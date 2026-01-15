@@ -1,0 +1,201 @@
+package com.example.dicedrop.presentation.settings
+
+import com.arkivanov.mvikotlin.core.store.Reducer
+import com.arkivanov.mvikotlin.core.store.Store
+import com.arkivanov.mvikotlin.core.store.StoreFactory
+import com.arkivanov.mvikotlin.extensions.coroutines.CoroutineBootstrapper
+import com.arkivanov.mvikotlin.extensions.coroutines.CoroutineExecutor
+import com.example.dicedrop.domain.entity.GameSettings
+import com.example.dicedrop.domain.entity.SettingTypes
+import com.example.dicedrop.domain.useCases.game.RestartGameUseCase
+import com.example.dicedrop.domain.useCases.settings.ChangeLanguageUseCase
+import com.example.dicedrop.domain.useCases.settings.ChangeUseAutoRollUseCase
+import com.example.dicedrop.domain.useCases.settings.GetSettingsUseCase
+import com.example.dicedrop.presentation.settings.SettingsStore.Intent
+import com.example.dicedrop.presentation.settings.SettingsStore.Label
+import com.example.dicedrop.presentation.settings.SettingsStore.State
+import kotlinx.coroutines.launch
+import javax.inject.Inject
+
+interface SettingsStore: Store<Intent, State, Label> {
+
+    sealed interface Intent {
+
+        data object ClickBack : Intent
+
+        data object ClickExit : Intent
+
+        data object ClickRestartGame : Intent
+
+        data object ClickNavigateToShop : Intent
+
+        data class ClickSettingsChange(val newSetting: SettingTypes) : Intent
+
+        data object ClickTurnOffAds : Intent
+
+    }
+
+    data class State(
+        val settingsState: SettingsState
+    ){
+        sealed interface SettingsState {
+
+            data object Initial : SettingsState
+
+            data object Loading : SettingsState
+
+            data object Error : SettingsState
+
+            data class Loaded(val settings: GameSettings, val openReason: OpenReason) : SettingsState
+        }
+    }
+
+    sealed interface Label {
+
+        data object ClickBack : Label
+
+        data object ClickExit : Label
+
+        data object ClickRestartGame : Label
+
+        data object ClickNavigateToShop : Label
+
+        data class ClickChangeLanguageError(val language: String) : Label
+
+        data class ClickTurnOffAds(val isAdsOff: Boolean) : Label
+    }
+}
+
+class SettingsStoreFactory @Inject constructor(
+    private val storeFactory: StoreFactory,
+    private val getSettingsUseCase: GetSettingsUseCase,
+    private val changeLanguageUseCase: ChangeLanguageUseCase,
+    private val changeUseAutoRollUseCase: ChangeUseAutoRollUseCase,
+    private val restartGameUseCase: RestartGameUseCase,
+) {
+
+    fun create(openReason: OpenReason): SettingsStore =
+        object : SettingsStore, Store<Intent, State, Label> by storeFactory.create(
+            name = "SettingsStore",
+            initialState = State(
+                settingsState = State.SettingsState.Initial
+            ),
+            bootstrapper = BootstrapperImpl(openReason),
+            executorFactory = ::ExecutorImpl,
+            reducer = ReducerImpl
+        ) {}
+
+    private sealed interface Action {
+
+        data class SettingsLoaded(val settings: GameSettings, val openReason: OpenReason) : Action
+
+        data object SettingsStartLoading : Action
+
+        data object SettingsLoadingError : Action
+
+    }
+
+    private sealed interface Msg {
+
+        data class LanguageChanged(val language: String): Msg
+
+        data class UseAutoRollChanged(val useAutoRoll: Boolean): Msg
+
+        data class AdsTurnedOff(val isAdsOff: Boolean): Msg
+
+        data class SettingsLoaded(val settings: GameSettings, val openReason: OpenReason) : Msg
+
+        data object SettingsStartLoading : Msg
+
+        data object SettingsLoadingError : Msg
+
+    }
+
+    private inner class BootstrapperImpl(private val openReason: OpenReason): CoroutineBootstrapper<Action>() {
+        override fun invoke() {
+            scope.launch {
+                dispatch(Action.SettingsStartLoading)
+                try {
+                    val settings = getSettingsUseCase()
+                    dispatch(Action.SettingsLoaded(settings, openReason))
+                } catch (e: Exception) {
+                    dispatch(Action.SettingsLoadingError)
+                }
+            }
+        }
+    }
+
+    private inner class ExecutorImpl : CoroutineExecutor<Intent, Action, State, Msg, Label>() {
+        override fun executeIntent(intent: Intent, getState: () -> State) {
+            when (intent) {
+                Intent.ClickBack -> publish(Label.ClickBack)
+                Intent.ClickNavigateToShop -> publish(Label.ClickNavigateToShop)
+                Intent.ClickRestartGame -> {
+                    scope.launch {
+                        restartGameUseCase()
+                        publish(Label.ClickRestartGame)
+                    }
+                }
+                is Intent.ClickTurnOffAds -> {
+                    scope.launch {
+                        try {
+                            dispatch(Msg.AdsTurnedOff(true))
+                            publish(Label.ClickTurnOffAds(true))
+                        } catch (e: Exception) {
+                            publish(Label.ClickTurnOffAds(false))
+                        }
+                    }
+                }
+
+                Intent.ClickExit -> publish(Label.ClickExit)
+                is Intent.ClickSettingsChange -> {
+                    scope.launch {
+                        when(intent.newSetting){
+                            is SettingTypes.Language -> {
+                                try {
+                                    changeLanguageUseCase(intent.newSetting.language)
+                                    dispatch(Msg.LanguageChanged(intent.newSetting.language))
+                                } catch (e: Exception) {
+                                    publish(Label.ClickChangeLanguageError(intent.newSetting.language))
+                                }
+                            }
+                            is SettingTypes.MusicVolume -> {
+
+                            }
+                            is SettingTypes.UseAutoRoll -> {
+                                changeUseAutoRollUseCase(intent.newSetting.checked)
+                                dispatch(Msg.UseAutoRollChanged(intent.newSetting.checked))
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        override fun executeAction(action: Action, getState: () -> State) {
+            when (action) {
+                is Action.SettingsLoaded -> dispatch(Msg.SettingsLoaded(action.settings, action.openReason))
+                Action.SettingsLoadingError -> dispatch(Msg.SettingsLoadingError)
+                Action.SettingsStartLoading -> dispatch(Msg.SettingsStartLoading)
+            }
+        }
+    }
+
+    private object ReducerImpl : Reducer<State, Msg> {
+        override fun State.reduce(msg: Msg): State = when (msg) {
+            is Msg.LanguageChanged -> updateSettings { it.copy(language = msg.language) }
+            is Msg.UseAutoRollChanged -> updateSettings { it.copy(useAutoRoll = msg.useAutoRoll) }
+            is Msg.AdsTurnedOff -> updateSettings { it.copy(isAdsOff = msg.isAdsOff) }
+            Msg.SettingsLoadingError -> copy(settingsState = State.SettingsState.Error)
+            Msg.SettingsStartLoading ->  copy(settingsState = State.SettingsState.Loading)
+            is Msg.SettingsLoaded -> copy(
+                settingsState = State.SettingsState.Loaded(msg.settings, msg.openReason)
+            )
+        }
+    }
+}
+
+private fun State.updateSettings(transform: (GameSettings) -> GameSettings): State =
+    (settingsState as? State.SettingsState.Loaded)?.let { state ->
+        copy(settingsState = State.SettingsState.Loaded(transform(state.settings),state.openReason))
+    } ?: this
