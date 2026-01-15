@@ -1,0 +1,18 @@
+<resources>
+    <string name="app_name">DiceDrop</string>
+    <string name="app_name_DICE">DICE</string>
+    <string name="app_name_DROP">DROP</string>
+    <string name="rolling_dice">Rolling dices...</string>
+    <string name="startGame">Start game</string>
+    <string name="best_score_short">"BEST: "</string>
+    <string name="settings_title">Settings</string>
+    <string name="pause_title">Pause</string>
+    <string name="back">Back</string>
+    <string name="music_volume">Music volume</string>
+    <string name="auto_skip">Auto skip</string>
+    <string name="restart_game">Restart game</string>
+    <string name="exit">Exit</string>
+    <string name="not_enough_coins">Not enough coins</string>
+    <string name="not_enough_bonus">Not enough bonus</string>
+    <string name="go_to_shop">Go to shop</string>
+</resources>
