@@ -1,7 +1,9 @@
 package com.example.dicedrop.domain.catalog
 
 import com.example.dicedrop.domain.entity.Achievement
+import com.example.dicedrop.domain.entity.AchievementReward
 import com.example.dicedrop.domain.entity.AchievementType
+import com.example.dicedrop.domain.entity.BonusType
 
 object AchievementsCatalog {
     val all: List<Achievement> = listOf(
@@ -36,6 +38,16 @@ object AchievementsCatalog {
             type = AchievementType.ROLL_TIMES,
             requiredCount = 1000,
             reward = 20,
+            additionalRewards = listOf(
+                AchievementReward(
+                    bonusType = BonusType.BOMB,
+                    amount = 1
+                ),
+                AchievementReward(
+                    bonusType = BonusType.HAMMER,
+                    amount = 1
+                )
+            )
         ),
         Achievement(
             id = "clear_50_rows",

@@ -8,5 +8,6 @@ data class Achievement(
     val requiredCount: Int,
     val totalCount: Int = 0,
     val reward: Int,
-    val isRewardClaimed: Boolean = false
+    val isRewardClaimed: Boolean = false,
+    val additionalRewards: List<AchievementReward> = emptyList()
 )
