@@ -22,7 +22,7 @@ fun RowScope.AchievementTitle(
         modifier = modifier
             .weight(1f)
             .padding(3.dp),
-        verticalArrangement = Arrangement.spacedBy(6.dp)
+        verticalArrangement = Arrangement.spacedBy(2.dp)
     ) {
         Text(
             color = DarkBlue,

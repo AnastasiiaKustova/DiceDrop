@@ -26,6 +26,9 @@ val Red = Color(0xFFF0475E)
 val BlueGradientLight = Color(0xFF3A5EA6)
 val BlueGradientDark = Color(0xFF4773CC)
 
+val BlackGradientLight = Color(0xFF414244)
+val BlackGradientDark = Color(0xFF858B96)
+
 val BlueGradient = Brush.linearGradient(
     colors = listOf(BlueGradientDark, BlueGradientLight),
     start = Offset(0f, 0f),

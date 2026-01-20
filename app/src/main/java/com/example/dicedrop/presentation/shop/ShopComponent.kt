@@ -12,7 +12,7 @@ interface ShopComponent {
 
     fun onBackClick()
 
-    fun onGetDailyRewardClick()
+    fun onRandomBonusConfirmClick()
 
     fun onBuyItemClick(shopItem: ShopItem)
 

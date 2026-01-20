@@ -19,7 +19,7 @@ import com.example.dicedrop.domain.entity.Achievement
 import com.example.dicedrop.presentation.achievements.animation.ConfettiOverlay
 import com.example.dicedrop.presentation.achievements.animation.RewardAnimationData
 import com.example.dicedrop.presentation.achievements.ui.AchievementsList
-import com.example.dicedrop.presentation.achievements.ui.TopBar
+import com.example.dicedrop.presentation.achievements.ui.AchievementTopBar
 import com.example.dicedrop.presentation.ui.theme.LightBlue
 
 @Composable
@@ -31,7 +31,7 @@ fun AchievementsContent(component: AchievementsComponent) {
 
     Scaffold(
         topBar = {
-            TopBar(onBackClick = { component.onBackClick() })
+            AchievementTopBar(onBackClick = { component.onBackClick() })
         },
         contentColor = LightBlue,
         modifier = Modifier.fillMaxSize()

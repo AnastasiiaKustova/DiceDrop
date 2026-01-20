@@ -390,8 +390,3 @@ class GameStoreFactory @Inject constructor(
         saveGameUseCase(game)
     }
 }
-
-private fun State.updateGameState(transform: (GameStatisticItem) -> GameStatisticItem): State =
-    (gameState as? State.GameState.Loaded)?.let { state ->
-        copy(gameState = State.GameState.Loaded(transform(state.gameStatistic)))
-    } ?: this

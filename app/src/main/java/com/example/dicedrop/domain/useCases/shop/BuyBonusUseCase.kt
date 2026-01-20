@@ -29,13 +29,13 @@ class BuyBonusUseCase @Inject constructor(
     suspend operator fun invoke(shopItem: ShopItem) {
         val currentGame = repository.getCurrentGame()
 
-        val gameStatistic = if (currentGame.coins - shopItem.price >= 0) {
+        val gameStatistic = if (currentGame.coins + shopItem.price >= 0) {
             val bonuses = currentGame.bonuses.map {
                 if (it.type == shopItem.bonusType)
                     it.copy(count = it.count + 1)
                 else it
             }
-            currentGame.copy(bonuses = bonuses, coins = currentGame.coins - shopItem.price)
+            currentGame.copy(bonuses = bonuses, coins = currentGame.coins + shopItem.price)
         } else
             throw NotEnoughCoinsException("Not enough coins for buy bonus ${shopItem.title}")
 

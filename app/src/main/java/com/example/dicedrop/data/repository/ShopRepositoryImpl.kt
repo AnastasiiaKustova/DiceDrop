@@ -6,7 +6,7 @@ import javax.inject.Inject
 
 class ShopRepositoryImpl @Inject constructor() : ShopRepository {
     override suspend fun isDailyRewardReceived(date: String): Boolean {
-        return false
+        return true
     }
 
     override suspend fun getDailyReward() {

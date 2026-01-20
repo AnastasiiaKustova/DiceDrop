@@ -20,7 +20,7 @@ import com.example.dicedrop.presentation.ui.theme.White
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TopBar(
+fun AchievementTopBar(
     modifier: Modifier = Modifier,
     onBackClick: () -> Unit,
 ) {

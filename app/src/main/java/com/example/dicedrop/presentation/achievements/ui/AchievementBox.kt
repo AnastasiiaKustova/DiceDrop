@@ -41,7 +41,7 @@ fun AchievementBox(
         Column(
             modifier = Modifier
                 .background(White)
-                .padding(top = 20.dp, start = 20.dp, end = 20.dp)
+                .padding(top = 16.dp, start = 20.dp, end = 20.dp)
         ) {
 
             Row(
@@ -68,7 +68,6 @@ fun AchievementBox(
                         color = DarkBlue,
                     )
                 }
-
             }
         }
         Box(
