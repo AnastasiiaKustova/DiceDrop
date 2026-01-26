@@ -27,8 +27,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.dicedrop.R
-import com.example.dicedrop.domain.entity.GameSettings
-import com.example.dicedrop.domain.entity.SettingTypes
+import com.example.dicedrop.domain.entity.settings.GameSettings
+import com.example.dicedrop.domain.entity.settings.SettingTypes
 import com.example.dicedrop.presentation.ui.theme.DarkBlue
 import com.example.dicedrop.presentation.ui.theme.White
 import com.example.dicedrop.presentation.ui.theme.WhiteBlue

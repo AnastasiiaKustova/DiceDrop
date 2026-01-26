@@ -15,7 +15,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import com.example.dicedrop.domain.entity.Achievement
+import com.example.dicedrop.domain.entity.achievement.Achievement
 import com.example.dicedrop.presentation.achievements.animation.ConfettiOverlay
 import com.example.dicedrop.presentation.achievements.animation.RewardAnimationData
 import com.example.dicedrop.presentation.achievements.ui.AchievementsList

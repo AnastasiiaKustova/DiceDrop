@@ -5,8 +5,8 @@ import com.arkivanov.mvikotlin.core.store.Store
 import com.arkivanov.mvikotlin.core.store.StoreFactory
 import com.arkivanov.mvikotlin.extensions.coroutines.CoroutineBootstrapper
 import com.arkivanov.mvikotlin.extensions.coroutines.CoroutineExecutor
-import com.example.dicedrop.domain.entity.GameSettings
-import com.example.dicedrop.domain.entity.SettingTypes
+import com.example.dicedrop.domain.entity.settings.GameSettings
+import com.example.dicedrop.domain.entity.settings.SettingTypes
 import com.example.dicedrop.domain.useCases.game.RestartGameUseCase
 import com.example.dicedrop.domain.useCases.settings.ChangeLanguageUseCase
 import com.example.dicedrop.domain.useCases.settings.ChangeUseAutoRollUseCase

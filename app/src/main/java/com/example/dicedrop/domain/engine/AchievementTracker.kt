@@ -1,7 +1,7 @@
 package com.example.dicedrop.domain.engine
 
-import com.example.dicedrop.domain.entity.Achievement
-import com.example.dicedrop.domain.entity.AchievementType
+import com.example.dicedrop.domain.entity.achievement.Achievement
+import com.example.dicedrop.domain.entity.achievement.AchievementType
 import com.example.dicedrop.domain.entity.statistic.AchievementUnlockedEvent
 import com.example.dicedrop.domain.entity.statistic.PlayerStat
 import com.example.dicedrop.domain.entity.statistic.PlayerStats

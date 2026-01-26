@@ -28,5 +28,6 @@ fun BonusType.getIconResId() : Int{
         BonusType.HAMMER -> R.drawable.ic_hammer
         BonusType.ROTATE -> R.drawable.ic_rotate
         BonusType.REROLL -> R.drawable.ic_update
+        BonusType.COIN -> R.drawable.ic_coins
     }
 }

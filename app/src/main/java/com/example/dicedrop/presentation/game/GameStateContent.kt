@@ -56,7 +56,7 @@ fun GameStateContent(
                     onRollEnd = component::onRollEnd,
                     onUseBonusClick = component::onBonusClick,
                     onBonusDragEnd = component::onPlaceBonus,
-                    onBuyBonusClick = component::onBuyBonusClick,
+                    onBuyBonusClick = component::onShopClick,
                     onPlaceBlock = component::placeBlock
                 )
             }
@@ -66,11 +66,11 @@ fun GameStateContent(
             GameStore.State.GameState.Initial -> Unit
         }
 
-        // 2. Диалоги поверх игры
         when (state) {
             is GameStore.State.GameState.NewRecord -> {
                 NewRecordDialog(
                     record = state.score,
+                    rewardsList = state.rewardsList,
                     confirmClick = component::onConfirmNewRecord
                 )
             }
@@ -97,7 +97,7 @@ private fun GameScreen(
     onRollEnd: (result: DiceItem) -> Unit,
     onUseBonusClick: (BonusType) -> Unit,
     onBonusDragEnd: (r: Int, c: Int, type: BonusType) -> Unit,
-    onBuyBonusClick: (BonusType) -> Unit,
+    onBuyBonusClick: () -> Unit,
     onPlaceBlock: (r: Int, c: Int) -> Unit
 ) {
     Column(
@@ -137,11 +137,11 @@ private fun GameScreen(
         GameBottomPanel(
             bonusStatistic = gameStatistic.bonuses,
             uiStateList = uiStates,
-            onBonusClick = onUseBonusClick,
+            onBonusClick = onBuyBonusClick,
             onBonusDragEnd = onBonusDragEnd,
             boardItem = gameStatistic.boardItem,
             boardState = boardState,
-            onCounterClick = { onBuyBonusClick(it.type) }
+            onCounterClick = { onBuyBonusClick() }
         )
     }
 }

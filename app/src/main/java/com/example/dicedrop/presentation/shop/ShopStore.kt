@@ -5,15 +5,18 @@ import com.arkivanov.mvikotlin.core.store.Store
 import com.arkivanov.mvikotlin.core.store.StoreFactory
 import com.arkivanov.mvikotlin.extensions.coroutines.CoroutineBootstrapper
 import com.arkivanov.mvikotlin.extensions.coroutines.CoroutineExecutor
+import com.example.dicedrop.core.DailyRewardReceived
 import com.example.dicedrop.domain.entity.BonusItem
 import com.example.dicedrop.domain.entity.CoinPack
 import com.example.dicedrop.domain.entity.ShopItem
+import com.example.dicedrop.domain.useCases.DateHelper
 import com.example.dicedrop.domain.useCases.shop.BuyBonusUseCase
 import com.example.dicedrop.domain.useCases.game.ObserveCoinsValueUseCase
 import com.example.dicedrop.domain.useCases.shop.GetDailyRewardIsReceivedStateUseCase
 import com.example.dicedrop.domain.useCases.shop.GetDailyRewardUseCase
 import com.example.dicedrop.domain.useCases.shop.GetRandomBonusUseCase
 import com.example.dicedrop.domain.useCases.shop.GetShopItemsUseCase
+import com.example.dicedrop.domain.useCases.shop.ObserveDailyRewardUseCase
 import com.example.dicedrop.presentation.shop.ShopStore.Intent
 import com.example.dicedrop.presentation.shop.ShopStore.Label
 import com.example.dicedrop.presentation.shop.ShopStore.State
@@ -49,7 +52,11 @@ interface ShopStore : Store<Intent, State, Label> {
 
             //data object Error : ShopState
 
-            data class Loaded(val money: Int, val shopItems: List<ShopItem>, val dailyRewardClaimed: Boolean) : ShopState
+            data class Loaded(
+                val money: Int,
+                val shopItems: List<ShopItem>,
+                val dailyRewardClaimed: Boolean
+            ) : ShopState
         }
     }
 
@@ -71,6 +78,7 @@ interface ShopStore : Store<Intent, State, Label> {
 class ShopStoreFactory @Inject constructor(
     private val storeFactory: StoreFactory,
     private val observeCoinsValueUseCase: ObserveCoinsValueUseCase,
+    private val observeDailyRewardUseCase: ObserveDailyRewardUseCase,
     private val buyBonusUseCase: BuyBonusUseCase,
     private val getRandomBonusUseCase: GetRandomBonusUseCase,
     private val getShopItemsUseCase: GetShopItemsUseCase,
@@ -92,7 +100,16 @@ class ShopStoreFactory @Inject constructor(
 
     private sealed interface Action {
 
-        data class ShopLoaded(val money: Int, val shopItems: List<ShopItem>, val dailyRewardClaimed: Boolean) : Action
+        data class ShopLoaded(
+            val money: Int,
+            val shopItems: List<ShopItem>,
+            val dailyRewardClaimed: Boolean
+        ) : Action
+
+        data class ObserveDailyReward(
+            val isDailyRewardReceived: Boolean,
+            val dayStreak: Int
+        ) : Action
 
         data class GetRandomBonus(val bonus: BonusItem) : Action
 
@@ -103,9 +120,18 @@ class ShopStoreFactory @Inject constructor(
 
     private sealed interface Msg {
 
-        data class ShopLoaded(val money: Int, val shopItems: List<ShopItem>, val dailyRewardClaimed: Boolean) : Msg
+        data class ShopLoaded(
+            val money: Int,
+            val shopItems: List<ShopItem>,
+            val dailyRewardClaimed: Boolean
+        ) : Msg
 
         data class GetRandomBonus(val bonus: BonusItem) : Msg
+
+        data class ObserveDailyReward(
+            val isDailyRewardReceived: Boolean,
+            val dayStreak: Int
+        ) : Msg
 
         data object ReturnToShopLoaded : Msg
 
@@ -141,6 +167,24 @@ class ShopStoreFactory @Inject constructor(
                     dispatch(Action.ShopLoadingError)
                 }
             }
+
+            scope.launch {
+                try {
+                    observeDailyRewardUseCase()
+                        .distinctUntilChanged()
+                        .collect { dailyReward ->
+                            val isDailyRewardReceived = dailyReward.lastDate == DateHelper.getCurrentDate()
+                            dispatch(
+                                Action.ObserveDailyReward(
+                                    isDailyRewardReceived = isDailyRewardReceived,
+                                    dayStreak = dailyReward.dayStreak
+                                )
+                            )
+                        }
+                } catch (e: Exception) {
+                    dispatch(Action.ShopLoadingError)
+                }
+            }
         }
     }
 
@@ -152,18 +196,25 @@ class ShopStoreFactory @Inject constructor(
                 is Intent.ClickBuyItem -> {
                     scope.launch {
                         try {
-
-
                             if (intent.shopItem.bonusType == null) {
+                                if (intent.shopItem.id == "daily_bonus") {
+                                    val isDailyRewardReceived =
+                                        getDailyRewardIsReceivedStateUseCase()
+                                    if (isDailyRewardReceived) throw DailyRewardReceived("Daily reward already received")
+                                    else getDailyRewardUseCase()
+                                }
+
                                 val randomBonus = getRandomBonusUseCase()
                                 buyBonusUseCase(
-                                    intent.shopItem.copy(
-                                        bonusType = randomBonus.type
-                                    )
+                                    bonusType = randomBonus.type,
+                                    price = intent.shopItem.price
                                 )
                                 dispatch(Msg.GetRandomBonus(randomBonus))
                             } else {
-                                buyBonusUseCase(intent.shopItem)
+                                buyBonusUseCase(
+                                    bonusType = intent.shopItem.bonusType,
+                                    price = intent.shopItem.price
+                                )
                                 dispatch(
                                     Msg.GetRandomBonus(
                                         BonusItem(
@@ -195,6 +246,13 @@ class ShopStoreFactory @Inject constructor(
                     )
                 )
 
+                is Action.ObserveDailyReward -> dispatch(
+                    Msg.ObserveDailyReward(
+                        isDailyRewardReceived = action.isDailyRewardReceived,
+                        dayStreak = action.dayStreak
+                    )
+                )
+
                 Action.ShopLoadingError -> dispatch(Msg.ShopLoadingError)
                 Action.ShopStartLoading -> dispatch(Msg.ShopStartLoading)
                 is Action.GetRandomBonus -> dispatch(Msg.GetRandomBonus(action.bonus))
@@ -221,6 +279,19 @@ class ShopStoreFactory @Inject constructor(
                         shopState = State.ShopState.GetRandomBonus(
                             bonus = msg.bonus,
                             prevState = loaded
+                        )
+                    )
+                }
+
+                is Msg.ObserveDailyReward -> {
+                    val loaded = shopState as? State.ShopState.Loaded
+                        ?: return this
+
+                    copy(
+                        shopState = State.ShopState.Loaded(
+                            money = loaded.money,
+                            shopItems = loaded.shopItems,
+                            dailyRewardClaimed = msg.isDailyRewardReceived
                         )
                     )
                 }

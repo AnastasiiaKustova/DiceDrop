@@ -1,8 +1,7 @@
 package com.example.dicedrop.domain.repository
 
-import com.example.dicedrop.domain.entity.GameSettings
+import com.example.dicedrop.domain.entity.settings.GameSettings
 import kotlinx.coroutines.flow.Flow
-import org.intellij.lang.annotations.Language
 
 interface SettingsRepository {
 

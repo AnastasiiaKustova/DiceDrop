@@ -6,7 +6,7 @@ import javax.inject.Inject
 import kotlin.random.Random
 
 class GetRandomBonusUseCase @Inject constructor() {
-    suspend operator fun invoke(): BonusItem {
+    operator fun invoke(): BonusItem {
         val bonuses = BonusType.entries
         val bonusID = Random.nextInt(0, bonuses.size)
         return BonusItem(type = bonuses[bonusID], count = 1)

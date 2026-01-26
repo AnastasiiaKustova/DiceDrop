@@ -25,7 +25,7 @@ fun GameBottomPanel(
     boardItem: BoardItem,
     boardState: BoardUiState,
     onCounterClick: (BonusItem) -> Unit,
-    onBonusClick: (BonusType) -> Unit,
+    onBonusClick: () -> Unit,
     onBonusDragEnd: (r: Int, c: Int, type: BonusType) -> Unit,
 ) {
     val density = LocalDensity.current
@@ -54,7 +54,7 @@ fun GameBottomPanel(
                 count = bonus.count,
                 modifier = modifier,
                 dragModifier = dragModifier ?: Modifier,
-                onBonusClick = { onBonusClick(bonus.type) },
+                onBonusClick = onBonusClick,
                 onCounterClick = { onCounterClick(bonus) }
             )
         }

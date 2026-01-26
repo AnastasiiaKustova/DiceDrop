@@ -20,6 +20,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 class GameRepositoryImpl @Inject constructor(
@@ -34,6 +35,12 @@ class GameRepositoryImpl @Inject constructor(
 
     private val _gameState = MutableStateFlow(default())
     override val gameStatisticFlow: Flow<GameStatisticItem> = _gameState.asStateFlow()
+
+    init {
+        repositoryScope.launch {
+            _gameState.value = loadGame()
+        }
+    }
 
     override val coinsValueFlow: Flow<Int> = _gameState
         .map { it.coins }  // Извлекаем количество монет из состояния игры
@@ -58,14 +65,7 @@ class GameRepositoryImpl @Inject constructor(
         return saved
     }
 
-   /* override suspend fun updateGameState(update: (GameStatisticItem) -> GameStatisticItem) {
-        _gameState.value = update(_gameState.value)
-    }*/
-
     override suspend fun updateGameState(game: GameStatisticItem) {
-        /*updateGameState{
-            game
-        }*/
         _gameState.value = game
     }
 }

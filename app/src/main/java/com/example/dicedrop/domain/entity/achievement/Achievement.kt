@@ -1,4 +1,4 @@
-package com.example.dicedrop.domain.entity
+package com.example.dicedrop.domain.entity.achievement
 
 data class Achievement(
     val id: String,

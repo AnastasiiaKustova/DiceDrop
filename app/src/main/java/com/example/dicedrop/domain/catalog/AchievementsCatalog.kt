@@ -1,8 +1,8 @@
 package com.example.dicedrop.domain.catalog
 
-import com.example.dicedrop.domain.entity.Achievement
-import com.example.dicedrop.domain.entity.AchievementReward
-import com.example.dicedrop.domain.entity.AchievementType
+import com.example.dicedrop.domain.entity.achievement.Achievement
+import com.example.dicedrop.domain.entity.achievement.AchievementReward
+import com.example.dicedrop.domain.entity.achievement.AchievementType
 import com.example.dicedrop.domain.entity.BonusType
 
 object AchievementsCatalog {

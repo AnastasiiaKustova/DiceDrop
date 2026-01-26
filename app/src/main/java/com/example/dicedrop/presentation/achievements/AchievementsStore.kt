@@ -6,7 +6,7 @@ import com.arkivanov.mvikotlin.core.store.StoreFactory
 import com.arkivanov.mvikotlin.extensions.coroutines.CoroutineBootstrapper
 import com.arkivanov.mvikotlin.extensions.coroutines.CoroutineExecutor
 import com.example.dicedrop.core.IllegalException
-import com.example.dicedrop.domain.entity.Achievement
+import com.example.dicedrop.domain.entity.achievement.Achievement
 import com.example.dicedrop.domain.useCases.achievements.GetAchievementRewardUseCase
 import com.example.dicedrop.domain.useCases.achievements.GetAchievementsUseCase
 import com.example.dicedrop.domain.useCases.achievements.ObserveAchievementStateUseCase
