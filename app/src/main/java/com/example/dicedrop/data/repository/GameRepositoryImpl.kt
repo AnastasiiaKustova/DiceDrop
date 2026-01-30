@@ -43,7 +43,7 @@ class GameRepositoryImpl @Inject constructor(
     }
 
     override val coinsValueFlow: Flow<Int> = _gameState
-        .map { it.coins }  // Извлекаем количество монет из состояния игры
+        .map { it.coins }
         .stateIn(repositoryScope, SharingStarted.Lazily, 0)
 
     override suspend fun getCurrentGame(): GameStatisticItem = gameStatisticFlow.first()

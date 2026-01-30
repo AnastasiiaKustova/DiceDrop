@@ -40,10 +40,6 @@ object AchievementsCatalog {
             reward = 20,
             additionalRewards = listOf(
                 AchievementReward(
-                    bonusType = BonusType.BOMB,
-                    amount = 1
-                ),
-                AchievementReward(
                     bonusType = BonusType.HAMMER,
                     amount = 1
                 )

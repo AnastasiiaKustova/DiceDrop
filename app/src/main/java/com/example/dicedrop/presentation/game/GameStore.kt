@@ -64,7 +64,7 @@ interface GameStore : Store<Intent, State, Label> {
 
         data object SaveGame : Intent
 
-        data object NewRecordConfirm : Intent
+        data class NewRecordConfirm(val rewardsList: List<BonusItem>) : Intent
 
     }
 
@@ -109,7 +109,6 @@ interface GameStore : Store<Intent, State, Label> {
 
         data object NotEnoughBonus : Label
 
-        // визуальные эффекты
         data class AnimateDice(val dices: DiceItem) : Label
 
         data class PlayLineClearAnimation(val clearedRows: List<Int>, val clearedCols: List<Int>) :
@@ -200,7 +199,7 @@ class GameStoreFactory @Inject constructor(
 
                             game.isNewRecord -> {
                                 val rewardsList = getRecordRewardsUseCase(
-                                    newRecord = game.totalScore
+                                    newRecord = game.totalScore,
                                 )
                                 dispatch(
                                     Action.NewRecord(
@@ -210,19 +209,7 @@ class GameStoreFactory @Inject constructor(
                                 )
                             }
 
-
-                            else -> {
-                                val rewardsList = getRecordRewardsUseCase(
-                                    newRecord = game.totalScore
-                                )
-                                dispatch(
-                                    Action.NewRecord(
-                                        score = game.totalScore,
-                                        rewardsList = rewardsList
-                                    )
-                                )
-                            }
-                            //dispatch(Action.GameLoaded(game))
+                            else -> dispatch(Action.GameLoaded(game))
                         }
                     }
             }
@@ -298,9 +285,9 @@ class GameStoreFactory @Inject constructor(
                     }
                 }
 
-                Intent.NewRecordConfirm -> {
+                is Intent.NewRecordConfirm -> {
                     scope.launch {
-                        confirmNewRecordUseCase()
+                        confirmNewRecordUseCase(intent.rewardsList)
                     }
                 }
 
@@ -351,20 +338,11 @@ class GameStoreFactory @Inject constructor(
                     scope.launch {
                         useBonusUseCase(intent.bonusType)
 
-                        val (clearedRows, clearedCols) = placeBonusUseCase(
+                        placeBonusUseCase(
                             intent.r,
                             intent.c,
                             intent.bonusType
                         )
-
-                        /* if (intent.bonusType == BonusType.BOMB) {
-                             publish(
-                                 Label.PlayLineClearAnimation(
-                                     clearedRows = clearedRows,
-                                     clearedCols = clearedCols
-                                 )
-                             )
-                         }*/
                     }
                 }
 
@@ -384,7 +362,7 @@ class GameStoreFactory @Inject constructor(
                 Msg.GameLoading -> copy(gameState = State.GameState.Loading)
                 is Msg.GameOver -> {
                     val loaded = gameState as? State.GameState.Loaded
-                        ?: return this // защита от некорректного состояния
+                        ?: return this
 
                     copy(
                         gameState = State.GameState.Over(

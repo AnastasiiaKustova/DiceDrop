@@ -24,6 +24,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -75,7 +76,9 @@ fun BonusCard(
                 text = title,
                 color = DarkBlue,
                 fontWeight = FontWeight.Bold,
-                fontSize = 20.sp
+                fontSize = 18.sp,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.align(Alignment.CenterHorizontally)
             )
 
             if (isDailyRewardClaimed) {
@@ -174,7 +177,7 @@ fun test() {
     val bonus = BonusType.BOMB
     BonusCard(
         bonusId = "daily_bonus",
-        title = "Bomb",
+        title = "Bomb Bomb Bomb",
         iconResId = bonus.getIconResId(),
         price = 0,
         dailyRewardClaimed = true,

@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -48,7 +49,7 @@ fun RandomBonusDialog(
     bonus: BonusItem,
     confirmClick: () -> Unit
 ) {
-    var visible by remember { mutableStateOf(false) }
+    var visible by remember { mutableStateOf(true) }
 
     LaunchedEffect(Unit) {
         visible = true
@@ -79,7 +80,7 @@ fun RandomBonusDialog(
                 Column(
                     modifier = modifier
                         .fillMaxWidth(0.55f)
-                        .fillMaxHeight(0.36f)
+                        .wrapContentHeight()
                         .background(White, RoundedCornerShape(20.dp))
                         .border(
                             width = 5.dp,

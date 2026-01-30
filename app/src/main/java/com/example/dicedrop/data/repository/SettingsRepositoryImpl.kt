@@ -26,7 +26,6 @@ class SettingsRepositoryImpl @Inject constructor(
     override val gameSettingsFlow: Flow<GameSettings> = _settings.asStateFlow()
 
     init {
-        // Подписываемся на DataStore, чтобы держать актуальные данные
         CoroutineScope(Dispatchers.IO).launch {
             dataStore.data.collect { prefs ->
                 val json = prefs[Keys.SETTINGS]

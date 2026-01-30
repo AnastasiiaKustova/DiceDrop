@@ -33,7 +33,7 @@ fun AchievementsContent(component: AchievementsComponent) {
         topBar = {
             AchievementTopBar(onBackClick = { component.onBackClick() })
         },
-        contentColor = LightBlue,
+        containerColor = LightBlue,
         modifier = Modifier.fillMaxSize()
     ) { padding ->
         Box(modifier = Modifier.padding(padding)) {

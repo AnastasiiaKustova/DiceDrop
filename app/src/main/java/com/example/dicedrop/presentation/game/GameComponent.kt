@@ -3,6 +3,7 @@ package com.example.dicedrop.presentation.game
 import android.content.Context
 import com.example.dicedrop.R
 import com.example.dicedrop.domain.ads.RewardedAdManager
+import com.example.dicedrop.domain.entity.BonusItem
 import com.example.dicedrop.domain.entity.BonusType
 import com.example.dicedrop.domain.entity.DiceItem
 import kotlinx.coroutines.flow.SharedFlow
@@ -38,7 +39,7 @@ interface GameComponent {
 
     fun onBackPressed()
 
-    fun onConfirmNewRecord()
+    fun onConfirmNewRecord(rewardsList: List<BonusItem>)
 
     sealed interface UiEvent {
         data object WatchAd : UiEvent

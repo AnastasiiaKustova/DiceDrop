@@ -14,11 +14,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import com.example.dicedrop.domain.entity.BonusItem
 import com.example.dicedrop.presentation.game.GameStore
 import com.example.dicedrop.presentation.game.ui.popups.NewRecordDialog
 import com.example.dicedrop.presentation.shop.ui.RandomBonusDialog
 import com.example.dicedrop.presentation.shop.ui.ShopItems
 import com.example.dicedrop.presentation.shop.ui.ShopTopBar
+import com.example.dicedrop.presentation.ui.theme.LightBlue
 
 @Composable
 fun ShopContent(component: ShopComponent) {
@@ -41,7 +43,8 @@ fun ShopContent(component: ShopComponent) {
                 onBackClick = component::onBackClick
             )
         },
-        modifier = Modifier.fillMaxSize()
+        modifier = Modifier.fillMaxSize(),
+        containerColor = LightBlue
     ) { padding ->
         Box(modifier = Modifier.padding(padding)) {
             when (val state = state.shopState) {
@@ -68,12 +71,14 @@ fun ShopContent(component: ShopComponent) {
             }
         }
     }
+
     when (val state = state.shopState) {
         is ShopStore.State.ShopState.GetRandomBonus ->
             RandomBonusDialog(
                 bonus = state.bonus,
                 confirmClick = component::onRandomBonusConfirmClick
             )
+
         else -> Unit
     }
 }

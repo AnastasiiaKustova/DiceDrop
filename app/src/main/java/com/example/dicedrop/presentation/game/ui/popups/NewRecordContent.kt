@@ -20,30 +20,34 @@ import com.example.dicedrop.presentation.ui.theme.DarkBlue
 @Composable
 fun NewRecordContent(
     record: String,
+    isLandscape: Boolean,
     rewardsList: List<BonusItem>,
 ) {
+    val titleSize = if (isLandscape) 14.sp else 22.sp
+    val recordSize = if (isLandscape) 32.sp else 50.sp
+
     Text(
         text = "Score",
         color = Color.Black,
-        fontSize = 22.sp,
+        fontSize = titleSize,
         fontWeight = FontWeight.Normal
     )
 
     Text(
         text = record,
         color = DarkBlue,
-        fontSize = 50.sp,
+        fontSize = recordSize,
         fontWeight = FontWeight.Bold
     )
 
     Spacer(
-        modifier = Modifier.fillMaxHeight(0.1f)
+        modifier = Modifier.height(8.dp)
     )
 
     Text(
         text = "Rewards",
         color = Color.Black,
-        fontSize = 22.sp,
+        fontSize = titleSize,
         fontWeight = FontWeight.Normal
     )
 
@@ -61,4 +65,5 @@ fun NewRecordContent(
             )
         }
     }
+
 }

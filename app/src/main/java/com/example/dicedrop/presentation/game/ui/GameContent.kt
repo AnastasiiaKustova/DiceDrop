@@ -31,8 +31,6 @@ import androidx.compose.ui.unit.sp
 import com.example.dicedrop.R
 import com.example.dicedrop.domain.ads.RewardedAdManager
 import com.example.dicedrop.presentation.game.GameComponent
-import com.example.dicedrop.presentation.game.GameSnackbarHost
-import com.example.dicedrop.presentation.game.GameStateContent
 import kotlinx.coroutines.delay
 
 @Composable

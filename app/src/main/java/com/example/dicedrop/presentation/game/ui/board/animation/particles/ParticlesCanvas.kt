@@ -1,7 +1,6 @@
 package com.example.dicedrop.presentation.game.ui.board.animation.particles
 
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Modifier
@@ -16,8 +15,8 @@ fun ParticlesCanvas(
     dialogSize: IntSize,
     particles: SnapshotStateList<ConfettiParticle>,
 ){
-    Canvas(modifier = Modifier.fillMaxSize()) {
-        val start = Offset(dialogSize.width / 2f, -dialogSize.height.toFloat())
+    Canvas(modifier = Modifier) {
+        val start = Offset(0f, -dialogSize.height.toFloat())
         particles.forEach { particle ->
             val distance = particle.speed * particle.lifetime * 1.5
             val rad = Math.toRadians(particle.angle.toDouble())

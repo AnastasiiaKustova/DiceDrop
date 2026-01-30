@@ -25,7 +25,6 @@ class BuyBonusUseCase @Inject constructor(
         } else
             throw NotEnoughCoinsException("Not enough coins for buy bonus ${bonusType}")
 
-        repository.updateGameState(gameStatistic)
-
+        repository.saveGame(gameStatistic)
     }
 }

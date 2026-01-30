@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -35,6 +36,7 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import com.example.dicedrop.R
@@ -42,6 +44,7 @@ import com.example.dicedrop.domain.entity.BonusItem
 import com.example.dicedrop.presentation.achievements.animation.ConfettiParticle
 import com.example.dicedrop.presentation.game.ui.board.animation.particles.Particles
 import com.example.dicedrop.presentation.game.ui.board.animation.particles.ParticlesCanvas
+import com.example.dicedrop.presentation.ui.theme.TranslucentBlack
 import com.example.dicedrop.presentation.ui.theme.White
 import kotlinx.coroutines.delay
 
@@ -49,15 +52,12 @@ import kotlinx.coroutines.delay
 fun NewRecordDialog(
     record: Int,
     rewardsList: List<BonusItem>,
+    isLandscape: Boolean,
     confirmClick: () -> Unit
 ) {
     var visible by remember { mutableStateOf(true) }
     var dialogSize by remember { mutableStateOf(IntSize.Zero) }
     val particles = remember { mutableStateListOf<ConfettiParticle>() }
-
-    val density = LocalDensity.current.density
-    val screenHeightPx = LocalConfiguration.current.screenHeightDp * density
-    val fillHeightCoefficient = getFillHeightCoefficient(screenHeightPx)
 
     LaunchedEffect(Unit) {
         visible = true
@@ -75,7 +75,7 @@ fun NewRecordDialog(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0x88000000))
+            .background(TranslucentBlack)
             .clickable { confirmClick() },
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
@@ -97,26 +97,28 @@ fun NewRecordDialog(
             ) {
                 Box(
                     modifier = Modifier
-                        .padding(bottom = 20.dp),
+                        .padding(vertical = 20.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     Column(
                         modifier = Modifier
-                            .padding(top = 90.dp)
-                            .fillMaxWidth(0.65f)
-                            .fillMaxHeight(fillHeightCoefficient)
+                            .wrapContentSize()
+                            .padding(top = (if (isLandscape) 70.dp else 90.dp))
+                            .fillMaxWidth(if (isLandscape) 0.5f else 0.65f)
                             .background(White, RoundedCornerShape(20.dp))
+                            .padding(bottom = 20.dp)
                             .onGloballyPositioned { layout -> dialogSize = layout.size }
                             ,
                         horizontalAlignment = Alignment.CenterHorizontally,
                     ) {
 
                         Spacer(
-                            modifier = Modifier.height(100.dp)
+                            modifier = Modifier.height(if (isLandscape) 70.dp else 100.dp)
                         )
 
                         NewRecordContent(
                             record = record.toString(),
+                            isLandscape = isLandscape,
                             rewardsList = rewardsList)
 
                         ParticlesCanvas(dialogSize, particles)
@@ -124,7 +126,7 @@ fun NewRecordDialog(
                     Image(
                         modifier = Modifier
                             .align(Alignment.TopCenter)
-                            .fillMaxWidth(0.9f),
+                            .fillMaxWidth(if (isLandscape) 0.4f else 0.9f),
                         painter = painterResource(id = R.drawable.ic_new_record),
                         contentDescription = null
                     )
@@ -134,10 +136,4 @@ fun NewRecordDialog(
             }
         }
     }
-}
-
-private fun getFillHeightCoefficient(screenHeight: Float): Float {
-    val m = -0.000833f
-
-    return (m * screenHeight + 2.26f).coerceIn(0f, 1f)
 }

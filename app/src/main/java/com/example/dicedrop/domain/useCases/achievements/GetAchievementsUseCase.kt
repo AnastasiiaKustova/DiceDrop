@@ -15,7 +15,7 @@ private val statsRepository: PlayerStatsRepository
 ) {
     suspend operator fun invoke(): List<Achievement> {
         val achievements = achievementRepository.getAchievements()
-        val stats = statsRepository.statsFlow.first() // актуальная статистика игрока
+        val stats = statsRepository.statsFlow.first()
 
         return achievements.map { achievement ->
             val statValue = when (achievement.type) {

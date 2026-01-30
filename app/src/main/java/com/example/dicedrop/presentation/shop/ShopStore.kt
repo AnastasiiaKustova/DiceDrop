@@ -20,6 +20,7 @@ import com.example.dicedrop.domain.useCases.shop.ObserveDailyRewardUseCase
 import com.example.dicedrop.presentation.shop.ShopStore.Intent
 import com.example.dicedrop.presentation.shop.ShopStore.Label
 import com.example.dicedrop.presentation.shop.ShopStore.State
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -196,6 +197,7 @@ class ShopStoreFactory @Inject constructor(
                 is Intent.ClickBuyItem -> {
                     scope.launch {
                         try {
+
                             if (intent.shopItem.bonusType == null) {
                                 if (intent.shopItem.id == "daily_bonus") {
                                     val isDailyRewardReceived =
@@ -209,12 +211,14 @@ class ShopStoreFactory @Inject constructor(
                                     bonusType = randomBonus.type,
                                     price = intent.shopItem.price
                                 )
+                                delay(100)
                                 dispatch(Msg.GetRandomBonus(randomBonus))
                             } else {
                                 buyBonusUseCase(
                                     bonusType = intent.shopItem.bonusType,
                                     price = intent.shopItem.price
                                 )
+                                delay(100)
                                 dispatch(
                                     Msg.GetRandomBonus(
                                         BonusItem(
@@ -263,13 +267,15 @@ class ShopStoreFactory @Inject constructor(
     private object ReducerImpl : Reducer<State, Msg> {
         override fun State.reduce(msg: Msg): State {
             return when (msg) {
-                is Msg.ShopLoaded -> copy(
-                    shopState = State.ShopState.Loaded(
-                        money = msg.money,
-                        shopItems = msg.shopItems,
-                        dailyRewardClaimed = msg.dailyRewardClaimed
+                is Msg.ShopLoaded -> {
+                    copy(
+                        shopState = State.ShopState.Loaded(
+                            money = msg.money,
+                            shopItems = msg.shopItems,
+                            dailyRewardClaimed = msg.dailyRewardClaimed
+                        )
                     )
-                )
+                }
 
                 is Msg.GetRandomBonus -> {
                     val loaded = shopState as? State.ShopState.Loaded

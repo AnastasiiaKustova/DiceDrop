@@ -8,7 +8,7 @@ data class GameStatisticItem (
     val bestScore: Int = 0,
     val totalScore: Int = 0,
     val coins: Int = 0,
-    val bonuses: List<BonusItem> = BonusItem.emptyList(),
+    val bonuses: List<BonusItem> = BonusItem.default(),
     val boardItem: BoardItem = BoardItem.default(),
     val dice: DiceItem = DiceItem.empty(),
     val nextDice: DiceItem = DiceItem.empty(),

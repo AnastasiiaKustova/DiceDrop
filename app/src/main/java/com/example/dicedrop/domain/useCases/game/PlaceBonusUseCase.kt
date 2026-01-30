@@ -9,7 +9,7 @@ import javax.inject.Inject
 class PlaceBonusUseCase @Inject constructor(
     private val repository: GameRepository
 ) {
-    suspend operator fun invoke(row: Int, col: Int, bonusType: BonusType): Pair<List<Int>, List<Int>> {
+    suspend operator fun invoke(row: Int, col: Int, bonusType: BonusType) {
         val current = repository.getCurrentGame()
 
         val clearedBoard = when (bonusType){
@@ -22,11 +22,5 @@ class PlaceBonusUseCase @Inject constructor(
             boardItem = clearedBoard
         )
         repository.updateGameState(updated)
-
-        when (bonusType){
-            BonusType.BOMB -> return Pair(listOf(row), listOf(col))
-            BonusType.HAMMER -> return Pair(listOf(row - 1, row, row + 1), listOf(col - 1, col, col + 1))
-            else -> return Pair(emptyList(), emptyList())
-        }
     }
 }

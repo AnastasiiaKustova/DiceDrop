@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
@@ -41,12 +42,13 @@ import com.example.dicedrop.presentation.ui.theme.White
 import com.example.dicedrop.presentation.ui.theme.Yellow
 
 @Composable
-fun ColumnScope.BottomBoard(
+fun BottomBoard(
     modifier: Modifier = Modifier,
     uiState: GameUiState,
     boardItem: BoardItem,
     boardState: BoardUiState,
     diceItem: DiceItem,
+    isLandscape: Boolean,
     onRollEnd: (result: DiceItem) -> Unit,
     onPlaceBlock: (r: Int, c: Int) -> Unit
 ) {
@@ -56,13 +58,14 @@ fun ColumnScope.BottomBoard(
     if (diceItem == DiceItem.empty()) rolling.value = true
 
     Column(
-        modifier = modifier.weight(1f),
+        modifier = modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
 
         DiceLabel(
             dice1 = diceItem.dice1,
             dice2 = diceItem.dice2,
+            isLandscape = isLandscape,
         )
 
         BottomBoardField(
@@ -108,7 +111,7 @@ private fun BottomBoardField(
                         uiState.elementStartX = coords.positionInRoot().x
                         uiState.elementStartY = coords.positionInRoot().y
                     }
-                    .pointerInput(dices) {
+                    .pointerInput(dices, boardItem) {
                         detectDragGestures(
                             onDragStart = { DragController.onDragStart(uiState) },
                             onDrag = { _, dragAmount ->
@@ -154,7 +157,8 @@ private fun BottomBoardField(
 private fun DiceLabel(
     modifier: Modifier = Modifier,
     dice1: Int,
-    dice2: Int
+    dice2: Int,
+    isLandscape: Boolean,
 ) {
     val isDiceNull = (dice1 == 0 || dice2 == 0)
 
@@ -164,13 +168,14 @@ private fun DiceLabel(
         stringResource(R.string.rolling_dice)
 
     Box(
-        contentAlignment = Alignment.Center
+        contentAlignment = Alignment.Center,
+        modifier = if (isLandscape) Modifier.background(DarkBlue).padding(top = 20.dp) else Modifier
     ) {
         Box(
             modifier = Modifier
                 .align(Alignment.TopCenter)
                 .fillMaxWidth()
-                .background(LightBlue)
+                .background(if (isLandscape) DarkBlue else LightBlue)
                 .height(20.dp)
         )
         Box(

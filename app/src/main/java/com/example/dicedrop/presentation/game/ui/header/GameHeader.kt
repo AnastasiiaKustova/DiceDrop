@@ -44,6 +44,7 @@ fun GameHeader(
     totalScore: Int,
     bestScore: Int,
     coins: Int,
+    isLandscape: Boolean,
     onShopClick: () -> Unit
 ) {
 
@@ -67,7 +68,8 @@ fun GameHeader(
         )
         Score(
             totalScore = totalScore,
-            bestScore = bestScore
+            bestScore = bestScore,
+            isLandscape = isLandscape,
         )
         Shop(
             onClick = onShopClick
@@ -106,39 +108,65 @@ private fun RowScope.Score(
     modifier: Modifier = Modifier,
     totalScore: Int,
     bestScore: Int,
+    isLandscape: Boolean,
 ){
-    Column(
-        modifier = modifier
-            .weight(2f),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text(
-            modifier = Modifier
-                .offset(y = 5.dp),
-            color = White,
-            text = stringResource(R.string.best_score_short) + bestScore,
-            fontSize = 12.sp
-        )
 
-        Box(
-            modifier = Modifier
-                .height(38.dp),
-            contentAlignment = Alignment.Center
+    if (isLandscape){
+        Row(
+            modifier = modifier
+                .weight(2f).padding(bottom = 5.dp),
+            horizontalArrangement = Arrangement.SpaceAround,
         ) {
             Text(
-                text = "$totalScore",
-                color = Color.White,
-                fontSize = 36.sp,
-                style = TextStyle(
-                    platformStyle = PlatformTextStyle(includeFontPadding = false),
-                    lineHeightStyle = LineHeightStyle(
-                        alignment = LineHeightStyle.Alignment.Bottom,
-                        trim = LineHeightStyle.Trim.Both
-                    )
-                )
+                color = White,
+                text = stringResource(R.string.best_score_short) + bestScore,
+                fontSize = 16.sp
+            )
+
+            Text(
+                color = White,
+                text = "TOTAL: " + totalScore,
+                fontSize = 16.sp
             )
         }
+        
     }
+    else{
+        Column(
+            modifier = modifier
+                .weight(2f),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                modifier = Modifier
+                    .offset(y = 5.dp),
+                color = White,
+                text = stringResource(R.string.best_score_short) + bestScore,
+                fontSize = 12.sp
+            )
+
+            Box(
+                modifier = Modifier
+                    .height(38.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "$totalScore",
+                    color = Color.White,
+                    fontSize = if (isLandscape) 12.sp else 36.sp,
+                    style = TextStyle(
+                        platformStyle = PlatformTextStyle(includeFontPadding = false),
+                        lineHeightStyle = LineHeightStyle(
+                            alignment = LineHeightStyle.Alignment.Bottom,
+                            trim = LineHeightStyle.Trim.Both
+                        )
+                    )
+                )
+            }
+        } 
+    }
+    
+    
 }
 
 @Composable

@@ -2,7 +2,9 @@ package com.example.dicedrop.presentation.game.ui.bottompanel
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
@@ -24,20 +26,14 @@ fun GameBottomPanel(
     bonusStatistic: List<BonusItem>,
     boardItem: BoardItem,
     boardState: BoardUiState,
+    isLandscape: Boolean,
     onCounterClick: (BonusItem) -> Unit,
-    onBonusClick: () -> Unit,
+    onBonusClick: (BonusType) -> Unit,
     onBonusDragEnd: (r: Int, c: Int, type: BonusType) -> Unit,
 ) {
     val density = LocalDensity.current
 
-    Row(
-        modifier = modifier
-            .background(BlueGradient)
-            .fillMaxWidth()
-            .padding(horizontal = 8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceAround
-    ) {
+    val content = @Composable{
         bonusStatistic.forEach { bonus ->
             val uiState = uiStateList.getByType(bonus.type.toDraggingType())
             val dragModifier = if (uiState != null)
@@ -52,15 +48,36 @@ fun GameBottomPanel(
             BonusButton(
                 iconResId = bonus.type.getIconResId(),
                 count = bonus.count,
-                modifier = modifier,
+                isLandscape = isLandscape,
                 dragModifier = dragModifier ?: Modifier,
-                onBonusClick = onBonusClick,
-                onCounterClick = { onCounterClick(bonus) }
+                onBonusClick = {onBonusClick(bonus.type)},
+                onCounterClick = { if (bonus.count <= 0) onCounterClick(bonus) }
             )
         }
     }
+
+    if (isLandscape){
+        Column(
+            modifier = modifier
+                .background(BlueGradient)
+                .fillMaxHeight()
+                .padding(8.dp),
+            verticalArrangement = Arrangement.SpaceAround,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            content()
+        }
+    }
+    else{
+        Row(
+            modifier = modifier
+                .background(BlueGradient)
+                .fillMaxWidth()
+                .padding(8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceAround
+        ) {
+            content()
+        }
+    }
 }
-
-
-
-

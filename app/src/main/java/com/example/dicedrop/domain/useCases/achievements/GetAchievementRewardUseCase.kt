@@ -33,6 +33,6 @@ class GetAchievementRewardUseCase@Inject constructor(
         )
 
         repositoryGame.saveGame(updatedGame)
-        //repositoryAchievement.achievementRewardReceived(achievement)
+        repositoryAchievement.achievementRewardReceived(achievement)
     }
 }

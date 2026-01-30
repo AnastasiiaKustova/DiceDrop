@@ -33,6 +33,7 @@ import com.example.dicedrop.R
 import com.example.dicedrop.domain.entity.settings.GameSettings
 import com.example.dicedrop.domain.entity.settings.SettingTypes
 import com.example.dicedrop.presentation.ui.theme.DarkBlue
+import com.example.dicedrop.presentation.ui.theme.TranslucentBlack
 import com.example.dicedrop.presentation.ui.theme.White
 import com.example.dicedrop.presentation.ui.theme.WhiteBlue
 
@@ -48,7 +49,7 @@ fun DrawPause(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0x88000000)) // полупрозрачный черный фон
+            .background(TranslucentBlack)
             .wrapContentSize(Alignment.Center)
             .padding(20.dp)
     ) {
