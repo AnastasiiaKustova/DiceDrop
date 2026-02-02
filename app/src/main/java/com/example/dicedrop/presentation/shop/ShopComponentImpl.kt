@@ -51,16 +51,16 @@ class ShopComponentImpl @AssistedInject constructor(
         store.accept(ShopStore.Intent.ClickBack)
     }
 
-    override fun onGetDailyRewardClick() {
-        store.accept(ShopStore.Intent.ClickGetDailyReward)
-    }
-
     override fun onBuyItemClick(shopItem: ShopItem) {
         store.accept(ShopStore.Intent.ClickBuyItem(shopItem))
     }
 
     override fun onBuyCoinPackClick(coinPack: CoinPack) {
         store.accept(ShopStore.Intent.ClickBuyCoinPack(coinPack))
+    }
+
+    override fun onRandomBonusConfirmClick(){
+        store.accept(ShopStore.Intent.RandomBonusConfirmClick)
     }
 
     @AssistedFactory

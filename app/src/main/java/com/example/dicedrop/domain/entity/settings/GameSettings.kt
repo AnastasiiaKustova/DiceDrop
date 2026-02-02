@@ -1,4 +1,4 @@
-package com.example.dicedrop.domain.entity
+package com.example.dicedrop.domain.entity.settings
 
 import java.util.Locale
 

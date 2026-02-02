@@ -26,13 +26,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.dicedrop.R
 import com.example.dicedrop.domain.ads.RewardedAdManager
 import com.example.dicedrop.presentation.game.GameComponent
-import com.example.dicedrop.presentation.game.GameSnackbarHost
-import com.example.dicedrop.presentation.game.GameStateContent
 import kotlinx.coroutines.delay
 
 @Composable
@@ -108,7 +107,7 @@ fun RewardedAdOverlay(state: RewardedAdManager.RewardedAdState) {
         modifier = Modifier
             .fillMaxSize()
             .background(Color.Black.copy(alpha = 0.7f))
-            .pointerInput(Unit) {}, // блокируем клики
+            .pointerInput(Unit) {},
         contentAlignment = Alignment.Center
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -119,9 +118,9 @@ fun RewardedAdOverlay(state: RewardedAdManager.RewardedAdState) {
 
             Text(
                 text = when (state) {
-                    RewardedAdManager.RewardedAdState.Loading -> "Загружаем рекламу..."
-                    RewardedAdManager.RewardedAdState.Showing -> "Просмотр рекламы"
-                    RewardedAdManager.RewardedAdState.Rewarded -> "Награда получена!"
+                    RewardedAdManager.RewardedAdState.Loading -> stringResource(R.string.loading_ad)
+                    RewardedAdManager.RewardedAdState.Showing -> stringResource(R.string.watching_ad)
+                    RewardedAdManager.RewardedAdState.Rewarded -> stringResource(R.string.reward_received_ad)
                     else -> ""
                 },
                 color = Color.White,

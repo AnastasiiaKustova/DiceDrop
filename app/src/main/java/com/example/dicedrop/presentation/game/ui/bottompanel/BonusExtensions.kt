@@ -28,5 +28,15 @@ fun BonusType.getIconResId() : Int{
         BonusType.HAMMER -> R.drawable.ic_hammer
         BonusType.ROTATE -> R.drawable.ic_rotate
         BonusType.REROLL -> R.drawable.ic_update
+        BonusType.COIN -> R.drawable.ic_coins
     }
+}
+
+fun getRandomBonusType(ignoreBonusTypeList: List<BonusType> = emptyList()): BonusType {
+    val bonusTypeList = getBonusTypeList(ignoreBonusTypeList)
+    return bonusTypeList.random()
+}
+
+fun getBonusTypeList(ignoreBonusTypeList: List<BonusType> = emptyList()): List<BonusType> {
+    return BonusType.entries.filterNot { it in ignoreBonusTypeList }
 }

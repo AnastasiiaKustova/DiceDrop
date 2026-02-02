@@ -5,5 +5,5 @@ data class ShopItem(
     val title: String,
     val iconResId: Int,
     val price: Int,
-    val bonusType: BonusType
+    val bonusType: BonusType?
 )

@@ -22,7 +22,6 @@ class CheckGameOverUseCase @Inject constructor(
 
         repository.saveGame(updated)
 
-        //repository.updateGameState(updated)
         return updated
     }
 }

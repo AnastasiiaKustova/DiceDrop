@@ -40,13 +40,13 @@ fun ConfettiOverlay(
     Canvas(
         modifier = Modifier
             .fillMaxSize()
-            .pointerInput(Unit) {} // блокируем клики
+            .pointerInput(Unit) {}
     ) {
         particles.forEach { particle ->
-            val distance = particle.speed * animProgress.value
+            val distance = particle.speed * animProgress.value * 2
             val rad = Math.toRadians(particle.angle.toDouble())
             val x = start.x + (distance * cos(rad)).toFloat()
-            val y = start.y - (distance * sin(rad)).toFloat() // вверх
+            val y = start.y - (distance * sin(rad)).toFloat()
 
             drawCircle(
                 color = particle.color.copy(alpha = 1f - animProgress.value),
@@ -69,8 +69,8 @@ fun generateConfetti(count: Int): List<ConfettiParticle> {
     val colors = listOf(Color.Yellow, Color.Red, Color.Green, Color.Cyan, Color.Magenta)
     return List(count) {
         ConfettiParticle(
-            angle = (0..360).random().toFloat(), // вверх и в стороны
-            speed = (200..400).random().toFloat(),
+            angle = (0..360).random().toFloat(),
+            speed = (400..600).random().toFloat(),
             color = colors.random(),
             size = (6..12).random().toFloat(),
             lifetime = 1f

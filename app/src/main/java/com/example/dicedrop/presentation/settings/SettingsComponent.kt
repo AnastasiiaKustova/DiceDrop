@@ -1,6 +1,6 @@
 package com.example.dicedrop.presentation.settings
 
-import com.example.dicedrop.domain.entity.SettingTypes
+import com.example.dicedrop.domain.entity.settings.SettingTypes
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 

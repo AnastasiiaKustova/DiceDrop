@@ -9,12 +9,14 @@ import com.example.dicedrop.core.NotEnoughBonusException
 import com.example.dicedrop.core.NotEnoughCoinsException
 import com.example.dicedrop.domain.action.CheckAndClearFullRowsAction
 import com.example.dicedrop.domain.action.RollDiceAction
+import com.example.dicedrop.domain.entity.BonusItem
 import com.example.dicedrop.domain.entity.BonusType
 import com.example.dicedrop.domain.entity.DiceItem
 import com.example.dicedrop.domain.entity.GameStatisticItem
 import com.example.dicedrop.domain.useCases.shop.BuyBonusUseCase
 import com.example.dicedrop.domain.useCases.game.CheckGameOverUseCase
 import com.example.dicedrop.domain.useCases.game.ConfirmNewRecordUseCase
+import com.example.dicedrop.domain.useCases.game.GetRecordRewardsUseCase
 import com.example.dicedrop.domain.useCases.game.GrantAdRewardUseCase
 import com.example.dicedrop.domain.useCases.game.LoadGameUseCase
 import com.example.dicedrop.domain.useCases.game.ObserveGameUseCase
@@ -62,7 +64,7 @@ interface GameStore : Store<Intent, State, Label> {
 
         data object SaveGame : Intent
 
-        data object NewRecordConfirm : Intent
+        data class NewRecordConfirm(val rewardsList: List<BonusItem>) : Intent
 
     }
 
@@ -84,6 +86,7 @@ interface GameStore : Store<Intent, State, Label> {
 
             data class NewRecord(
                 val score: Int,
+                val rewardsList: List<BonusItem>,
                 val prevState: Loaded
             ) : GameState
 
@@ -106,7 +109,6 @@ interface GameStore : Store<Intent, State, Label> {
 
         data object NotEnoughBonus : Label
 
-        // визуальные эффекты
         data class AnimateDice(val dices: DiceItem) : Label
 
         data class PlayLineClearAnimation(val clearedRows: List<Int>, val clearedCols: List<Int>) :
@@ -127,6 +129,7 @@ class GameStoreFactory @Inject constructor(
     private val checkAndClearFullRowsAction: CheckAndClearFullRowsAction,
     private val useBonusUseCase: UseBonusUseCase,
     private val buyBonusUseCase: BuyBonusUseCase,
+    private val getRecordRewardsUseCase: GetRecordRewardsUseCase,
     private val confirmNewRecordUseCase: ConfirmNewRecordUseCase,
     private val restartGameUseCase: RestartGameUseCase,
     private val resumeGameUseCase: ResumeGameUseCase,
@@ -157,7 +160,7 @@ class GameStoreFactory @Inject constructor(
 
         data class GameOver(val score: Int) : Action
 
-        data class NewRecord(val score: Int) : Action
+        data class NewRecord(val score: Int, val rewardsList: List<BonusItem>) : Action
 
     }
 
@@ -171,7 +174,7 @@ class GameStoreFactory @Inject constructor(
 
         data class GameOver(val score: Int) : Msg
 
-        data class NewRecord(val score: Int) : Msg
+        data class NewRecord(val score: Int, val rewardsList: List<BonusItem>) : Msg
     }
 
     //Если какие-то действия необходимо выполнить при создании стора (например подписаться на флоу из репозитория), то это нужно делать в Bootstrapper
@@ -180,7 +183,7 @@ class GameStoreFactory @Inject constructor(
             scope.launch {
                 dispatch(Action.GameLoading)
                 try {
-                    loadGameUseCase() // без dispatch
+                    loadGameUseCase()
                 } catch (e: Exception) {
                     dispatch(Action.GameError)
                 }
@@ -194,11 +197,19 @@ class GameStoreFactory @Inject constructor(
                             game.isGameOver ->
                                 dispatch(Action.GameOver(game.totalScore))
 
-                            game.isNewRecord ->
-                                dispatch(Action.NewRecord(game.totalScore))
+                            game.isNewRecord -> {
+                                val rewardsList = getRecordRewardsUseCase(
+                                    newRecord = game.totalScore,
+                                )
+                                dispatch(
+                                    Action.NewRecord(
+                                        score = game.totalScore,
+                                        rewardsList = rewardsList
+                                    )
+                                )
+                            }
 
-                            else ->
-                                dispatch(Action.GameLoaded(game))
+                            else -> dispatch(Action.GameLoaded(game))
                         }
                     }
             }
@@ -215,7 +226,12 @@ class GameStoreFactory @Inject constructor(
                 is Action.GameLoaded -> dispatch(Msg.GameLoaded(action.game))
                 Action.GameLoading -> dispatch(Msg.GameLoading)
                 is Action.GameOver -> dispatch(Msg.GameOver(action.score))
-                is Action.NewRecord -> dispatch(Msg.NewRecord(action.score))
+                is Action.NewRecord -> dispatch(
+                    Msg.NewRecord(
+                        score = action.score,
+                        rewardsList = action.rewardsList
+                    )
+                )
             }
         }
 
@@ -269,15 +285,14 @@ class GameStoreFactory @Inject constructor(
                     }
                 }
 
-                Intent.NewRecordConfirm -> {
+                is Intent.NewRecordConfirm -> {
                     scope.launch {
-                        confirmNewRecordUseCase()
+                        confirmNewRecordUseCase(intent.rewardsList)
                     }
                 }
 
                 Intent.RestartGame -> {
                     scope.launch {
-                        //TODO
                         restartGameUseCase()
                         val gameStatistic = resumeGameUseCase()
                         dispatch(Msg.GameLoaded(gameStatistic))
@@ -322,20 +337,11 @@ class GameStoreFactory @Inject constructor(
                     scope.launch {
                         useBonusUseCase(intent.bonusType)
 
-                        val (clearedRows, clearedCols) = placeBonusUseCase(
+                        placeBonusUseCase(
                             intent.r,
                             intent.c,
                             intent.bonusType
                         )
-
-                        /* if (intent.bonusType == BonusType.BOMB) {
-                             publish(
-                                 Label.PlayLineClearAnimation(
-                                     clearedRows = clearedRows,
-                                     clearedCols = clearedCols
-                                 )
-                             )
-                         }*/
                     }
                 }
 
@@ -355,7 +361,7 @@ class GameStoreFactory @Inject constructor(
                 Msg.GameLoading -> copy(gameState = State.GameState.Loading)
                 is Msg.GameOver -> {
                     val loaded = gameState as? State.GameState.Loaded
-                        ?: return this // защита от некорректного состояния
+                        ?: return this
 
                     copy(
                         gameState = State.GameState.Over(
@@ -372,6 +378,7 @@ class GameStoreFactory @Inject constructor(
                     copy(
                         gameState = State.GameState.NewRecord(
                             score = msg.score,
+                            rewardsList = msg.rewardsList,
                             prevState = loaded
                         )
                     )
@@ -390,8 +397,3 @@ class GameStoreFactory @Inject constructor(
         saveGameUseCase(game)
     }
 }
-
-private fun State.updateGameState(transform: (GameStatisticItem) -> GameStatisticItem): State =
-    (gameState as? State.GameState.Loaded)?.let { state ->
-        copy(gameState = State.GameState.Loaded(transform(state.gameStatistic)))
-    } ?: this

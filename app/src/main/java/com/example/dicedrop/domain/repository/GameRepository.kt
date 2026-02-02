@@ -15,8 +15,6 @@ interface GameRepository {
 
     suspend fun loadGame() : GameStatisticItem
 
-    //suspend fun updateGameState(update: (GameStatisticItem) -> GameStatisticItem)
-
     suspend fun updateGameState(game: GameStatisticItem)
 
 }

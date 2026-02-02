@@ -100,7 +100,7 @@ object BoardUiHelper {
         val row = this.ghostRow ?: return false
         val col = this.ghostCol ?: return false
         return this.draggingType == DraggingType.BOMB &&
-                ((r in (row - 10) until row + 10 && c == col) || r == row)
+                ((r in (row - 10) until row + 11 && c == col) || r == row)
     }
 
     private fun GameUiState.isInBonusHammer(r: Int, c: Int): Boolean {

@@ -5,7 +5,7 @@ import com.arkivanov.mvikotlin.core.instancekeeper.getStore
 import com.arkivanov.mvikotlin.extensions.coroutines.labels
 import com.arkivanov.mvikotlin.extensions.coroutines.stateFlow
 import com.example.dicedrop.core.componentScope
-import com.example.dicedrop.domain.entity.SettingTypes
+import com.example.dicedrop.domain.entity.settings.SettingTypes
 import com.example.dicedrop.presentation.settings.SettingsComponent.UiEvent
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory

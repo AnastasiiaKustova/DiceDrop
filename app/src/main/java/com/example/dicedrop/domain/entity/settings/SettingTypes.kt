@@ -1,4 +1,4 @@
-package com.example.dicedrop.domain.entity
+package com.example.dicedrop.domain.entity.settings
 
 sealed interface SettingTypes{
     data class UseAutoRoll(

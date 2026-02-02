@@ -5,9 +5,10 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -18,12 +19,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.dicedrop.R
+import com.example.dicedrop.presentation.common.OutlinedText
 import com.example.dicedrop.presentation.ui.theme.Blue
 import com.example.dicedrop.presentation.ui.theme.CellBG
 import com.example.dicedrop.presentation.ui.theme.DarkBlue
@@ -37,8 +40,6 @@ fun MenuContent(component: MenuComponent) {
         onShopClick = { component.onShopClick() },
         onCloseAppClick = { component.onCloseAppClick() },
     )
-
-
 }
 
 @Composable
@@ -66,6 +67,7 @@ private fun MenuButton(
         onClick = onClick
     ) {
         Text(
+            color = Color.White,
             fontSize = 20.sp,
             text = title
         )
@@ -89,25 +91,28 @@ private fun Menu(
                     end = Offset(0f, Float.POSITIVE_INFINITY)
                 )
             )
-            .padding(24.dp),
+        ,
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        Spacer(modifier = Modifier.weight(1f))
-        Text(
-            color = Color.White,
-            fontSize = 50.sp,
+
+        OutlinedText(
+            modifier = Modifier
+                .fillMaxWidth(0.5f)
+                .wrapContentSize(),
+            outlineColor = Color.White,
+            fontSize = (0.07f * LocalConfiguration.current.screenHeightDp).sp,
             fontWeight = FontWeight.Bold,
-            text = stringResource(R.string.app_name_DICE)
+            text = stringResource(R.string.app_name_DICE_DROP),
         )
-        Text(
+        /*Text(
             color = Color.White,
-            fontSize = 60.sp,
+            fontSize = (0.06f * LocalConfiguration.current.screenHeightDp).sp,
             fontWeight = FontWeight.Bold,
             text = stringResource(R.string.app_name_DROP)
-        )
+        )*/
 
-        Spacer(modifier = Modifier.weight(0.3f))
+        Spacer(modifier = Modifier.height(20.dp))
 
         Column(
             verticalArrangement = Arrangement.spacedBy(16.dp)
@@ -118,23 +123,20 @@ private fun Menu(
             )
 
             MenuButton(
-                title = "Achievements",
+                title = stringResource(R.string.achievements),
                 onClick = { onAchievementsClick() }
             )
 
             MenuButton(
-                title = "Store",
+                title = stringResource(R.string.store),
                 onClick = { onShopClick() }
             )
 
             MenuButton(
-                title = "Close",
+                title = stringResource(R.string.close),
                 onClick = { onCloseAppClick() }
             )
         }
-
-
-        Spacer(modifier = Modifier.weight(1f))
     }
 }
 

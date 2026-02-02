@@ -1,15 +1,16 @@
 package com.example.dicedrop.domain.entity
 
 import android.os.Parcelable
+import com.example.dicedrop.presentation.game.ui.bottompanel.getBonusTypeList
 import kotlinx.android.parcel.Parcelize
 
 @Parcelize
-data class BonusItem (
+data class BonusItem(
     val type: BonusType,
     val count: Int = 0
-): Parcelable{
+) : Parcelable {
     companion object {
-        fun emptyList(): List<BonusItem> =
-            BonusType.entries.map { BonusItem(it) }
+        fun default(): List<BonusItem> =
+            BonusType.entries.filter { it in getBonusTypeList(listOf(BonusType.COIN)) }.map { BonusItem(it) }
     }
 }

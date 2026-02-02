@@ -1,6 +1,6 @@
 <resources>
     <string name="app_name">DiceDrop</string>
-    <string name="app_name_DICE">DICE</string>
+    <string name="app_name_DICE_DROP">DICE DROP</string>
     <string name="app_name_DROP">DROP</string>
     <string name="rolling_dice">Rolling dices...</string>
     <string name="startGame">Start game</string>
@@ -15,4 +15,10 @@
     <string name="not_enough_coins">Not enough coins</string>
     <string name="not_enough_bonus">Not enough bonus</string>
     <string name="go_to_shop">Go to shop</string>
+    <string name="loading_ad">Loading ad...</string>
+    <string name="watching_ad">Watching ad</string>
+    <string name="reward_received_ad">Reward received!</string>
+    <string name="achievements">Achievements</string>
+    <string name="store">Store</string>
+    <string name="close">Close</string>
 </resources>

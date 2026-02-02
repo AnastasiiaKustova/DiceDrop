@@ -1,4 +1,4 @@
-package com.example.dicedrop.domain.entity
+package com.example.dicedrop.domain.entity.achievement
 
 data class Achievement(
     val id: String,
@@ -8,5 +8,6 @@ data class Achievement(
     val requiredCount: Int,
     val totalCount: Int = 0,
     val reward: Int,
-    val isRewardClaimed: Boolean = false
+    val isRewardClaimed: Boolean = false,
+    val additionalRewards: List<AchievementReward> = emptyList()
 )

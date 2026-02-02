@@ -1,7 +1,7 @@
 package com.example.dicedrop.domain.repository
 
-import com.example.dicedrop.domain.entity.Achievement
-import com.example.dicedrop.domain.entity.AchievementProgress
+import com.example.dicedrop.domain.entity.achievement.Achievement
+import com.example.dicedrop.domain.entity.achievement.AchievementProgress
 import kotlinx.coroutines.flow.Flow
 
 interface AchievementRepository {

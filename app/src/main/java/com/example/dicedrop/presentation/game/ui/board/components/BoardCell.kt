@@ -16,7 +16,6 @@ fun GameCell(color: Color, size: Dp) {
     Box(
         modifier = Modifier
             .size(size)
-            //.weight(1f)
             .padding(2.dp)
             .background(color, RoundedCornerShape(4.dp))
     )

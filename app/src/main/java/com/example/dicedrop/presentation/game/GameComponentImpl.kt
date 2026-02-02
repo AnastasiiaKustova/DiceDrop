@@ -8,6 +8,7 @@ import com.arkivanov.mvikotlin.extensions.coroutines.labels
 import com.arkivanov.mvikotlin.extensions.coroutines.stateFlow
 import com.example.dicedrop.core.componentScope
 import com.example.dicedrop.domain.ads.RewardedAdManager
+import com.example.dicedrop.domain.entity.BonusItem
 import com.example.dicedrop.domain.entity.BonusType
 import com.example.dicedrop.domain.entity.DiceItem
 import com.example.dicedrop.presentation.game.GameComponent.UiEvent
@@ -79,8 +80,8 @@ class GameComponentImpl @AssistedInject constructor(
         store.accept(GameStore.Intent.BackPressed)
     }
 
-    override fun onConfirmNewRecord() {
-        store.accept(GameStore.Intent.NewRecordConfirm)
+    override fun onConfirmNewRecord(rewardsList: List<BonusItem>) {
+        store.accept(GameStore.Intent.NewRecordConfirm(rewardsList))
     }
 
     override fun onAchievementClick() {

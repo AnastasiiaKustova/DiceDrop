@@ -4,7 +4,7 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
-import com.example.dicedrop.domain.entity.GameSettings
+import com.example.dicedrop.domain.entity.settings.GameSettings
 import com.example.dicedrop.domain.repository.SettingsRepository
 import com.google.gson.Gson
 import kotlinx.coroutines.CoroutineScope
@@ -26,7 +26,6 @@ class SettingsRepositoryImpl @Inject constructor(
     override val gameSettingsFlow: Flow<GameSettings> = _settings.asStateFlow()
 
     init {
-        // Подписываемся на DataStore, чтобы держать актуальные данные
         CoroutineScope(Dispatchers.IO).launch {
             dataStore.data.collect { prefs ->
                 val json = prefs[Keys.SETTINGS]

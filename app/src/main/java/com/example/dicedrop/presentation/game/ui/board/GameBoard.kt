@@ -7,11 +7,11 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.paddingFromBaseline
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -21,11 +21,11 @@ import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.unit.dp
 import com.example.dicedrop.domain.entity.BoardItem
 import com.example.dicedrop.domain.entity.DiceItem
-import com.example.dicedrop.presentation.game.ui.board.components.GameCell
-import com.example.dicedrop.presentation.game.ui.board.components.Grid
 import com.example.dicedrop.presentation.game.ui.board.BoardUiHelper.CellState
 import com.example.dicedrop.presentation.game.ui.board.BoardUiHelper.getCellColor
 import com.example.dicedrop.presentation.game.ui.board.BoardUiHelper.getCellState
+import com.example.dicedrop.presentation.game.ui.board.components.GameCell
+import com.example.dicedrop.presentation.game.ui.board.components.Grid
 import com.example.dicedrop.presentation.game.ui.drag.BoardUiState
 import com.example.dicedrop.presentation.game.ui.drag.GameUiState
 import com.example.dicedrop.presentation.ui.theme.LightBlue
@@ -47,9 +47,9 @@ fun DrawPlayingField(
         modifier = modifier
             .background(LightBlue)
             .padding(horizontal = 16.dp, vertical = 8.dp)
-            .paddingFromBaseline(top = 8.dp)
-            .fillMaxWidth(),
-        horizontalAlignment = Alignment.CenterHorizontally
+            .fillMaxSize(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
     ) {
         Box(
             modifier = Modifier

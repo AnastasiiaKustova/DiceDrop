@@ -1,4 +1,4 @@
-package com.example.dicedrop.presentation.game
+package com.example.dicedrop.presentation.game.ui
 
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape

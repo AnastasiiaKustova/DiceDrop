@@ -6,8 +6,8 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import com.example.dicedrop.data.mapper.fromJsonOrDefault
 import com.example.dicedrop.domain.catalog.AchievementsCatalog
-import com.example.dicedrop.domain.entity.Achievement
-import com.example.dicedrop.domain.entity.AchievementProgress
+import com.example.dicedrop.domain.entity.achievement.Achievement
+import com.example.dicedrop.domain.entity.achievement.AchievementProgress
 import com.example.dicedrop.domain.repository.AchievementRepository
 import com.google.gson.Gson
 import kotlinx.coroutines.CoroutineScope
