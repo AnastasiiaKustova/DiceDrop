@@ -29,7 +29,6 @@ fun ShopItems(
         verticalArrangement = Arrangement.spacedBy(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        //Text(text = "Bonuses")
 
         LazyVerticalGrid(
             modifier = Modifier

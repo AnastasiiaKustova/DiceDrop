@@ -30,7 +30,6 @@ class AchievementTracker @Inject constructor(
     }
 
     suspend fun onBombUsed() {
-        //check(AchievementType.BOMB_USED)
     }
 
     private suspend fun check(type: AchievementType) {

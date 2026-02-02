@@ -12,7 +12,6 @@ import com.example.dicedrop.data.repository.GameRepositoryImpl
 import com.example.dicedrop.data.repository.PlayerStatsRepositoryImpl
 import com.example.dicedrop.data.repository.SettingsRepositoryImpl
 import com.example.dicedrop.data.repository.ShopRepositoryImpl
-import com.example.dicedrop.domain.engine.BoardEngine
 import com.example.dicedrop.domain.repository.AchievementRepository
 import com.example.dicedrop.domain.repository.GameRepository
 import com.example.dicedrop.domain.repository.PlayerStatsRepository
@@ -26,7 +25,6 @@ import dagger.Provides
 @Module
 interface DataModule {
 
-    //TODO так для всех репозиториев
     @[ApplicationScope Binds]
     fun bindGameRepository(impl: GameRepositoryImpl): GameRepository
 

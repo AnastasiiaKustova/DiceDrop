@@ -183,7 +183,7 @@ class GameStoreFactory @Inject constructor(
             scope.launch {
                 dispatch(Action.GameLoading)
                 try {
-                    loadGameUseCase() // без dispatch
+                    loadGameUseCase()
                 } catch (e: Exception) {
                     dispatch(Action.GameError)
                 }
@@ -293,7 +293,6 @@ class GameStoreFactory @Inject constructor(
 
                 Intent.RestartGame -> {
                     scope.launch {
-                        //TODO
                         restartGameUseCase()
                         val gameStatistic = resumeGameUseCase()
                         dispatch(Msg.GameLoaded(gameStatistic))

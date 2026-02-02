@@ -4,11 +4,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -24,7 +22,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -94,14 +91,15 @@ private fun Menu(
                     end = Offset(0f, Float.POSITIVE_INFINITY)
                 )
             )
-            //.padding(24.dp)
         ,
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
 
         OutlinedText(
-            modifier = Modifier.fillMaxWidth(0.5f).wrapContentSize(),
+            modifier = Modifier
+                .fillMaxWidth(0.5f)
+                .wrapContentSize(),
             outlineColor = Color.White,
             fontSize = (0.07f * LocalConfiguration.current.screenHeightDp).sp,
             fontWeight = FontWeight.Bold,
@@ -125,17 +123,17 @@ private fun Menu(
             )
 
             MenuButton(
-                title = "Achievements",
+                title = stringResource(R.string.achievements),
                 onClick = { onAchievementsClick() }
             )
 
             MenuButton(
-                title = "Store",
+                title = stringResource(R.string.store),
                 onClick = { onShopClick() }
             )
 
             MenuButton(
-                title = "Close",
+                title = stringResource(R.string.close),
                 onClick = { onCloseAppClick() }
             )
         }
