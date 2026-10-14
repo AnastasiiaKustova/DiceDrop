@@ -22,6 +22,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.example.dicedrop.R
 import com.example.dicedrop.presentation.ui.theme.BlueGradientDark
@@ -45,7 +46,7 @@ fun ShopTopBar(
                 )
             ),
         title = { Text(
-            text = "Shop",
+            text = stringResource(R.string.store),
             color = White
         ) },
         colors = TopAppBarDefaults.centerAlignedTopAppBarColors().copy(

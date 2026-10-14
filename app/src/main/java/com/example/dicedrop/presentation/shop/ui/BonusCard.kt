@@ -23,6 +23,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -40,7 +41,7 @@ import com.example.dicedrop.presentation.ui.theme.White
 @Composable
 fun BonusCard(
     bonusId: String,
-    title: String,
+    titleId: Int,
     iconResId: Int,
     price: Int,
     modifier: Modifier = Modifier,
@@ -73,7 +74,7 @@ fun BonusCard(
         ) {
 
             Text(
-                text = title,
+                text = stringResource(titleId),
                 color = DarkBlue,
                 fontWeight = FontWeight.Bold,
                 fontSize = 18.sp,
@@ -169,18 +170,4 @@ fun BonusCard(
 
         }
     }
-}
-
-@Composable
-@Preview
-fun test() {
-    val bonus = BonusType.BOMB
-    BonusCard(
-        bonusId = "daily_bonus",
-        title = "Bomb Bomb Bomb",
-        iconResId = bonus.getIconResId(),
-        price = 0,
-        dailyRewardClaimed = true,
-        onCardClick = {}
-    )
 }

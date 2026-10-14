@@ -14,6 +14,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
+import com.example.dicedrop.R
 import com.example.dicedrop.presentation.ui.theme.BlueGradientDark
 import com.example.dicedrop.presentation.ui.theme.BlueGradientLight
 import com.example.dicedrop.presentation.ui.theme.White
@@ -35,7 +37,7 @@ fun AchievementTopBar(
             ),
         title = {
             Text(
-                text = "Achievements",
+                text = stringResource(R.string.achievements),
                 color = White
             )
         },

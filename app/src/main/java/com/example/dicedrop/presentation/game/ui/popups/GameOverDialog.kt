@@ -15,19 +15,16 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
@@ -55,7 +52,7 @@ fun GameOverDialog(
             .fillMaxSize()
             .background(TranslucentBlack)
             .wrapContentSize(Alignment.Center)
-            .clickable {  }
+            .clickable { }
     ) {
         Box(
             modifier = modifier
@@ -88,14 +85,14 @@ fun GameOverDialog(
                 Spacer(modifier = spaceHeightModifier)
 
                 Text(
-                    text = "GAME OVER",
+                    text = stringResource(R.string.game_over),
                     fontWeight = FontWeight.Bold,
                     color = DarkBlue,
                     fontSize = if (isLandscape) 20.sp else 25.sp
                 )
 
                 Text(
-                    text = "Score $gameScore",
+                    text = stringResource(R.string.score_with_count, gameScore),
                     fontWeight = FontWeight.Normal,
                     color = Color.Black,
                     fontSize = if (isLandscape) 12.sp else 16.sp
@@ -103,12 +100,12 @@ fun GameOverDialog(
 
                 if (isLandscape) Spacer(modifier = Modifier.height(20.dp)) else Spacer(modifier = Modifier.height(40.dp))
 
-                rerollLabel( isLandscape = isLandscape, onClick = {onWatchAdsClick()})
+                RerollLabel( isLandscape = isLandscape, onClick = {onWatchAdsClick()})
 
                 Spacer(modifier = spaceHeightModifier)
 
                 AnimatedButton(
-                    text = "RESTART",
+                    text = stringResource(R.string.restart),
                     modifier = Modifier.wrapContentHeight(),
                     onClick = { _ -> onRestartClick() }
                 )
@@ -118,7 +115,7 @@ fun GameOverDialog(
 }
 
 @Composable
-private fun rerollLabel(
+private fun RerollLabel(
     modifier: Modifier = Modifier,
     isLandscape: Boolean,
     onClick: () -> Unit
@@ -153,7 +150,7 @@ private fun rerollLabel(
                 fontWeight = FontWeight.Normal,
                 fontSize = 12.sp,
                 lineHeight = 1.5.em,
-                text = "Watch an ad to reroll the dice",
+                text = stringResource(R.string.watch_an_ad_to_reroll_the_dice),
                 color = Color.Black
             )
         }
@@ -166,7 +163,7 @@ private fun rerollLabel(
                 .padding(horizontal = 12.dp)
 
         ) { Text(
-            text = "Try again",
+            text = stringResource(R.string.try_again),
             color = DarkBlue
         ) }
     }

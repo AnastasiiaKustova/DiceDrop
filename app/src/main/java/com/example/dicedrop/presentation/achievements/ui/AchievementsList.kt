@@ -33,8 +33,8 @@ fun AchievementsList(
         ) {
             AchievementBox(
                 achievementID = it.id,
-                title = it.title,
-                description = it.description,
+                titleId = it.titleId,
+                descriptionId = it.descriptionId,
                 currentProgress = it.totalCount,
                 totalProgress = it.requiredCount,
                 reward = it.reward,
