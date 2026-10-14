@@ -46,7 +46,7 @@ fun ShopItems(
             ) { item ->
                 BonusCard(
                     bonusId = item.id,
-                    title = item.title,
+                    titleId = item.titleId,
                     iconResId = item.iconResId,
                     price = item.price,
                     dailyRewardClaimed = dailyRewardClaimed,

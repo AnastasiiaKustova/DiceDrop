@@ -1,7 +1,7 @@
 <resources>
-    <string name="app_name">DiceDrop</string>
-    <string name="app_name_DICE_DROP">DICE DROP</string>
-    <string name="app_name_DROP">DROP</string>
+    <string name="app_name" translatable="false">DiceDrop</string>
+    <string name="app_name_DICE_DROP" translatable="false">DICE DROP</string>
+    <string name="app_name_DROP" translatable="false">DROP</string>
     <string name="rolling_dice">Rolling dices...</string>
     <string name="startGame">Start game</string>
     <string name="best_score_short">"BEST: "</string>
@@ -21,4 +21,28 @@
     <string name="achievements">Achievements</string>
     <string name="store">Store</string>
     <string name="close">Close</string>
+    <string name="completed">Completed</string>
+    <string name="game_over">GAME OVER</string>
+    <string name="restart">RESTART</string>
+    <string name="watch_an_ad_to_reroll_the_dice">Watch an ad to reroll the dice</string>
+    <string name="try_again">Try again</string>
+    <string name="score_with_count">Score %1$s</string>
+    <string name="score">Score</string>
+    <string name="rewards">Rewards</string>
+    <string name="tap_to_continue">Tap to continue</string>
+    <string name="daily_gift">Daily gift</string>
+    <string name="rotate">Rotate</string>
+    <string name="reroll">Reroll</string>
+    <string name="bomb">Bomb</string>
+    <string name="hammer">Hammer</string>
+    <string name="random">Random</string>
+    <string name="just_the_beginning">Just the Beginning</string>
+    <string name="roll_the_dice_50_times">Roll the dice 50 times</string>
+    <string name="getting_the_hang_of_it" translatable="false">Getting the Hang of It</string>
+    <string name="roll_the_dice_100_times">Roll the dice 100 times</string>
+    <string name="on_a_roll" translatable="false">On a Roll</string>
+    <string name="roll_the_dice_500_times">Roll the dice 500 times</string>
+    <string name="dice_legend">Dice Legend</string>
+    <string name="roll_the_dice_1000_times">Roll the dice 1000 times</string>
+    <string name="clear_the_rows_50_times">Clear the rows 50 times</string>
 </resources>

@@ -10,42 +10,42 @@ object ShopItemCatalog {
     val all: List<ShopItem> = listOf(
         ShopItem(
             id = "daily_bonus",
-            title = "Daily gift",
+            titleId = R.string.daily_gift,
             iconResId = R.drawable.ic_gift,
             price = 0,
             bonusType = null
         ),
         ShopItem(
             id = "basic_bonus_rotate",
-            title = "Rotate",
+            titleId = R.string.rotate,
             iconResId = BonusType.ROTATE.getIconResId(),
             price = 2,
             bonusType = BonusType.ROTATE
         ),
         ShopItem(
             id = "basic_bonus_reroll",
-            title = "Reroll",
+            titleId = R.string.reroll,
             iconResId = BonusType.REROLL.getIconResId(),
             price = 1,
             bonusType = BonusType.REROLL
         ),
         ShopItem(
             id = "basic_bonus_bomb",
-            title = "Bomb",
+            titleId = R.string.bomb,
             iconResId = BonusType.BOMB.getIconResId(),
             price = 3,
             bonusType = BonusType.BOMB
         ),
         ShopItem(
             id = "basic_bonus_hammer",
-            title = "Hammer",
+            titleId = R.string.hammer,
             iconResId = BonusType.HAMMER.getIconResId(),
             price = 3,
             bonusType = BonusType.HAMMER
         ),
         ShopItem(
             id = "random_bonus",
-            title = "Random",
+            titleId = R.string.random,
             iconResId = R.drawable.ic_random,
             price = 1,
             bonusType = null

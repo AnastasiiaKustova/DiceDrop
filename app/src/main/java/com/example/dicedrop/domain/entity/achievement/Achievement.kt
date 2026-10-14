@@ -2,8 +2,8 @@ package com.example.dicedrop.domain.entity.achievement
 
 data class Achievement(
     val id: String,
-    val title: String,
-    val description: String,
+    val titleId: Int,
+    val descriptionId: Int,
     val type: AchievementType,
     val requiredCount: Int,
     val totalCount: Int = 0,

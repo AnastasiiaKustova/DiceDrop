@@ -14,9 +14,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color.Companion.White
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.dicedrop.R
 import com.example.dicedrop.presentation.animations.AnimatedButton
 import com.example.dicedrop.presentation.ui.theme.DarkBlue
 
@@ -24,8 +26,8 @@ import com.example.dicedrop.presentation.ui.theme.DarkBlue
 fun AchievementBox(
     modifier: Modifier = Modifier,
     achievementID: String,
-    title: String,
-    description: String,
+    titleId: Int,
+    descriptionId: Int,
     currentProgress: Int,
     totalProgress: Int,
     reward: Int,
@@ -49,8 +51,8 @@ fun AchievementBox(
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 AchievementTitle(
-                    title = title,
-                    description = description,
+                    title = stringResource(titleId),
+                    description = stringResource(descriptionId),
                 )
 
                 if (!isClaimed){
@@ -62,7 +64,7 @@ fun AchievementBox(
                 }
                 else{
                     Text(
-                        text = "Completed",
+                        text = stringResource(R.string.completed),
                         fontWeight = FontWeight.Bold,
                         fontSize = 16.sp,
                         color = DarkBlue,
