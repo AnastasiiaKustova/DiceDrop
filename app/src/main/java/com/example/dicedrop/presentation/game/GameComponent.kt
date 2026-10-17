@@ -26,8 +26,6 @@ interface GameComponent {
 
     fun onBonusClick(bonusType: BonusType)
 
-    fun onPlaceBonus(r: Int, c: Int, bonusType: BonusType)
-
     fun onBuyBonusClick(bonusType: BonusType)
 
     fun onWatchAdsClick()
@@ -54,7 +52,13 @@ interface GameComponent {
         data object WatchAd : UiEvent
         data object Animate : UiEvent
         data class Error(val msg: ErrorType) : UiEvent
-        data class ClearLine(val clearedRows: List<Int>, val clearedCols: List<Int>) : UiEvent
+        data class ClearLine(
+            val clearedRows: List<Int>,
+            val clearedCols: List<Int>,
+            val combo: Int,
+            val points: Int
+        ) : UiEvent
+        data class AchievementUnlocked(val titleId: Int) : UiEvent
 
         enum class ErrorType(val stringRes: Int) {
             NotEnoughCoins(R.string.not_enough_coins),

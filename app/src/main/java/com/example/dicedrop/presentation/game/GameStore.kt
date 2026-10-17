@@ -9,6 +9,7 @@ import com.example.dicedrop.core.NotEnoughBonusException
 import com.example.dicedrop.core.NotEnoughCoinsException
 import com.example.dicedrop.domain.action.CheckAndClearFullRowsAction
 import com.example.dicedrop.domain.action.RollDiceAction
+import com.example.dicedrop.domain.engine.AchievementTracker
 import com.example.dicedrop.domain.entity.BonusItem
 import com.example.dicedrop.domain.entity.BonusType
 import com.example.dicedrop.domain.entity.DiceItem
@@ -23,7 +24,6 @@ import com.example.dicedrop.domain.useCases.game.GrantAdRewardUseCase
 import com.example.dicedrop.domain.useCases.game.LoadGameUseCase
 import com.example.dicedrop.domain.useCases.game.ObserveGameUseCase
 import com.example.dicedrop.domain.useCases.game.PlaceBlockUseCase
-import com.example.dicedrop.domain.useCases.game.PlaceBonusUseCase
 import com.example.dicedrop.domain.useCases.game.RestartGameUseCase
 import com.example.dicedrop.domain.useCases.game.ResumeGameUseCase
 import com.example.dicedrop.domain.useCases.game.RollSpareUseCase
@@ -33,7 +33,6 @@ import com.example.dicedrop.domain.useCases.shop.BuyBonusUseCase
 import com.example.dicedrop.presentation.game.GameStore.Intent
 import com.example.dicedrop.presentation.game.GameStore.Label
 import com.example.dicedrop.presentation.game.GameStore.State
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -52,8 +51,6 @@ interface GameStore : Store<Intent, State, Label> {
         data class RollDice(val result: DiceItem) : Intent
 
         data class PlaceBlock(val r: Int, val c: Int) : Intent
-
-        data class PlaceBonus(val r: Int, val c: Int, val bonusType: BonusType) : Intent
 
         data class UseBonus(val bonusType: BonusType) : Intent
 
@@ -117,14 +114,20 @@ interface GameStore : Store<Intent, State, Label> {
 
         data object ClickNavigateToAchievements : Label
 
+        data class AchievementUnlocked(val titleId: Int) : Label
+
         data object NotEnoughCoins : Label
 
         data object NotEnoughBonus : Label
 
         data class AnimateDice(val dices: DiceItem) : Label
 
-        data class PlayLineClearAnimation(val clearedRows: List<Int>, val clearedCols: List<Int>) :
-            Label
+        data class PlayLineClearAnimation(
+            val clearedRows: List<Int>,
+            val clearedCols: List<Int>,
+            val combo: Int,
+            val points: Int
+        ) : Label
 
         data object WatchAd : Label
     }
@@ -135,7 +138,6 @@ class GameStoreFactory @Inject constructor(
     private val saveGameUseCase: SaveGameUseCase,
     private val loadGameUseCase: LoadGameUseCase,
     private val placeBlockUseCase: PlaceBlockUseCase,
-    private val placeBonusUseCase: PlaceBonusUseCase,
     private val checkGameOverUseCase: CheckGameOverUseCase,
     private val rollDiceAction: RollDiceAction,
     private val checkAndClearFullRowsAction: CheckAndClearFullRowsAction,
@@ -148,7 +150,8 @@ class GameStoreFactory @Inject constructor(
     private val grantAdRewardUseCase: GrantAdRewardUseCase,
     private val observeGameUseCase: ObserveGameUseCase,
     private val discardSpareUseCase: DiscardSpareUseCase,
-    private val rollSpareUseCase: RollSpareUseCase
+    private val rollSpareUseCase: RollSpareUseCase,
+    private val achievementTracker: AchievementTracker
 ) {
 
     fun create(): GameStore =
@@ -172,9 +175,7 @@ class GameStoreFactory @Inject constructor(
 
         data object GameError : Action
 
-        data class GameOver(val score: Int) : Action
-
-        data class NewRecord(val score: Int, val rewardsList: List<BonusItem>) : Action
+        data class AchievementUnlocked(val titleId: Int) : Action
     }
 
     private sealed interface Msg {
@@ -185,9 +186,9 @@ class GameStoreFactory @Inject constructor(
 
         data object GameError : Msg
 
-        data class GameOver(val score: Int) : Msg
+        data class GameOver(val game: GameStatisticItem) : Msg
 
-        data class NewRecord(val score: Int, val rewardsList: List<BonusItem>) : Msg
+        data class NewRecord(val game: GameStatisticItem, val rewardsList: List<BonusItem>) : Msg
     }
 
     //Если какие-то действия необходимо выполнить при создании стора (например подписаться на флоу из репозитория), то это нужно делать в Bootstrapper
@@ -206,25 +207,14 @@ class GameStoreFactory @Inject constructor(
                 observeGameUseCase()
                     .distinctUntilChanged()
                     .collect { game ->
-                        when {
-                            game.isGameOver ->
-                                dispatch(Action.GameOver(game.totalScore))
-
-                            game.isNewRecord -> {
-                                val rewardsList = getRecordRewardsUseCase(
-                                    newRecord = game.totalScore,
-                                )
-                                dispatch(
-                                    Action.NewRecord(
-                                        score = game.totalScore,
-                                        rewardsList = rewardsList
-                                    )
-                                )
-                            }
-
-                            else -> dispatch(Action.GameLoaded(game))
-                        }
+                        dispatch(Action.GameLoaded(game))
                     }
+            }
+
+            scope.launch {
+                achievementTracker.events.collect { event ->
+                    dispatch(Action.AchievementUnlocked(event.achievement.titleId))
+                }
             }
         }
     }
@@ -238,15 +228,25 @@ class GameStoreFactory @Inject constructor(
         override fun executeAction(action: Action, getState: () -> State) {
             when (action) {
                 Action.GameError -> dispatch(Msg.GameError)
-                is Action.GameLoaded -> dispatch(Msg.GameLoaded(action.game))
+                is Action.GameLoaded -> showGame(action.game)
                 Action.GameLoading -> dispatch(Msg.GameLoading)
-                is Action.GameOver -> dispatch(Msg.GameOver(action.score))
-                is Action.NewRecord -> dispatch(
+                is Action.AchievementUnlocked -> publish(Label.AchievementUnlocked(action.titleId))
+            }
+        }
+
+        // Единая точка выбора экрана по данным игры: сначала рекорд, потом конец игры
+        private fun showGame(game: GameStatisticItem) {
+            when {
+                game.isNewRecord -> dispatch(
                     Msg.NewRecord(
-                        score = action.score,
-                        rewardsList = action.rewardsList
+                        game = game,
+                        rewardsList = getRecordRewardsUseCase(newRecord = game.totalScore)
                     )
                 )
+
+                game.isGameOver -> dispatch(Msg.GameOver(game))
+
+                else -> dispatch(Msg.GameLoaded(game))
             }
         }
 
@@ -265,28 +265,24 @@ class GameStoreFactory @Inject constructor(
                         publish(Label.ClickNavigateToShop)
                     }
                 }
-
                 is Intent.PlaceBlock -> {
                     if (placing) return
                     placing = true
                     scope.launch {
                         try {
-                            val placed = placeBlockUseCase(intent.r, intent.c)
+                            val placed = placeBlockUseCase(intent.r, intent.c) ?: return@launch
                             val clearedResult = checkAndClearFullRowsAction(placed)
 
                             if (clearedResult.clearedLinesCount > 0) {
                                 publish(
                                     Label.PlayLineClearAnimation(
                                         clearedRows = clearedResult.clearedRows,
-                                        clearedCols = clearedResult.clearedCols
+                                        clearedCols = clearedResult.clearedCols,
+                                        combo = clearedResult.combo,
+                                        points = clearedResult.points
                                     )
                                 )
                             }
-
-                            delay(100)
-                            placeBlockUseCase.markThawing()
-                            delay(400)
-                            placeBlockUseCase.clearDice()
                         } finally {
                             placing = false
                         }
@@ -342,9 +338,7 @@ class GameStoreFactory @Inject constructor(
                 Intent.RestartGame -> {
                     scope.launch {
                         restartGameUseCase()
-                        var gameStatistic = resumeGameUseCase()
-                        gameStatistic = checkGameOverUseCase()
-                        dispatch(Msg.GameLoaded(gameStatistic))
+                        showGame(checkGameOverUseCase())
                     }
                 }
 
@@ -364,8 +358,7 @@ class GameStoreFactory @Inject constructor(
 
                 Intent.ResumeGame -> {
                     scope.launch {
-                        val gameStatistic = resumeGameUseCase()
-                        dispatch(Msg.GameLoaded(gameStatistic))
+                        showGame(resumeGameUseCase())
                     }
                 }
 
@@ -379,18 +372,6 @@ class GameStoreFactory @Inject constructor(
                     scope.launch {
                         saveIfLoaded(getState)
                         publish(Label.ClickNavigateBack)
-                    }
-                }
-
-                is Intent.PlaceBonus -> {
-                    scope.launch {
-                        useBonusUseCase(intent.bonusType)
-
-                        placeBonusUseCase(
-                            intent.r,
-                            intent.c,
-                            intent.bonusType
-                        )
                     }
                 }
 
@@ -408,27 +389,26 @@ class GameStoreFactory @Inject constructor(
             return when (msg) {
                 Msg.GameError -> copy(gameState = State.GameState.Error)
                 Msg.GameLoading -> copy(gameState = State.GameState.Loading)
+                // Состояние строится из самой игры, поэтому не зависит от текущего экрана
                 is Msg.GameOver -> {
-                    val loaded = gameState as? State.GameState.Loaded
-                        ?: return this
-
                     copy(
                         gameState = State.GameState.Over(
-                            score = msg.score,
-                            prevState = loaded
+                            score = msg.game.totalScore,
+                            prevState = State.GameState.Loaded(msg.game)
                         )
                     )
                 }
 
                 is Msg.NewRecord -> {
-                    val loaded = gameState as? State.GameState.Loaded
-                        ?: return this
+                    // Если окно рекорда уже открыто, награды не перегенерируем
+                    val rewardsList = (gameState as? State.GameState.NewRecord)?.rewardsList
+                        ?: msg.rewardsList
 
                     copy(
                         gameState = State.GameState.NewRecord(
-                            score = msg.score,
-                            rewardsList = msg.rewardsList,
-                            prevState = loaded
+                            score = msg.game.totalScore,
+                            rewardsList = rewardsList,
+                            prevState = State.GameState.Loaded(msg.game)
                         )
                     )
                 }

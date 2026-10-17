@@ -12,8 +12,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 import androidx.datastore.preferences.core.Preferences
@@ -31,33 +32,47 @@ class PlayerStatsRepositoryImpl @Inject constructor(
     }
 
     private val _statsFlow = MutableStateFlow(PlayerStats())
-    override val statsFlow: Flow<PlayerStats> = _statsFlow.asStateFlow()
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
-    init {
-        scope.launch {
-            _statsFlow.value = load()
-        }
+    private val loadJob = scope.launch {
+        _statsFlow.value = load()
+    }
+
+    override val statsFlow: Flow<PlayerStats> = flow {
+        loadJob.join()
+        emitAll(_statsFlow)
     }
 
     override suspend fun increment(stat: PlayerStat, amount: Long) {
+        loadJob.join()
         val current = _statsFlow.value.counters.toMutableMap()
         current[stat] = (current[stat] ?: 0L) + amount
         save(PlayerStats(current))
     }
 
+    override suspend fun updateMax(stat: PlayerStat, value: Long) {
+        loadJob.join()
+        val current = _statsFlow.value.counters.toMutableMap()
+        if (value <= (current[stat] ?: 0L)) return
+        current[stat] = value
+        save(PlayerStats(current))
+    }
+
     override suspend fun get(stat: PlayerStat): Long {
+        loadJob.join()
         return _statsFlow.value.get(stat)
     }
 
     override suspend fun reset(stat: PlayerStat) {
+        loadJob.join()
         val current = _statsFlow.value.counters.toMutableMap()
         current.remove(stat)
         save(PlayerStats(current))
     }
 
     override suspend fun resetAll() {
+        loadJob.join()
         save(PlayerStats())
     }
 

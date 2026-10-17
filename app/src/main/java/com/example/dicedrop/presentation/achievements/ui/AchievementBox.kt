@@ -80,7 +80,7 @@ fun AchievementBox(
             if (!isClaimed) {
                 if (currentProgress >= totalProgress)
                     AnimatedButton(
-                        text = "Claim",
+                        text = stringResource(R.string.claim),
                         modifier = Modifier.fillMaxWidth(),
                         onClick = { cardCenter ->
                             onGetRewardClick(

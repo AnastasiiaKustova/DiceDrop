@@ -1,6 +1,7 @@
 package com.example.dicedrop.domain.useCases.game
 
 import com.example.dicedrop.core.NotEnoughBonusException
+import com.example.dicedrop.domain.engine.AchievementTracker
 import com.example.dicedrop.domain.entity.BonusType
 import com.example.dicedrop.domain.entity.DiceItem
 import com.example.dicedrop.domain.entity.GameStatisticItem
@@ -11,7 +12,8 @@ import com.example.dicedrop.domain.repository.GameRepository
 import javax.inject.Inject
 
 class UseBonusUseCase @Inject constructor(
-    private val repository: GameRepository
+    private val repository: GameRepository,
+    private val achievementTracker: AchievementTracker
 ) {
     suspend operator fun invoke(bonusType: BonusType, slot: Slot? = null) {
         val gameStatistic = repository.getCurrentGame()
@@ -37,6 +39,7 @@ class UseBonusUseCase @Inject constructor(
         }
 
         repository.updateGameState(updatedGame)
+        achievementTracker.onBonusUsed(bonusType)
     }
 
     suspend fun setFace(value: Int, slot: Slot) {
@@ -54,6 +57,7 @@ class UseBonusUseCase @Inject constructor(
         val newTray = if (slot == Slot.A) tray.copy(slotA = target.copy(value = value))
         else tray.copy(slotB = target.copy(value = value))
         repository.updateGameState(game.copy(bonuses = bonuses).withTray(newTray))
+        achievementTracker.onBonusUsed(BonusType.LUCKY)
     }
 }
 

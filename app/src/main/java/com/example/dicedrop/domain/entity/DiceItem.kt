@@ -7,8 +7,8 @@ import kotlin.random.Random
 
 @Parcelize
 data class DiceItem (
-    val dice1: Int,
-    val dice2: Int
+    val dice1: Int = 0,
+    val dice2: Int = 0
 ): Parcelable{
 
     companion object {

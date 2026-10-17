@@ -4,9 +4,11 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
+import com.example.dicedrop.data.mapper.fromJsonOrDefault
 import com.example.dicedrop.domain.entity.settings.GameSettings
 import com.example.dicedrop.domain.repository.SettingsRepository
 import com.google.gson.Gson
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -25,22 +27,28 @@ class SettingsRepositoryImpl @Inject constructor(
     private val _settings = MutableStateFlow(GameSettings.default())
     override val gameSettingsFlow: Flow<GameSettings> = _settings.asStateFlow()
 
+    private val loaded = CompletableDeferred<Unit>()
+
     init {
         CoroutineScope(Dispatchers.IO).launch {
             dataStore.data.collect { prefs ->
                 val json = prefs[Keys.SETTINGS]
-                val parsed = json?.let { gson.fromJson(it, GameSettings::class.java) }
-                _settings.value = parsed ?: GameSettings.default()
+                _settings.value = gson.fromJsonOrDefault(json, GameSettings.default())
+                loaded.complete(Unit)
             }
         }
     }
 
     override suspend fun saveSettings(settings: GameSettings) {
+        loaded.await()
         _settings.value = settings
         dataStore.edit { prefs ->
             prefs[Keys.SETTINGS] = gson.toJson(settings)
         }
     }
 
-    override suspend fun getSettings(): GameSettings = _settings.value
+    override suspend fun getSettings(): GameSettings {
+        loaded.await()
+        return _settings.value
+    }
 }

@@ -94,15 +94,6 @@ fun DrawSettings(
                 onSettingsChange = onSettingsChange
             )
 
-            SettingsItem(
-                icon = Icons.Filled.Check,
-                title = stringResource(R.string.auto_skip),
-                type = SettingTypes.UseAutoRoll(settings.useAutoRoll),
-                onSettingsChange = onSettingsChange
-            )
-
-
-
             Spacer(modifier = Modifier.height(20.dp))
 
             OutlinedButton(

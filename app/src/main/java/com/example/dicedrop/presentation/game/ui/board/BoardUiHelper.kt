@@ -2,6 +2,7 @@ package com.example.dicedrop.presentation.game.ui.board
 
 
 import androidx.compose.ui.graphics.Color
+import com.example.dicedrop.domain.engine.BoardEngine.ClearLines
 import com.example.dicedrop.domain.engine.BoardEngine.canPlaceBlock
 import com.example.dicedrop.domain.engine.BoardEngine.checkFullRows
 import com.example.dicedrop.domain.engine.BoardEngine.placeBlock
@@ -11,7 +12,6 @@ import com.example.dicedrop.domain.entity.DraggingType
 import com.example.dicedrop.presentation.game.ui.drag.GameUiState
 import com.example.dicedrop.presentation.ui.theme.CellBG
 import com.example.dicedrop.presentation.ui.theme.Green
-import com.example.dicedrop.presentation.ui.theme.Orange
 import com.example.dicedrop.presentation.ui.theme.Red
 import com.example.dicedrop.presentation.ui.theme.Yellow
 import com.example.dicedrop.presentation.ui.theme.YellowDark
@@ -32,22 +32,20 @@ object BoardUiHelper {
         )
     }
 
-    fun canClear(
+    // Считается один раз на позицию призрака, а не для каждой клетки поля
+    fun getClearLines(
         board: BoardItem,
-        row: Int,
-        col: Int,
         ghostRow: Int?,
         ghostCol: Int?,
         dice: DiceItem
-    ): Boolean {
-        if (dice == DiceItem.empty()) return false
-        if (ghostRow == null) return false
-        if (ghostCol == null) return false
-        if (!board.canPlaceBlock(ghostRow, ghostCol, dice.dice1, dice.dice2)) return false
+    ): ClearLines {
+        val empty = ClearLines(emptyList(), emptyList())
+        if (dice == DiceItem.empty()) return empty
+        if (ghostRow == null) return empty
+        if (ghostCol == null) return empty
+        if (!board.canPlaceBlock(ghostRow, ghostCol, dice.dice1, dice.dice2)) return empty
         val newBoard = board.placeBlock(ghostRow, ghostCol, dice.dice1, dice.dice2)
-        val (fullRows, fullCols) = newBoard.checkFullRows()
-        if (fullRows.isEmpty() && fullCols.isEmpty()) return false
-        return fullRows.firstOrNull { it == row } != null || fullCols.firstOrNull { it == col } != null
+        return newBoard.checkFullRows()
     }
 
     fun getCellState(
@@ -55,6 +53,8 @@ object BoardUiHelper {
         dice: DiceItem,
         r: Int,
         c: Int,
+        clearLines: ClearLines,
+        isGhostValid: Boolean,
         uiState: GameUiState? = null
     ): CellState {
 
@@ -62,22 +62,15 @@ object BoardUiHelper {
         val isInGhost = uiState?.isInGhost(dice, r, c) ?: false
 
         return when {
-            canClear(boardItem, r, c, uiState?.ghostRow, uiState?.ghostCol, dice) -> CellState.CAN_CLEAR
+            r in clearLines.rows || c in clearLines.cols -> CellState.CAN_CLEAR
             cellFilled -> CellState.FILLED
-            isInGhost && canPlace(
-                boardItem,
-                uiState?.ghostRow,
-                uiState?.ghostCol,
-                dice
-            ) -> CellState.GHOST_VALID
-
+            isInGhost && isGhostValid -> CellState.GHOST_VALID
             isInGhost -> CellState.GHOST_INVALID
             else -> CellState.EMPTY
         }
     }
 
     fun CellState.getCellColor(): Color = when (this) {
-        CellState.BONUS -> Orange
         CellState.FILLED -> Yellow
         CellState.GHOST_VALID -> Green
         CellState.GHOST_INVALID -> Red
@@ -93,5 +86,5 @@ object BoardUiHelper {
                 c in col until col + dice.dice2
     }
 
-    enum class CellState { FILLED, CAN_CLEAR, GHOST_VALID, GHOST_INVALID, BONUS, EMPTY }
+    enum class CellState { FILLED, CAN_CLEAR, GHOST_VALID, GHOST_INVALID, EMPTY }
 }

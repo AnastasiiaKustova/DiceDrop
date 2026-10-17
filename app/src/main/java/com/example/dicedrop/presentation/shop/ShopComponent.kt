@@ -28,6 +28,7 @@ interface ShopComponent {
         }
 
         enum class ErrorType {
+            NotEnoughCoins,
             BuyBonusFailed,
             PurchaseFailed,
             DailyBonusUnavailable,

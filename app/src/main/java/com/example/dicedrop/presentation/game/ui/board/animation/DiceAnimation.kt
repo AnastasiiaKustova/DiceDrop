@@ -21,6 +21,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.example.dicedrop.R
 import com.example.dicedrop.domain.entity.DiceItem
+import com.example.dicedrop.presentation.game.ui.board.toDiceRes
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -65,7 +66,8 @@ fun AnimatedDices(
 
     if (!rolling1.value && !rolling2.value) {
         LaunchedEffect(rolling) {
-            delay(400)
+            // Если оба кубика заморожены, броска не было и ждать нечего
+            if (frozenValue == null || frozenValue2 == null) delay(400)
             onRollEnd(result.value)
         }
     }
@@ -82,18 +84,30 @@ fun AnimatedDie(
     pool: List<Int> = (1..6).toList(),
     onRollEnd: (result: Int) -> Unit
 ) {
-    var currentImage by remember { mutableStateOf(R.drawable.dice_1) }
+    var currentImage by remember { mutableStateOf(frozenValue?.toDiceRes() ?: R.drawable.dice_1) }
 
     val rotation = remember { Animatable(0f) }
     val scale = remember { Animatable(1f) }
+    val ice = remember { Animatable(if (frozenValue != null) 1f else 0f) }
 
-    val result = frozenValue ?: pool.random()
+    val result = remember { frozenValue ?: pool.random() }
 
     LaunchedEffect(rolling) {
         if (rolling) {
 
             rotation.snapTo(0f)
             scale.snapTo(1f)
+
+            // Замороженный кубик не бросается: значение остается, лед просто тает
+            if (frozenValue != null) {
+                currentImage = result.toDiceRes()
+                ice.animateTo(
+                    targetValue = 0f,
+                    animationSpec = tween(400)
+                )
+                onRollEnd(result)
+                return@LaunchedEffect
+            }
             val duration = 1200
             val steps = 10
 
@@ -131,14 +145,7 @@ fun AnimatedDie(
                 job2.join()
             }
 
-            currentImage = when (result) {
-                1 -> R.drawable.dice_1
-                2 -> R.drawable.dice_2
-                3 -> R.drawable.dice_3
-                4 -> R.drawable.dice_4
-                5 -> R.drawable.dice_5
-                else -> R.drawable.dice_6
-            }
+            currentImage = result.toDiceRes()
 
             scale.snapTo(1f)
 
@@ -156,13 +163,15 @@ fun AnimatedDie(
         imageID = currentImage,
         imageSize = imageSize,
         boxPadding = boxPadding,
+        showIce = frozenValue != null,
+        iceAlpha = { ice.value },
         modifier = Modifier
             .size(imageSize)
-            .graphicsLayer(
-                rotationZ = rotation.value,
-                scaleX = scale.value,
+            .graphicsLayer {
+                rotationZ = rotation.value
+                scaleX = scale.value
                 scaleY = scale.value
-            )
+            }
     )
 }
 
@@ -171,7 +180,9 @@ private fun Dice(
     modifier: Modifier = Modifier,
     imageID: Int,
     imageSize: Dp = 50.dp,
-    boxPadding: Dp = 25.dp
+    boxPadding: Dp = 25.dp,
+    showIce: Boolean = false,
+    iceAlpha: () -> Float = { 0f }
 ) {
     Box(
         contentAlignment = Alignment.Center,
@@ -183,5 +194,14 @@ private fun Dice(
             painter = painterResource(id = imageID),
             contentDescription = ""
         )
+        if (showIce) {
+            Image(
+                painter = painterResource(id = R.drawable.ic_ice_shell),
+                contentDescription = null,
+                modifier = Modifier
+                    .size(imageSize * 1.4f)
+                    .graphicsLayer { alpha = 0.75f * iceAlpha() }
+            )
+        }
     }
 }

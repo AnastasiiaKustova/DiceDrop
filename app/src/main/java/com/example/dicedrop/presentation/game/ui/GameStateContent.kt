@@ -1,4 +1,5 @@
 import android.content.res.Configuration
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -9,6 +10,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -23,6 +25,7 @@ import com.example.dicedrop.domain.entity.Slot
 import com.example.dicedrop.presentation.game.GameComponent
 import com.example.dicedrop.presentation.game.GameStore
 import com.example.dicedrop.presentation.game.ui.board.BottomBoard
+import com.example.dicedrop.presentation.game.ui.board.ComboPopup
 import com.example.dicedrop.presentation.game.ui.board.DrawPlayingField
 import com.example.dicedrop.presentation.game.ui.bottompanel.GameBottomPanel
 import com.example.dicedrop.presentation.game.ui.bottompanel.getByType
@@ -33,6 +36,7 @@ import com.example.dicedrop.presentation.game.ui.header.GameHeader
 import com.example.dicedrop.presentation.game.ui.popups.GameOverDialog
 import com.example.dicedrop.presentation.game.ui.popups.LuckyChoiceDialog
 import com.example.dicedrop.presentation.game.ui.popups.NewRecordDialog
+import com.example.dicedrop.presentation.settings.ui.DrawPause
 import com.example.dicedrop.presentation.ui.theme.LightBlue
 import com.example.dicedrop.presentation.ui.theme.White
 
@@ -41,10 +45,17 @@ fun GameStateContent(
     state: GameStore.State.GameState,
     clearedRows: List<Int>,
     clearedCols: List<Int>,
+    comboPopup: ComboPopup?,
     component: GameComponent
 ) {
     var showLucky by remember { mutableStateOf(false) }
     var pickedFace by remember { mutableStateOf<Int?>(null) }
+    var showPause by rememberSaveable { mutableStateOf(false) }
+
+    // Системная "Назад" при открытой паузе закрывает паузу, а не выходит из игры
+    BackHandler(enabled = showPause) {
+        showPause = false
+    }
 
     val configuration = LocalConfiguration.current
 
@@ -71,11 +82,12 @@ fun GameStateContent(
                     gameStatistic = gameState.gameStatistic,
                     clearedRows = clearedRows,
                     clearedCols = clearedCols,
+                    comboPopup = comboPopup,
                     isLandscape = isLandscape,
                     onShopClick = component::onShopClick,
+                    onPauseClick = { showPause = true },
                     onRollEnd = component::onRollEnd,
                     onUseBonusClick = component::onBonusClick,
-                    onBonusDragEnd = component::onPlaceBonus,
                     onBuyBonusClick = component::onShopClick,
                     onPlaceBlock = component::placeBlock,
                     onFreezeAll = component::onFreezeAll,
@@ -109,6 +121,7 @@ fun GameStateContent(
                     rescueChance = state.prevState.gameStatistic.let { g ->
                         g.boardItem.rescueChance(g.bonuses.firstOrNull { it.type == BonusType.ROTATE }?.count ?: 0)
                     },
+                    canUndo = state.prevState.gameStatistic.reviveSnapshot != null,
                     isLandscape = isLandscape,
                     onRestartClick = component::restartGame,
                     onWatchAdsClick = component::onWatchAdsClick
@@ -126,6 +139,16 @@ fun GameStateContent(
                 },
             )
         }
+
+        if (showPause) {
+            DrawPause(
+                onBackClick = { showPause = false },
+                onRestartClick = {
+                    showPause = false
+                    component.restartGame()
+                }
+            )
+        }
     }
 }
 
@@ -134,14 +157,15 @@ private fun GameScreen(
     gameStatistic: GameStatisticItem,
     clearedRows: List<Int>,
     clearedCols: List<Int>,
+    comboPopup: ComboPopup?,
     isLandscape: Boolean,
     pickedFace: Int?,
     onPickedFace: (Int?) -> Unit,
     onShowLucky: () -> Unit,
     onShopClick: () -> Unit,
+    onPauseClick: () -> Unit,
     onRollEnd: (result: DiceItem) -> Unit,
     onUseBonusClick: (BonusType) -> Unit,
-    onBonusDragEnd: (r: Int, c: Int, type: BonusType) -> Unit,
     onBuyBonusClick: () -> Unit,
     onPlaceBlock: (r: Int, c: Int) -> Unit,
     onFreezeAll: () -> Unit,
@@ -165,7 +189,9 @@ private fun GameScreen(
             totalScore = gameStatistic.totalScore,
             bestScore = gameStatistic.bestScore,
             coins = gameStatistic.coins,
+            combo = gameStatistic.combo,
             isLandscape = isLandscape,
+            onPauseClick = onPauseClick,
             onShopClick = onShopClick
         )
 
@@ -175,6 +201,7 @@ private fun GameScreen(
                 boardItem = gameStatistic.boardItem,
                 clearedRows = clearedRows,
                 clearedCols = clearedCols,
+                comboPopup = comboPopup,
                 boardState = boardState,
                 diceItem = gameStatistic.dice,
                 lastPlaced = gameStatistic.lastPlaced,
@@ -208,7 +235,6 @@ private fun GameScreen(
             GameBottomPanel(
                 modifier = Modifier.weight(0.12f),
                 bonusStatistic = gameStatistic.bonuses,
-                uiStateList = uiStates,
                 freezeEnabled = !(gameStatistic.tray.slotA?.frozen == true
                         && gameStatistic.tray.slotB?.frozen == true),
                 spareActive = spareActive,
@@ -221,9 +247,6 @@ private fun GameScreen(
                         else -> Unit
                     }
                 },
-                onBonusDragEnd = onBonusDragEnd,
-                boardItem = gameStatistic.boardItem,
-                boardState = boardState,
                 isLandscape = isLandscape,
                 luckyEnabled = !spareActive,
                 onCounterClick = { onBuyBonusClick() }

@@ -12,15 +12,17 @@ import com.example.dicedrop.domain.repository.GameRepository
 import com.google.gson.Gson
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.flow.emitAll
+import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -35,33 +37,68 @@ class GameRepositoryImpl @Inject constructor(
     private val repositoryScope = CoroutineScope(Dispatchers.IO + repositoryJob)
 
     private val _gameState = MutableStateFlow(default())
-    override val gameStatisticFlow: Flow<GameStatisticItem> = _gameState.asStateFlow()
 
-    init {
+    @Volatile
+    private var lastSaved: GameStatisticItem? = null
+
+    // Пока сохранение не прочитано с диска, наружу отдавать ничего нельзя,
+    // иначе дефолтное состояние перезапишет реальный прогресс
+    private val loadJob = repositoryScope.launch {
+        _gameState.value = readGame()
+        startAutoSave()
+    }
+
+    override val gameStatisticFlow: Flow<GameStatisticItem> = flow {
+        loadJob.join()
+        emitAll(_gameState)
+    }
+
+    override val coinsValueFlow: Flow<Int> = gameStatisticFlow
+        .map { it.coins }
+
+    override suspend fun getCurrentGame(): GameStatisticItem {
+        loadJob.join()
+        return _gameState.value
+    }
+
+    override suspend fun saveGame(gameStatistic: GameStatisticItem) {
+        loadJob.join()
+        _gameState.value = gameStatistic
+        writeGame(gameStatistic)
+    }
+
+    override suspend fun loadGame(): GameStatisticItem = getCurrentGame()
+
+    override suspend fun updateGameState(game: GameStatisticItem) {
+        loadJob.join()
+        _gameState.value = game
+    }
+
+    // Пишет на диск после паузы в изменениях, а не на каждое изменение
+    @OptIn(FlowPreview::class)
+    private fun startAutoSave() {
         repositoryScope.launch {
-            _gameState.value = loadGame()
+            _gameState
+                .drop(1)
+                .debounce(AUTO_SAVE_DELAY_MS)
+                .filter { it !== lastSaved }
+                .collect { writeGame(it) }
         }
     }
 
-    override val coinsValueFlow: Flow<Int> = _gameState
-        .map { it.coins }
-        .stateIn(repositoryScope, SharingStarted.Lazily, 0)
-
-    override suspend fun getCurrentGame(): GameStatisticItem = gameStatisticFlow.first()
-
-    override suspend fun saveGame(gameStatistic: GameStatisticItem) {
-        _gameState.value = gameStatistic
+    private suspend fun writeGame(gameStatistic: GameStatisticItem) {
+        lastSaved = gameStatistic
         dataStore.edit { prefs ->
             prefs[Keys.GAME_STAT] = gson.toJson(gameStatistic)
         }
     }
 
-    override suspend fun loadGame(): GameStatisticItem {
+    private suspend fun readGame(): GameStatisticItem {
         val saved = dataStore.data.firstOrNull()?.let { prefs ->
             gson.fromJsonOrDefault(prefs[Keys.GAME_STAT], default())
         } ?: default()
 
-        val clean = saved.copy(
+        return saved.copy(
             bonuses = default().bonuses.map { def ->
                 val count = saved.bonuses.firstOrNull {
                     runCatching { it.type }.getOrNull() == def.type
@@ -70,12 +107,9 @@ class GameRepositoryImpl @Inject constructor(
             },
             tray = saved.tray ?: TrayState()
         )
-
-        _gameState.value = clean
-        return clean
     }
 
-    override suspend fun updateGameState(game: GameStatisticItem) {
-        _gameState.value = game
+    private companion object {
+        const val AUTO_SAVE_DELAY_MS = 500L
     }
 }

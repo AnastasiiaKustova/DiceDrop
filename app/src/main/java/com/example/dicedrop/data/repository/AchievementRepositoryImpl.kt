@@ -15,9 +15,10 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -33,12 +34,14 @@ class AchievementRepositoryImpl @Inject constructor(
     }
 
     private val _achievementState: MutableStateFlow<List<AchievementProgress>> = MutableStateFlow(emptyList())
-    override val achievementState: Flow<List<AchievementProgress>> = _achievementState.asStateFlow()
 
-    init {
-        scope.launch {
-            _achievementState.value = loadProgress()
-        }
+    private val loadJob = scope.launch {
+        _achievementState.value = loadProgress()
+    }
+
+    override val achievementState: Flow<List<AchievementProgress>> = flow {
+        loadJob.join()
+        emitAll(_achievementState)
     }
 
     override suspend fun getCurrentAchievementProgress(): List<AchievementProgress> = achievementState.first()
@@ -69,6 +72,7 @@ class AchievementRepositoryImpl @Inject constructor(
     }
 
     override suspend fun saveAchievementProgress(list: List<AchievementProgress>) {
+        loadJob.join()
         _achievementState.value = list
         val json = gson.toJson(list)
         dataStore.edit { prefs ->

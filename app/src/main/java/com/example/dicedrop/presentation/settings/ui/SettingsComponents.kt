@@ -55,16 +55,6 @@ fun SettingsItem(
         Spacer(modifier = Modifier.weight(1f))
 
         when (type){
-            is SettingTypes.UseAutoRoll -> {
-                SettingSwitch(
-                    value = type.checked,
-                    onSettingsChange = {
-                        onSettingsChange(
-                            SettingTypes.UseAutoRoll(it)
-                        )
-                    }
-                )
-            }
             is SettingTypes.MusicVolume -> {
                 SettingSlider(
                     value = type.value,

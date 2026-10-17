@@ -24,6 +24,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -37,6 +38,7 @@ import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
@@ -76,7 +78,9 @@ fun BottomBoard(
 
     val rolling = remember { mutableStateOf(false) }
 
-    if (diceItem == DiceItem.empty()) rolling.value = true
+    LaunchedEffect(diceItem) {
+        if (diceItem == DiceItem.empty()) rolling.value = true
+    }
 
     Column(
         modifier = modifier.fillMaxSize().background(DarkBlue).padding(top = 16.dp),
@@ -89,8 +93,6 @@ fun BottomBoard(
             frozenA = tray.slotA?.frozen == true,
             frozenB = tray.slotB?.frozen == true,
             discardMode = tray.spare?.value != null,
-            thawingA = tray.slotA?.thawing == true,
-            thawingB = tray.slotB?.thawing == true,
             spare = tray.spare,
             isLandscape = isLandscape,
             facePick = facePick,
@@ -134,16 +136,26 @@ private fun BottomBoardField(
     ) {
         if (dices.dice1 > 0 && dices.dice2 > 0) {
             val density = LocalDensity.current
+            // Пока третий кубик не сброшен, блок перетаскивать нельзя
+            val dragEnabled = tray.spare == null
 
             Box(
                 modifier = modifier
-                    .offset(x = uiState.dragOffsetX, y = uiState.dragOffsetY)
+                    // Смещение читается в фазе layout, поэтому драг не вызывает рекомпозицию блока
+                    .offset {
+                        IntOffset(
+                            x = uiState.dragOffsetX.roundToPx(),
+                            y = uiState.dragOffsetY.roundToPx()
+                        )
+                    }
                     .align(Alignment.Center)
+                    .alpha(if (dragEnabled) 1f else 0.5f)
                     .onGloballyPositioned { coords ->
                         uiState.elementStartX = coords.positionInRoot().x
                         uiState.elementStartY = coords.positionInRoot().y
                     }
-                    .pointerInput(dices, boardItem) {
+                    .pointerInput(dices, boardItem, dragEnabled) {
+                        if (!dragEnabled) return@pointerInput
                         detectDragGestures(
                             onDragStart = { DragController.onDragStart(uiState) },
                             onDrag = { _, dragAmount ->
@@ -193,8 +205,6 @@ private fun DiceLabel(
     frozenB: Boolean,
     discardMode: Boolean,
     spare: TrayDie?,
-    thawingA: Boolean,
-    thawingB: Boolean,
     isLandscape: Boolean,
     facePick: Boolean,
     onDieClick: (DiscardTarget) -> Unit,
@@ -202,16 +212,8 @@ private fun DiceLabel(
 ) {
     val isDiceNull = (dice1 == 0 || dice2 == 0)
 
-    val pulse by rememberInfiniteTransition(label = "diceHint").animateFloat(
-        initialValue = 1f,
-        targetValue = 0.35f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 500),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "diceAlpha"
-    )
-    val glow = if (discardMode || facePick) pulse else 1f
+    // Пульсация нужна только в режиме выбора кубика, иначе анимация не создается
+    val glow = if (discardMode || facePick) diceHintPulse() else 1f
 
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         if (isDiceNull) {
@@ -233,11 +235,11 @@ private fun DiceLabel(
                 horizontalArrangement = Arrangement.spacedBy(2.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                DiceFace(dice1.toDiceRes(), frozenA, thawingA, glow) { onDieClick(DiscardTarget.A) }
-                DiceFace(dice2.toDiceRes(), frozenB, thawingB, glow) { onDieClick(DiscardTarget.B) }
+                DiceFace(dice1.toDiceRes(), frozenA, glow) { onDieClick(DiscardTarget.A) }
+                DiceFace(dice2.toDiceRes(), frozenB, glow) { onDieClick(DiscardTarget.B) }
                 if (spare != null) {
                     if (spare.value != null) {
-                        DiceFace(spare.value.toDiceRes(), false, false, if (discardMode) pulse else 1f) {
+                        DiceFace(spare.value.toDiceRes(), false, if (discardMode) glow else 1f) {
                             onDieClick(DiscardTarget.SPARE)
                         }
                     } else {
@@ -262,8 +264,22 @@ private fun DiceLabel(
 
 
 @Composable
-private fun DiceFace(resId: Int?, badge: Boolean, thawing: Boolean, alpha: Float, onClick: () -> Unit) {
-    val iceTarget = if (thawing) 0f else if (badge) 1f else 0f
+private fun diceHintPulse(): Float {
+    val pulse by rememberInfiniteTransition(label = "diceHint").animateFloat(
+        initialValue = 1f,
+        targetValue = 0.35f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 500),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "diceAlpha"
+    )
+    return pulse
+}
+
+@Composable
+private fun DiceFace(resId: Int?, badge: Boolean, alpha: Float, onClick: () -> Unit) {
+    val iceTarget = if (badge) 1f else 0f
     val ice by animateFloatAsState(iceTarget,
         animationSpec = tween(durationMillis = 400),
         label = "iceAnim"

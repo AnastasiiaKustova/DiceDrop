@@ -21,6 +21,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -43,7 +44,7 @@ fun LuckyChoiceDialog(onPick: (Int) -> Unit) {
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text(
-                text = "Закажи грань",
+                text = stringResource(R.string.lucky_dialog_title),
                 fontWeight = FontWeight.Bold,
                 fontSize = 22.sp,
                 color = White,
@@ -53,7 +54,7 @@ fun LuckyChoiceDialog(onPick: (Int) -> Unit) {
             Spacer(modifier = Modifier.height(4.dp))
 
             Text(
-                text = "Грань встанет сразу, тапни кубик",
+                text = stringResource(R.string.lucky_dialog_hint),
                 fontSize = 13.sp,
                 color = WhiteBlue,
                 textAlign = TextAlign.Center

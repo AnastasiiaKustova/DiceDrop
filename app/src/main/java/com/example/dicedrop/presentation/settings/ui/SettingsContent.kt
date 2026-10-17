@@ -25,11 +25,8 @@ fun SettingsContent(component: SettingsComponent) {
                 when (gameState.openReason){
                     OpenReason.GamePause -> {
                         DrawPause(
-                            settings = gameState.settings,
                             onBackClick = { component.onBackClick() },
-                            onRestartClick = { component.onRestartGameClick() },
-                            onSettingsChange = { component.onSettingsChangeClick(it) },
-                            onExitClick = { component.onExitClick() }
+                            onRestartClick = { component.onRestartGameClick() }
                         )
                     }
                     OpenReason.RegularSettings -> {

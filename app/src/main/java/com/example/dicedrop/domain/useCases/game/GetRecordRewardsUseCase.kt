@@ -2,7 +2,7 @@ package com.example.dicedrop.domain.useCases.game
 
 import com.example.dicedrop.domain.entity.BonusItem
 import com.example.dicedrop.domain.entity.BonusType
-import com.example.dicedrop.presentation.game.ui.bottompanel.getRandomBonusType
+import com.example.dicedrop.domain.entity.getRandomBonusType
 import javax.inject.Inject
 import kotlin.random.Random
 

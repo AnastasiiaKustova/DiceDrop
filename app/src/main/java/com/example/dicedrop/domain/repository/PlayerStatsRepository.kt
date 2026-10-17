@@ -10,6 +10,8 @@ interface PlayerStatsRepository {
 
     suspend fun increment(stat: PlayerStat, amount: Long = 1)
 
+    suspend fun updateMax(stat: PlayerStat, value: Long)
+
     suspend fun get(stat: PlayerStat): Long
 
     suspend fun reset(stat: PlayerStat)

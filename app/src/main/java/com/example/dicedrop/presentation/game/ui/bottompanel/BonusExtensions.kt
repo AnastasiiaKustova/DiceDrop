@@ -14,8 +14,6 @@ fun List<GameUiState>.getByType(type: DraggingType?): GameUiState? {
     type?.let { return this.first { it.draggingType == type } } ?: return null
 }
 
-fun BonusType.toDraggingType(): DraggingType? = null // бонусы теперь по тапу, драга на доску нет
-
 fun BonusType.getIconResId(): Int {
     return when (this) {
         BonusType.ROTATE -> R.drawable.bonus_swap_c_flat
@@ -26,11 +24,12 @@ fun BonusType.getIconResId(): Int {
     }
 }
 
-fun getRandomBonusType(ignoreBonusTypeList: List<BonusType> = emptyList()): BonusType {
-    val bonusTypeList = getBonusTypeList(ignoreBonusTypeList)
-    return bonusTypeList.random()
-}
-
-fun getBonusTypeList(ignoreBonusTypeList: List<BonusType> = emptyList()): List<BonusType> {
-    return BonusType.entries.filterNot { it in ignoreBonusTypeList }
+fun BonusType.getTitleResId(): Int {
+    return when (this) {
+        BonusType.ROTATE -> R.string.rotate
+        BonusType.FREEZE -> R.string.freeze
+        BonusType.LUCKY -> R.string.lucky
+        BonusType.DRAFT -> R.string.draft
+        BonusType.COIN -> R.string.coins
+    }
 }

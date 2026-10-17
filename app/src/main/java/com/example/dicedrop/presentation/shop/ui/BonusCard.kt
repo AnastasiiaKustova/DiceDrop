@@ -148,7 +148,7 @@ fun BonusCard(
                 Text(
                     fontWeight = FontWeight.Bold,
                     fontSize = if (isDailyRewardClaimed) 16.sp else 21.sp,
-                    text = if (isDailyRewardClaimed) "Claimed" else "Free",
+                    text = if (isDailyRewardClaimed) stringResource(R.string.claimed) else stringResource(R.string.free),
                     color = White
                 )
 

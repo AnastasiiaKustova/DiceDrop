@@ -1,7 +1,6 @@
 package com.example.dicedrop.domain.entity
 
 import android.os.Parcelable
-import com.example.dicedrop.presentation.game.ui.bottompanel.getBonusTypeList
 import kotlinx.android.parcel.Parcelize
 
 @Parcelize
