@@ -32,9 +32,9 @@
     <string name="tap_to_continue">Tap to continue</string>
     <string name="daily_gift">Daily gift</string>
     <string name="rotate">Rotate</string>
-    <string name="reroll">Reroll</string>
-    <string name="bomb">Bomb</string>
-    <string name="hammer">Hammer</string>
+    <string name="draft">Докинуть третий</string>
+    <string name="freeze">Заморозка</string>
+    <string name="lucky">Счастливый</string>
     <string name="random">Random</string>
     <string name="just_the_beginning">Just the Beginning</string>
     <string name="roll_the_dice_50_times">Roll the dice 50 times</string>
@@ -45,4 +45,12 @@
     <string name="dice_legend">Dice Legend</string>
     <string name="roll_the_dice_1000_times">Roll the dice 1000 times</string>
     <string name="clear_the_rows_50_times">Clear the rows 50 times</string>
+    <string name="discard_hint">Убери лишний кубик</string>
+    <string name="face_hint">Выбери кубик</string>
+    <string name="last_chance_title">Ходов нет</string>
+    <string name="last_chance_text">Обычный блок не встает — используй бонус или сдавайся</string>
+    <string name="last_chance_lucky">Заказать грань (%1$d)</string>
+    <string name="last_chance_draft">Докинуть третий (%1$d)</string>
+    <string name="give_up">Сдаться</string>
+    <string name="rescue_chance">Шанс спастись: %1$d%%</string>
 </resources>

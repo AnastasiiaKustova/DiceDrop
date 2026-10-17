@@ -27,6 +27,9 @@ fun GameBottomPanel(
     boardItem: BoardItem,
     boardState: BoardUiState,
     isLandscape: Boolean,
+    freezeEnabled: Boolean,
+    spareActive: Boolean,
+    luckyEnabled: Boolean,
     onCounterClick: (BonusItem) -> Unit,
     onBonusClick: (BonusType) -> Unit,
     onBonusDragEnd: (r: Int, c: Int, type: BonusType) -> Unit,
@@ -49,6 +52,12 @@ fun GameBottomPanel(
                 iconResId = bonus.type.getIconResId(),
                 count = bonus.count,
                 isLandscape = isLandscape,
+                enabled = when (bonus.type) {
+                    BonusType.FREEZE -> freezeEnabled && !spareActive
+                    BonusType.ROTATE, BonusType.DRAFT -> !spareActive
+                    BonusType.LUCKY -> !spareActive && luckyEnabled
+                    else -> true
+                },
                 dragModifier = dragModifier ?: Modifier,
                 onBonusClick = {onBonusClick(bonus.type)},
                 onCounterClick = { if (bonus.count <= 0) onCounterClick(bonus) }

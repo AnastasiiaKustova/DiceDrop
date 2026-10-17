@@ -35,8 +35,6 @@ object DragController {
                     onAction(row, col, GameActionType.PLACE_BLOCK)
                 }
             }
-            DraggingType.BOMB -> onAction(row, col, GameActionType.USE_BOMB)
-            DraggingType.HAMMER -> onAction(row, col, GameActionType.USE_HAMMER)
         }
 
         resetDragState(gameState)
@@ -58,26 +56,11 @@ object DragController {
         gameState.dragOffsetY += (dragAmount.y * speed).dp
 
         val (row, col) = when (gameState.draggingType) {
-            DraggingType.BOMB, DraggingType.HAMMER -> calculateBonusTarget(gameState, boardItem, board, density)
             else -> calculateBlockTarget(gameState, board, density)
         }
 
         gameState.ghostRow = row
         gameState.ghostCol = col
-    }
-
-    private fun calculateBonusTarget(
-        state: GameUiState,
-        boardItem: BoardItem,
-        board: BoardUiState,
-        density: Density
-    ): Pair<Int?, Int?> {
-        val col = ((state.elementStartX - board.boardOffsetX) /
-                density.run { board.cellSize.toPx() }).roundToInt()
-        val row = ((state.elementStartY - board.boardOffsetY) /
-                density.run { board.cellSize.toPx() }).roundToInt()
-        if (row !in 0 until boardItem.row || col !in 0 until boardItem.col) return null to null
-        return row to col
     }
 
     private fun calculateBlockTarget(

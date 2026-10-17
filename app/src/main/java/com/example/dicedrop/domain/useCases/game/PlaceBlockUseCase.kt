@@ -11,18 +11,37 @@ class PlaceBlockUseCase @Inject constructor(
 ) {
     suspend operator fun invoke(row: Int, col: Int): GameStatisticItem {
         val current = repository.getCurrentGame()
-        val placedBoard = current.boardItem.placeBlock(
-            row = row,
-            col = col,
-            h = current.dice.dice1,
-            w = current.dice.dice2
-        )
+        val h = current.dice.dice1
+        val w = current.dice.dice2
+        val placedBoard = current.boardItem.placeBlock(row = row, col = col, h = h, w = w)
 
+        val cells = buildList {
+            for (r in row until row + h) for (c in col until col + w) add(r * current.boardItem.col + c)
+        }
         val updated = current.copy(
             boardItem = placedBoard,
-            dice = DiceItem.empty()
-        )
+            lastPlaced = cells,)
         repository.updateGameState(updated)
         return updated
+    }
+
+    suspend fun markThawing() {
+        val current = repository.getCurrentGame()
+        val a = current.tray.slotA
+        val b = current.tray.slotB
+        if (a?.frozen != true && b?.frozen != true) return
+        repository.updateGameState(
+            current.copy(
+                tray = current.tray.copy(
+                    slotA = a?.copy(thawing = true),
+                    slotB = b?.copy(thawing = true)
+                )
+            )
+        )
+    }
+
+    suspend fun clearDice() {
+        val current = repository.getCurrentGame()
+        repository.updateGameState(current.copy(dice = DiceItem.empty()))
     }
 }

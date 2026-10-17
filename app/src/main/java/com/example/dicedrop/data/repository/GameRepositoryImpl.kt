@@ -7,6 +7,7 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import com.example.dicedrop.data.mapper.fromJsonOrDefault
 import com.example.dicedrop.domain.entity.GameStatisticItem
 import com.example.dicedrop.domain.entity.GameStatisticItem.Companion.default
+import com.example.dicedrop.domain.entity.TrayState
 import com.example.dicedrop.domain.repository.GameRepository
 import com.google.gson.Gson
 import kotlinx.coroutines.CoroutineScope
@@ -28,7 +29,7 @@ class GameRepositoryImpl @Inject constructor(
     private val gson: Gson
 ) : GameRepository {
 
-    private object Keys { val GAME_STAT = stringPreferencesKey("game_statistic_json") }
+    private object Keys { val GAME_STAT = stringPreferencesKey("game_statistic_json_v2") }
 
     private val repositoryJob = SupervisorJob()
     private val repositoryScope = CoroutineScope(Dispatchers.IO + repositoryJob)
@@ -60,9 +61,18 @@ class GameRepositoryImpl @Inject constructor(
             gson.fromJsonOrDefault(prefs[Keys.GAME_STAT], default())
         } ?: default()
 
-        _gameState.value = saved
+        val clean = saved.copy(
+            bonuses = default().bonuses.map { def ->
+                val count = saved.bonuses.firstOrNull {
+                    runCatching { it.type }.getOrNull() == def.type
+                }?.count ?: 0
+                def.copy(count = count)
+            },
+            tray = saved.tray ?: TrayState()
+        )
 
-        return saved
+        _gameState.value = clean
+        return clean
     }
 
     override suspend fun updateGameState(game: GameStatisticItem) {

@@ -19,35 +19,35 @@ object ShopItemCatalog {
             id = "basic_bonus_rotate",
             titleId = R.string.rotate,
             iconResId = BonusType.ROTATE.getIconResId(),
-            price = 2,
+            price = 1,
             bonusType = BonusType.ROTATE
         ),
         ShopItem(
-            id = "basic_bonus_reroll",
-            titleId = R.string.reroll,
-            iconResId = BonusType.REROLL.getIconResId(),
-            price = 1,
-            bonusType = BonusType.REROLL
+            id = "basic_bonus_draft",
+            titleId = R.string.draft,
+            iconResId = BonusType.DRAFT.getIconResId(),
+            price = 2,
+            bonusType = BonusType.DRAFT
         ),
         ShopItem(
-            id = "basic_bonus_bomb",
-            titleId = R.string.bomb,
-            iconResId = BonusType.BOMB.getIconResId(),
-            price = 3,
-            bonusType = BonusType.BOMB
+            id = "basic_bonus_freeze",
+            titleId = R.string.freeze,
+            iconResId = BonusType.FREEZE.getIconResId(),
+            price = 2,
+            bonusType = BonusType.FREEZE
         ),
         ShopItem(
-            id = "basic_bonus_hammer",
-            titleId = R.string.hammer,
-            iconResId = BonusType.HAMMER.getIconResId(),
+            id = "basic_bonus_lucky",
+            titleId = R.string.lucky,
+            iconResId = BonusType.LUCKY.getIconResId(),
             price = 3,
-            bonusType = BonusType.HAMMER
+            bonusType = BonusType.LUCKY
         ),
         ShopItem(
             id = "random_bonus",
             titleId = R.string.random,
             iconResId = R.drawable.ic_random,
-            price = 1,
+            price = 2,
             bonusType = null
         ),
     )

@@ -12,10 +12,12 @@ import com.example.dicedrop.domain.action.RollDiceAction
 import com.example.dicedrop.domain.entity.BonusItem
 import com.example.dicedrop.domain.entity.BonusType
 import com.example.dicedrop.domain.entity.DiceItem
+import com.example.dicedrop.domain.entity.DiscardTarget
 import com.example.dicedrop.domain.entity.GameStatisticItem
-import com.example.dicedrop.domain.useCases.shop.BuyBonusUseCase
+import com.example.dicedrop.domain.entity.Slot
 import com.example.dicedrop.domain.useCases.game.CheckGameOverUseCase
 import com.example.dicedrop.domain.useCases.game.ConfirmNewRecordUseCase
+import com.example.dicedrop.domain.useCases.game.DiscardSpareUseCase
 import com.example.dicedrop.domain.useCases.game.GetRecordRewardsUseCase
 import com.example.dicedrop.domain.useCases.game.GrantAdRewardUseCase
 import com.example.dicedrop.domain.useCases.game.LoadGameUseCase
@@ -24,18 +26,21 @@ import com.example.dicedrop.domain.useCases.game.PlaceBlockUseCase
 import com.example.dicedrop.domain.useCases.game.PlaceBonusUseCase
 import com.example.dicedrop.domain.useCases.game.RestartGameUseCase
 import com.example.dicedrop.domain.useCases.game.ResumeGameUseCase
+import com.example.dicedrop.domain.useCases.game.RollSpareUseCase
 import com.example.dicedrop.domain.useCases.game.SaveGameUseCase
 import com.example.dicedrop.domain.useCases.game.UseBonusUseCase
+import com.example.dicedrop.domain.useCases.shop.BuyBonusUseCase
 import com.example.dicedrop.presentation.game.GameStore.Intent
 import com.example.dicedrop.presentation.game.GameStore.Label
 import com.example.dicedrop.presentation.game.GameStore.State
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 interface GameStore : Store<Intent, State, Label> {
 
-    //Если пользователь кликает по экрану то он отправляет Intent
+    //Если пользователь кликает по экрану, то он отправляет Intent
     sealed interface Intent {
 
         data object ClickNavigateToShop : Intent
@@ -66,6 +71,13 @@ interface GameStore : Store<Intent, State, Label> {
 
         data class NewRecordConfirm(val rewardsList: List<BonusItem>) : Intent
 
+        data object FreezeAll : Intent
+
+        data class DiscardDie(val target: DiscardTarget) : Intent
+
+        data class SpareRolled(val value: Int) : Intent
+
+        data class LuckyFace(val value: Int, val slot: Slot) : Intent
     }
 
     data class State(
@@ -96,7 +108,7 @@ interface GameStore : Store<Intent, State, Label> {
         }
     }
 
-    //Действия которые делает пользователь (только?)
+    //Действия, которые делает пользователь (только?)
     sealed interface Label {
 
         data object ClickNavigateBack : Label
@@ -134,7 +146,9 @@ class GameStoreFactory @Inject constructor(
     private val restartGameUseCase: RestartGameUseCase,
     private val resumeGameUseCase: ResumeGameUseCase,
     private val grantAdRewardUseCase: GrantAdRewardUseCase,
-    private val observeGameUseCase: ObserveGameUseCase
+    private val observeGameUseCase: ObserveGameUseCase,
+    private val discardSpareUseCase: DiscardSpareUseCase,
+    private val rollSpareUseCase: RollSpareUseCase
 ) {
 
     fun create(): GameStore =
@@ -161,7 +175,6 @@ class GameStoreFactory @Inject constructor(
         data class GameOver(val score: Int) : Action
 
         data class NewRecord(val score: Int, val rewardsList: List<BonusItem>) : Action
-
     }
 
     private sealed interface Msg {
@@ -220,6 +233,8 @@ class GameStoreFactory @Inject constructor(
     //Если стейт экрана менять не нужно, то отправяем Label вызывая publish
     private inner class ExecutorImpl :
         CoroutineExecutor<Intent, Action, State, Msg, Label>() {
+        private var placing = false
+
         override fun executeAction(action: Action, getState: () -> State) {
             when (action) {
                 Action.GameError -> dispatch(Msg.GameError)
@@ -252,18 +267,28 @@ class GameStoreFactory @Inject constructor(
                 }
 
                 is Intent.PlaceBlock -> {
+                    if (placing) return
+                    placing = true
                     scope.launch {
-                        val placed = placeBlockUseCase(intent.r, intent.c)
-                        val clearedResult = checkAndClearFullRowsAction(placed)
-                        checkGameOverUseCase()
+                        try {
+                            val placed = placeBlockUseCase(intent.r, intent.c)
+                            val clearedResult = checkAndClearFullRowsAction(placed)
 
-                        if (clearedResult.clearedLinesCount > 0) {
-                            publish(
-                                Label.PlayLineClearAnimation(
-                                    clearedRows = clearedResult.clearedRows,
-                                    clearedCols = clearedResult.clearedCols
+                            if (clearedResult.clearedLinesCount > 0) {
+                                publish(
+                                    Label.PlayLineClearAnimation(
+                                        clearedRows = clearedResult.clearedRows,
+                                        clearedCols = clearedResult.clearedCols
+                                    )
                                 )
-                            )
+                            }
+
+                            delay(100)
+                            placeBlockUseCase.markThawing()
+                            delay(400)
+                            placeBlockUseCase.clearDice()
+                        } finally {
+                            placing = false
                         }
                     }
                 }
@@ -279,9 +304,32 @@ class GameStoreFactory @Inject constructor(
                     scope.launch {
                         try {
                             useBonusUseCase(intent.bonusType)
+                            if (intent.bonusType != BonusType.DRAFT) checkGameOverUseCase()
                         } catch (e: NotEnoughBonusException) {
                             publish(Label.NotEnoughBonus)
                         }
+                    }
+                }
+
+                is Intent.SpareRolled -> {
+                    scope.launch { rollSpareUseCase(intent.value) }
+                }
+
+                is Intent.FreezeAll -> {
+                    scope.launch {
+                        try { useBonusUseCase(BonusType.FREEZE) }
+                        catch (e: NotEnoughBonusException) { publish(Label.NotEnoughBonus) }
+                    }
+                }
+
+                is Intent.DiscardDie -> {
+                    scope.launch { discardSpareUseCase(intent.target); checkGameOverUseCase() }
+                }
+
+                is Intent.LuckyFace -> {
+                    scope.launch {
+                        try { useBonusUseCase.setFace(intent.value, intent.slot); checkGameOverUseCase() }
+                        catch (e: NotEnoughBonusException) { publish(Label.NotEnoughBonus) }
                     }
                 }
 
@@ -294,7 +342,8 @@ class GameStoreFactory @Inject constructor(
                 Intent.RestartGame -> {
                     scope.launch {
                         restartGameUseCase()
-                        val gameStatistic = resumeGameUseCase()
+                        var gameStatistic = resumeGameUseCase()
+                        gameStatistic = checkGameOverUseCase()
                         dispatch(Msg.GameLoaded(gameStatistic))
                     }
                 }

@@ -98,7 +98,8 @@ private fun RowScope.CoinsCounter(
         Text(
             color = White,
             text = "$coins",
-            fontSize = 22.sp
+            fontSize = if (coins >= 1000) 15.sp else 22.sp,
+            maxLines = 1
         )
     }
 }

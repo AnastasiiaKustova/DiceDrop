@@ -23,6 +23,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.graphics.Color.Companion.Gray
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -40,6 +42,7 @@ fun BonusButton(
     @DrawableRes iconResId: Int,
     count: Int,
     isLandscape: Boolean,
+    enabled: Boolean = true,
     onBonusClick: () -> Unit,
     onCounterClick: () -> Unit
 ) {
@@ -54,18 +57,19 @@ fun BonusButton(
     ) {
         Button(
             onClick = onBonusClick,
+            enabled = enabled,
             shape = RoundedCornerShape(8.dp),
             colors = ButtonDefaults.buttonColors(containerColor = White),
             contentPadding = PaddingValues(0.dp),
             modifier = Modifier.fillMaxSize()
         ) {}
 
-        BonusButtonCounter(count, onCounterClick)
+        BonusButtonCounter(count, onCounterClick, enabled)
 
         Image(
             painter = painterResource(id = iconResId),
             contentDescription = null,
-            modifier = dragModifier.fillMaxSize().padding(8.dp)
+            modifier = dragModifier.fillMaxSize().padding(8.dp).alpha(if (enabled) 1f else 0.4f)
         )
     }
 }
@@ -73,11 +77,12 @@ fun BonusButton(
 @Composable
 fun BoxScope.BonusButtonCounter(
     count: Int,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    enabled: Boolean = true
 ) {
     val text = if (count >= 100) "99" else if (count > 0) count.toString() else "+"
-    val color = if (count > 0) White else Red
-    val textColor = if (count > 0) DarkBlue else White
+    val color = if (!enabled) Gray else if (count > 0) White else Red
+    val textColor = if (!enabled) White else if (count > 0) DarkBlue else White
 
     Box(
         modifier = Modifier

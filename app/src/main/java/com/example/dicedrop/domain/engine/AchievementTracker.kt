@@ -29,9 +29,6 @@ class AchievementTracker @Inject constructor(
         check(AchievementType.CLEAR_ROWS)
     }
 
-    suspend fun onBombUsed() {
-    }
-
     private suspend fun check(type: AchievementType) {
         val stats = statsRepository.statsFlow.first()
         val achievements = achievementRepository.getAchievements()

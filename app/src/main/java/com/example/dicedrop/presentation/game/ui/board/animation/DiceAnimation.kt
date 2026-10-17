@@ -17,6 +17,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.example.dicedrop.R
 import com.example.dicedrop.domain.entity.DiceItem
@@ -28,6 +29,7 @@ fun AnimatedDices(
     rolling: Boolean,
     skipAnimation: Boolean = false,
     frozenValue: Int? = null,
+    frozenValue2: Int? = null,
     onRollEnd: (result: DiceItem) -> Unit
 ) {
 
@@ -37,7 +39,7 @@ fun AnimatedDices(
     var result = remember { mutableStateOf(DiceItem.empty()) }
 
     Row {
-        AnimatedDice(
+        AnimatedDie(
             rolling = rolling1.value,
             frozenValue = frozenValue,
             skipAnimation = if (frozenValue != null) true else skipAnimation,
@@ -47,10 +49,13 @@ fun AnimatedDices(
                 dice1 = it
             )
         }
-        AnimatedDice(
+        AnimatedDie(
             rolling = rolling2.value,
-            skipAnimation = skipAnimation,
+            frozenValue = frozenValue2,
+            skipAnimation = if (frozenValue2 != null) true else skipAnimation,
         ) {
+
+
             rolling2.value = false
             result.value = result.value.copy(
                 dice2 = it
@@ -68,10 +73,13 @@ fun AnimatedDices(
 }
 
 @Composable
-private fun AnimatedDice(
+fun AnimatedDie(
     rolling: Boolean,
     frozenValue: Int? = null,
     skipAnimation: Boolean = false,
+    imageSize: Dp = 50.dp,
+    boxPadding: Dp = 25.dp,
+    pool: List<Int> = (1..6).toList(),
     onRollEnd: (result: Int) -> Unit
 ) {
     var currentImage by remember { mutableStateOf(R.drawable.dice_1) }
@@ -79,7 +87,7 @@ private fun AnimatedDice(
     val rotation = remember { Animatable(0f) }
     val scale = remember { Animatable(1f) }
 
-    val result = frozenValue ?: (1..6).random()
+    val result = frozenValue ?: pool.random()
 
     LaunchedEffect(rolling) {
         if (rolling) {
@@ -146,8 +154,10 @@ private fun AnimatedDice(
 
     Dice(
         imageID = currentImage,
+        imageSize = imageSize,
+        boxPadding = boxPadding,
         modifier = Modifier
-            .size(50.dp)
+            .size(imageSize)
             .graphicsLayer(
                 rotationZ = rotation.value,
                 scaleX = scale.value,
@@ -159,12 +169,14 @@ private fun AnimatedDice(
 @Composable
 private fun Dice(
     modifier: Modifier = Modifier,
-    imageID: Int
+    imageID: Int,
+    imageSize: Dp = 50.dp,
+    boxPadding: Dp = 25.dp
 ) {
     Box(
         contentAlignment = Alignment.Center,
         modifier = Modifier
-            .padding(25.dp)
+            .padding(boxPadding)
     ) {
         Image(
             modifier = modifier,
