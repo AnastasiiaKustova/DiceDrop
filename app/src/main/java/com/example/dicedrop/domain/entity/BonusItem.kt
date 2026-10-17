@@ -11,6 +11,10 @@ data class BonusItem(
 ) : Parcelable {
     companion object {
         fun default(): List<BonusItem> =
-            BonusType.entries.filter { it in getBonusTypeList(listOf(BonusType.COIN)) }.map { BonusItem(it) }
+            BonusType.entries.filter { it in getBonusTypeList(listOf(BonusType.COIN)) }.map {
+                BonusItem(it, count = when (it) {
+                    else -> 99
+                })
+            }
     }
 }

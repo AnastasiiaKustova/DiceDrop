@@ -40,13 +40,14 @@ fun DrawPlayingField(
     clearedRows: List<Int>,
     clearedCols: List<Int>,
     diceItem: DiceItem,
+    lastPlaced: List<Int> = emptyList(),
     uiState: GameUiState?
 ) {
 
     Column(
         modifier = modifier
             .background(LightBlue)
-            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .padding(horizontal = 8.dp, vertical = 8.dp)
             .fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
@@ -61,6 +62,8 @@ fun DrawPlayingField(
             Grid(boardItem.row, boardItem.col) { r, c ->
 
                 val isCleared = r in clearedRows || c in clearedCols
+
+                val isNew = lastPlaced.contains(r * boardItem.col + c)
 
                 val cellState = getCellState(uiState = uiState, boardItem = boardItem, dice = diceItem, r = r, c = c)
 
@@ -99,7 +102,8 @@ fun DrawPlayingField(
                 else{
                     GameCell(
                         color = targetColor,
-                        size = boardState.cellSize
+                        size = boardState.cellSize,
+                        isNew = isNew
                     )
                 }
             }

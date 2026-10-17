@@ -60,11 +60,8 @@ object BoardUiHelper {
 
         val cellFilled = boardItem.board[r][c]
         val isInGhost = uiState?.isInGhost(dice, r, c) ?: false
-        val isInBonusBomb = uiState?.isInBonusBomb(r, c) ?: false
-        val isInBonusHammer = uiState?.isInBonusHammer(r, c) ?: false
 
         return when {
-            isInBonusBomb || isInBonusHammer -> CellState.BONUS
             canClear(boardItem, r, c, uiState?.ghostRow, uiState?.ghostCol, dice) -> CellState.CAN_CLEAR
             cellFilled -> CellState.FILLED
             isInGhost && canPlace(
@@ -94,20 +91,6 @@ object BoardUiHelper {
         return this.draggingType == DraggingType.BLOCK &&
                 r in row until row + dice.dice1 &&
                 c in col until col + dice.dice2
-    }
-
-    private fun GameUiState.isInBonusBomb(r: Int, c: Int): Boolean {
-        val row = this.ghostRow ?: return false
-        val col = this.ghostCol ?: return false
-        return this.draggingType == DraggingType.BOMB &&
-                ((r in (row - 10) until row + 11 && c == col) || r == row)
-    }
-
-    private fun GameUiState.isInBonusHammer(r: Int, c: Int): Boolean {
-        val row = this.ghostRow ?: return false
-        val col = this.ghostCol ?: return false
-        return this.draggingType == DraggingType.HAMMER &&
-                r in (row - 1)..(row + 1) && c in (col - 1)..(col + 1)
     }
 
     enum class CellState { FILLED, CAN_CLEAR, GHOST_VALID, GHOST_INVALID, BONUS, EMPTY }

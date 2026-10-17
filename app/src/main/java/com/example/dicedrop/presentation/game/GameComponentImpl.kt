@@ -11,6 +11,8 @@ import com.example.dicedrop.domain.ads.RewardedAdManager
 import com.example.dicedrop.domain.entity.BonusItem
 import com.example.dicedrop.domain.entity.BonusType
 import com.example.dicedrop.domain.entity.DiceItem
+import com.example.dicedrop.domain.entity.DiscardTarget
+import com.example.dicedrop.domain.entity.Slot
 import com.example.dicedrop.presentation.game.GameComponent.UiEvent
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
@@ -78,6 +80,22 @@ class GameComponentImpl @AssistedInject constructor(
 
     override fun onBackPressed() {
         store.accept(GameStore.Intent.BackPressed)
+    }
+
+    override fun onFreezeAll() {
+        store.accept(GameStore.Intent.FreezeAll)
+    }
+
+    override fun onDiscardClick(target: DiscardTarget) {
+        store.accept(GameStore.Intent.DiscardDie(target))
+    }
+
+    override fun onSpareRolled(value: Int) {
+        store.accept(GameStore.Intent.SpareRolled(value))
+    }
+
+    override fun onLuckyFace(value: Int, slot: Slot) {
+        store.accept(GameStore.Intent.LuckyFace(value, slot))
     }
 
     override fun onConfirmNewRecord(rewardsList: List<BonusItem>) {

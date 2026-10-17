@@ -42,34 +42,6 @@ object BoardEngine {
         return copy(board = newBoard)
     }
 
-    fun BoardItem.clearAreaHammer(row: Int, col: Int): BoardItem {
-        val newBoard = board.copy()
-        val rowMin = max(row - 1, 0)
-        val colMin = max(col - 1, 0)
-
-        val rowMax = min(row + 2, board.size)
-        val colMax = min(col + 2, board[0].size)
-
-
-        for (r in rowMin until rowMax ) {
-            for (c in colMin until colMax) {
-                newBoard[r][c] = false
-            }
-        }
-        return copy(board = newBoard)
-    }
-
-    fun BoardItem.clearAreaBomb(row: Int, col: Int): BoardItem {
-        val newBoard = board.copy()
-
-       for (i in 0 until board.size) {
-            newBoard[row][i] = false
-            newBoard[i][col] = false
-        }
-
-        return copy(board = newBoard)
-    }
-
     fun BoardItem.checkFullRows(): ClearLines {
 
         val rows = board.size
@@ -124,4 +96,14 @@ object BoardEngine {
         val rows: List<Int>,
         val cols: List<Int>
     )
+
+    fun BoardItem.rescueChance(rotateCount: Int): Int {
+        var fits = 0
+        var total = 0
+        for (d1 in 1..6) for (d2 in 1..6) {
+            total++
+            if (isCanPlaceNewBlock(d1, d2) || (rotateCount > 0 && isCanPlaceNewBlock(d2, d1))) fits++
+        }
+        return if (total == 0) 0 else (fits * 100) / total
+    }
 }

@@ -113,14 +113,3 @@ fun RandomBonusDialog(
         }
     }
 }
-
-@Preview
-@Composable
-fun Test(){
-    RandomBonusDialog(
-        bonus = BonusItem(
-            type = BonusType.BOMB,
-            count = 1
-        )
-    ){}
-}

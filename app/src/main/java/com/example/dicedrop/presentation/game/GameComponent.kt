@@ -1,11 +1,12 @@
 package com.example.dicedrop.presentation.game
 
-import android.content.Context
 import com.example.dicedrop.R
 import com.example.dicedrop.domain.ads.RewardedAdManager
 import com.example.dicedrop.domain.entity.BonusItem
 import com.example.dicedrop.domain.entity.BonusType
 import com.example.dicedrop.domain.entity.DiceItem
+import com.example.dicedrop.domain.entity.DiscardTarget
+import com.example.dicedrop.domain.entity.Slot
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 
@@ -40,6 +41,14 @@ interface GameComponent {
     fun onBackPressed()
 
     fun onConfirmNewRecord(rewardsList: List<BonusItem>)
+
+    fun onDiscardClick(target: DiscardTarget)
+
+    fun onFreezeAll()
+
+    fun onSpareRolled(value: Int)
+
+    fun onLuckyFace(value: Int, slot: Slot)
 
     sealed interface UiEvent {
         data object WatchAd : UiEvent

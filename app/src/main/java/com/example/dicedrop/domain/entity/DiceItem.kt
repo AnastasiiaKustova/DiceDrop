@@ -14,7 +14,7 @@ data class DiceItem (
     companion object {
 
         @IgnoredOnParcel
-        private const val DICE_SIZE = 5
+        private const val DICE_SIZE = 6
 
         fun empty(): DiceItem = DiceItem( dice1 = 0, dice2 = 0)
 
