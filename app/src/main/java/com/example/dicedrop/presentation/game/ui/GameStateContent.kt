@@ -4,7 +4,10 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
+import androidx.compose.ui.unit.dp
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -15,7 +18,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
-import com.example.dicedrop.domain.engine.BoardEngine.rescueChance
 import com.example.dicedrop.domain.entity.BonusType
 import com.example.dicedrop.domain.entity.DiceItem
 import com.example.dicedrop.domain.entity.DiscardTarget
@@ -37,7 +39,7 @@ import com.example.dicedrop.presentation.game.ui.popups.GameOverDialog
 import com.example.dicedrop.presentation.game.ui.popups.LuckyChoiceDialog
 import com.example.dicedrop.presentation.game.ui.popups.NewRecordDialog
 import com.example.dicedrop.presentation.settings.ui.DrawPause
-import com.example.dicedrop.presentation.ui.theme.LightBlue
+import com.example.dicedrop.presentation.ui.theme.DarkBlue
 import com.example.dicedrop.presentation.ui.theme.White
 
 @Composable
@@ -46,15 +48,23 @@ fun GameStateContent(
     clearedRows: List<Int>,
     clearedCols: List<Int>,
     comboPopup: ComboPopup?,
+    trophyHighlighted: Boolean,
+    rewardsToClaim: Int,
     component: GameComponent
 ) {
-    var showLucky by remember { mutableStateOf(false) }
-    var pickedFace by remember { mutableStateOf<Int?>(null) }
+    // "Счастливый": сначала игрок выбирает в шторке грань, затем кубик, которому её поставить
+    var showLuckySheet by rememberSaveable { mutableStateOf(false) }
+    var luckyFace by rememberSaveable { mutableStateOf<Int?>(null) }
     var showPause by rememberSaveable { mutableStateOf(false) }
 
-    // Системная "Назад" при открытой паузе закрывает паузу, а не выходит из игры
-    BackHandler(enabled = showPause) {
-        showPause = false
+    fun cancelLucky() {
+        showLuckySheet = false
+        luckyFace = null
+    }
+
+    // Системная "Назад" сначала закрывает открытые окна и режимы, а не выходит из игры
+    BackHandler(enabled = showPause || showLuckySheet || luckyFace != null) {
+        if (showPause) showPause = false else cancelLucky()
     }
 
     val configuration = LocalConfiguration.current
@@ -66,51 +76,62 @@ fun GameStateContent(
 
     Box(modifier = Modifier.fillMaxSize()) {
 
-        when (state) {
-            is GameStore.State.GameState.Loaded,
-            is GameStore.State.GameState.NewRecord,
-            is GameStore.State.GameState.Over -> {
+        val gameState = when (state) {
+            is GameStore.State.GameState.Loaded -> state
+            is GameStore.State.GameState.NewRecord -> state.prevState
+            is GameStore.State.GameState.Over -> state.prevState
+            else -> null
+        }
 
-                val gameState = when (state) {
-                    is GameStore.State.GameState.Loaded -> state
-                    is GameStore.State.GameState.NewRecord -> state.prevState
-                    is GameStore.State.GameState.Over -> state.prevState
-                    else -> error("Impossible")
+        if (gameState != null) {
+            val game = gameState.gameStatistic
+            GameScreen(
+                gameStatistic = game,
+                clearedRows = clearedRows,
+                clearedCols = clearedCols,
+                comboPopup = comboPopup,
+                isLandscape = isLandscape,
+                trophyHighlighted = trophyHighlighted,
+                rewardsToClaim = rewardsToClaim,
+                luckyFace = luckyFace,
+                onShopClick = component::onShopClick,
+                onAchievementsClick = component::onAchievementClick,
+                onPauseClick = { showPause = true },
+                onRollEnd = component::onRollEnd,
+                onUseBonusClick = component::onBonusClick,
+                onBuyBonusClick = component::onBuyBonusClick,
+                onPlaceBlock = component::placeBlock,
+                onFreezeAll = component::onFreezeAll,
+                onDiscardClick = component::onDiscardClick,
+                onSpareRolled = component::onSpareRolled,
+                onLuckyClick = {
+                    if (luckyFace != null) cancelLucky() else showLuckySheet = true
+                },
+                onLuckyDieClick = { slot ->
+                    luckyFace?.let { component.onLuckyFace(it, slot) }
+                    cancelLucky()
                 }
+            )
 
-                GameScreen(
-                    gameStatistic = gameState.gameStatistic,
-                    clearedRows = clearedRows,
-                    clearedCols = clearedCols,
-                    comboPopup = comboPopup,
-                    isLandscape = isLandscape,
-                    onShopClick = component::onShopClick,
-                    onPauseClick = { showPause = true },
-                    onRollEnd = component::onRollEnd,
-                    onUseBonusClick = component::onBonusClick,
-                    onBuyBonusClick = component::onShopClick,
-                    onPlaceBlock = component::placeBlock,
-                    onFreezeAll = component::onFreezeAll,
-                    onDiscardClick = component::onDiscardClick,
-                    onSpareRolled = component::onSpareRolled,
-                    pickedFace = pickedFace,
-                    onPickedFace = { pickedFace = it },
-                    onShowLucky = { showLucky = true },
-                    onLuckyFace = component::onLuckyFace
+            if (showLuckySheet) {
+                LuckyChoiceDialog(
+                    onPick = { face ->
+                        luckyFace = face
+                        showLuckySheet = false
+                    },
+                    onCancel = { cancelLucky() }
                 )
             }
-
-            GameStore.State.GameState.Loading -> Loading()
-            GameStore.State.GameState.Error,
-            GameStore.State.GameState.Initial -> Unit
+        } else if (state == GameStore.State.GameState.Loading) {
+            Loading()
         }
 
         when (state) {
             is GameStore.State.GameState.NewRecord -> {
                 NewRecordDialog(
                     record = state.score,
+                    previousRecord = state.prevState.gameStatistic.bestScore,
                     rewardsList = state.rewardsList,
-                    isLandscape = isLandscape,
                     confirmClick = { component.onConfirmNewRecord(state.rewardsList) }
                 )
             }
@@ -118,12 +139,12 @@ fun GameStateContent(
             is GameStore.State.GameState.Over -> {
                 GameOverDialog(
                     gameScore = state.score,
-                    rescueChance = state.prevState.gameStatistic.let { g ->
-                        g.boardItem.rescueChance(g.bonuses.firstOrNull { it.type == BonusType.ROTATE }?.count ?: 0)
-                    },
+                    bestScore = state.prevState.gameStatistic.bestScore,
                     canUndo = state.prevState.gameStatistic.reviveSnapshot != null,
-                    isLandscape = isLandscape,
-                    onRestartClick = component::restartGame,
+                    onRestartClick = {
+                        cancelLucky()
+                        component.restartGame()
+                    },
                     onWatchAdsClick = component::onWatchAdsClick
                 )
             }
@@ -131,21 +152,17 @@ fun GameStateContent(
             else -> Unit
         }
 
-        if (showLucky) {
-            LuckyChoiceDialog(
-                onPick = { face ->
-                    pickedFace = face
-                    showLucky = false
-                },
-            )
-        }
-
         if (showPause) {
             DrawPause(
                 onBackClick = { showPause = false },
                 onRestartClick = {
                     showPause = false
+                    cancelLucky()
                     component.restartGame()
+                },
+                onMenuClick = {
+                    showPause = false
+                    component.onBackPressed()
                 }
             )
         }
@@ -159,25 +176,29 @@ private fun GameScreen(
     clearedCols: List<Int>,
     comboPopup: ComboPopup?,
     isLandscape: Boolean,
-    pickedFace: Int?,
-    onPickedFace: (Int?) -> Unit,
-    onShowLucky: () -> Unit,
+    trophyHighlighted: Boolean,
+    rewardsToClaim: Int,
+    luckyFace: Int?,
     onShopClick: () -> Unit,
+    onAchievementsClick: () -> Unit,
     onPauseClick: () -> Unit,
     onRollEnd: (result: DiceItem) -> Unit,
     onUseBonusClick: (BonusType) -> Unit,
-    onBuyBonusClick: () -> Unit,
+    onBuyBonusClick: (BonusType) -> Unit,
     onPlaceBlock: (r: Int, c: Int) -> Unit,
     onFreezeAll: () -> Unit,
     onDiscardClick: (DiscardTarget) -> Unit,
     onSpareRolled: (Int) -> Unit,
-    onLuckyFace: (Int, Slot) -> Unit,
+    onLuckyClick: () -> Unit,
+    onLuckyDieClick: (Slot) -> Unit,
 ) {
     val spareActive = gameStatistic.tray.spare != null
+    val diceReady = gameStatistic.dice != DiceItem.empty()
 
     Column(
         modifier = Modifier
-            .fillMaxSize(),
+            .fillMaxSize()
+            .background(DarkBlue),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
 
@@ -185,19 +206,20 @@ private fun GameScreen(
         val boardState = remember { BoardUiState() }
 
         GameHeader(
-            modifier = Modifier.weight(0.12f),
             totalScore = gameStatistic.totalScore,
             bestScore = gameStatistic.bestScore,
             coins = gameStatistic.coins,
             combo = gameStatistic.combo,
-            isLandscape = isLandscape,
+            trophyHighlighted = trophyHighlighted,
+            rewardsToClaim = rewardsToClaim,
             onPauseClick = onPauseClick,
-            onShopClick = onShopClick
+            onShopClick = onShopClick,
+            onAchievementsClick = onAchievementsClick
         )
 
-        val content = @Composable{
+        val field = @Composable { fieldModifier: Modifier, trayModifier: Modifier, panelModifier: Modifier ->
             DrawPlayingField(
-                modifier = Modifier.weight(0.46f),
+                modifier = fieldModifier,
                 boardItem = gameStatistic.boardItem,
                 clearedRows = clearedRows,
                 clearedCols = clearedCols,
@@ -209,22 +231,20 @@ private fun GameScreen(
             )
 
             BottomBoard(
-                modifier = Modifier.weight(0.3f),
+                modifier = trayModifier,
                 uiState = uiStates.getByType(DraggingType.BLOCK)
                     ?: throw IllegalStateException(),
                 boardItem = gameStatistic.boardItem,
                 boardState = boardState,
                 diceItem = gameStatistic.dice,
-                isLandscape = isLandscape,
                 tray = gameStatistic.tray,
-                facePick = pickedFace != null,
+                pickedFace = luckyFace.takeIf { !spareActive && diceReady },
                 onDieClick = { target ->
                     if (spareActive && gameStatistic.tray.spare?.value != null) {
                         onDiscardClick(target)
-                    } else if (pickedFace != null && !spareActive) {
-                        if (target == DiscardTarget.A) onLuckyFace(pickedFace!!, Slot.A)
-                        else if (target == DiscardTarget.B) onLuckyFace(pickedFace!!, Slot.B)
-                        onPickedFace(null)
+                    } else if (luckyFace != null && !spareActive) {
+                        if (target == DiscardTarget.A) onLuckyDieClick(Slot.A)
+                        else if (target == DiscardTarget.B) onLuckyDieClick(Slot.B)
                     }
                 },
                 onRollEnd = onRollEnd,
@@ -233,7 +253,7 @@ private fun GameScreen(
             )
 
             GameBottomPanel(
-                modifier = Modifier.weight(0.12f),
+                modifier = panelModifier,
                 bonusStatistic = gameStatistic.bonuses,
                 freezeEnabled = !(gameStatistic.tray.slotA?.frozen == true
                         && gameStatistic.tray.slotB?.frozen == true),
@@ -241,24 +261,24 @@ private fun GameScreen(
                 onBonusClick = {
                     when (it) {
                         BonusType.FREEZE -> if (!spareActive) onFreezeAll()
-                        BonusType.ROTATE -> if (!spareActive && gameStatistic.dice != DiceItem.empty()) onUseBonusClick(it)
+                        BonusType.ROTATE -> if (!spareActive && diceReady) onUseBonusClick(it)
                         BonusType.DRAFT -> if (!spareActive) onUseBonusClick(it)
-                        BonusType.LUCKY -> if (!spareActive) onShowLucky()
+                        BonusType.LUCKY -> if (!spareActive && diceReady) onLuckyClick()
                         else -> Unit
                     }
                 },
                 isLandscape = isLandscape,
                 luckyEnabled = !spareActive,
-                onCounterClick = { onBuyBonusClick() }
+                onBuyClick = onBuyBonusClick
             )
         }
 
         if (isLandscape) {
-            Row(modifier = Modifier.weight(0.76f)) {
-                content()
+            Row(modifier = Modifier.weight(1f)) {
+                field(Modifier.weight(0.46f).fillMaxHeight(), Modifier.weight(0.34f), Modifier.weight(0.2f))
             }
         } else {
-            content()
+            field(Modifier, Modifier.weight(1f), Modifier.height(120.dp))
         }
     }
 }
@@ -268,7 +288,7 @@ private fun Loading() {
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(LightBlue)
+            .background(DarkBlue)
     ) {
         CircularProgressIndicator(
             modifier = Modifier.align(Alignment.Center),

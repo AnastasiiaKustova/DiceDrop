@@ -1,15 +1,8 @@
 <resources>
     <string name="app_name" translatable="false">DiceDrop</string>
-    <string name="app_name_DICE_DROP" translatable="false">DICE DROP</string>
-    <string name="app_name_DROP" translatable="false">DROP</string>
-    <string name="rolling_dice">Rolling dice...</string>
-    <string name="startGame">Start game</string>
-    <string name="best_score_short">"BEST: "</string>
-    <string name="total_score_short">"TOTAL: "</string>
     <string name="settings_title">Settings</string>
     <string name="pause_title">Pause</string>
     <string name="back">Back</string>
-    <string name="music_volume">Music volume</string>
     <string name="restart_game">Start over</string>
     <string name="exit">Exit</string>
     <string name="not_enough_coins">Not enough coins</string>
@@ -21,24 +14,59 @@
     <string name="achievements">Achievements</string>
     <string name="store">Store</string>
     <string name="close">Close</string>
-    <string name="completed">Completed</string>
     <string name="game_over">GAME OVER</string>
-    <string name="restart">RESTART</string>
-    <string name="watch_an_ad_to_reroll_the_dice">Watch an ad to reroll the dice</string>
-    <string name="watch_an_ad_to_undo_move">Watch an ad to undo the last move</string>
     <string name="try_again">Try again</string>
-    <string name="rescue_chance">Rescue chance: %1$d%%</string>
-    <string name="score_with_count">Score: %1$s</string>
-    <string name="score">Score</string>
-    <string name="rewards">Rewards</string>
-    <string name="tap_to_continue">Tap to continue</string>
     <string name="you_got">You got</string>
+
+    <!-- New design -->
+    <string name="play">PLAY</string>
+    <string name="record_caps">BEST</string>
+    <string name="record_with_value">BEST %1$s</string>
+    <string name="combo_badge">COMBO x%1$d</string>
+    <string name="gift">Gift</string>
+    <string name="gift_ready">Ready!</string>
+    <string name="daily_streak">Day %1$d of 7 · daily streak</string>
+    <string name="continue_game">Continue</string>
+    <string name="to_menu">Menu</string>
+    <string name="music">Music</string>
+    <string name="cancel">Cancel</string>
+    <string name="great">Great!</string>
+    <string name="new_record">NEW RECORD!</string>
+    <string name="previous_record">Previous best: %1$s</string>
+    <string name="rewards_caps">REWARDS</string>
+    <string name="score_caps">SCORE</string>
+    <string name="game_over_subtitle">No room left for the block</string>
+    <string name="undo_for_ad">Undo the last move for an ad</string>
+    <string name="watch_ad">Watch ad</string>
+    <string name="achievement_banner">ACHIEVEMENT UNLOCKED</string>
+    <string name="daily_gift_subtitle">Come back every day for a bonus</string>
+    <string name="bonuses_title">Bonuses</string>
+    <string name="buy">Buy</string>
+    <string name="rotate_desc">Rotates the block by 90°</string>
+    <string name="freeze_desc">Keeps the dice for the next roll</string>
+    <string name="lucky_desc">Pick any face of a die</string>
+    <string name="draft_desc">Roll an extra die and drop one</string>
+    <string name="random_bonus_title">Random bonus</string>
+    <string name="random_bonus_desc">One of four — feeling lucky?</string>
+    <string name="owned_hint">In brackets — how many bonuses you have</string>
+    <string name="achievements_done">Completed</string>
+    <string name="tab_all">All</string>
+    <string name="tab_claim">Claim · %1$d</string>
+    <string name="tab_progress">In progress</string>
+    <string name="tab_done">Done</string>
+    <plurals name="rewards_waiting">
+        <item quantity="one">%1$d reward to claim</item>
+        <item quantity="other">%1$d rewards to claim</item>
+    </plurals>
+    <plurals name="bonus_price_coins">
+        <item quantity="one">%1$s — %2$d coin</item>
+        <item quantity="other">%1$s — %2$d coins</item>
+    </plurals>
 
     <!-- Shop -->
     <string name="daily_gift">Daily gift</string>
     <string name="daily_gift_already_received">Today\'s gift has already been claimed</string>
     <string name="random">Random</string>
-    <string name="free">Free</string>
     <string name="claimed">Claimed</string>
     <string name="coins">Coins</string>
 
@@ -47,14 +75,13 @@
     <string name="freeze">Freeze</string>
     <string name="lucky">Lucky face</string>
     <string name="draft">Extra die</string>
-    <string name="face_hint">Choose a die</string>
+    <string name="face_hint">Choose a die to change its face</string>
     <string name="discard_hint">Discard the extra die</string>
     <string name="lucky_dialog_title">Pick a face</string>
-    <string name="lucky_dialog_hint">The face is set instantly — tap a die</string>
+    <string name="lucky_dialog_hint">Choose a new face for the die</string>
 
     <!-- Achievements -->
     <string name="claim">Claim</string>
-    <string name="achievement_unlocked">Achievement unlocked: %1$s</string>
     <string name="just_the_beginning">Just the Beginning</string>
     <string name="getting_the_hang_of_it">Getting the Hang of It</string>
     <string name="on_a_roll">On a Roll</string>

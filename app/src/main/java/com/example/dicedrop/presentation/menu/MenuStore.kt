@@ -3,10 +3,25 @@ package com.example.dicedrop.presentation.menu
 import com.arkivanov.mvikotlin.core.store.Reducer
 import com.arkivanov.mvikotlin.core.store.Store
 import com.arkivanov.mvikotlin.core.store.StoreFactory
+import com.arkivanov.mvikotlin.extensions.coroutines.CoroutineBootstrapper
 import com.arkivanov.mvikotlin.extensions.coroutines.CoroutineExecutor
+import com.example.dicedrop.domain.entity.BonusItem
+import com.example.dicedrop.domain.entity.DailyReward
+import com.example.dicedrop.domain.useCases.shop.BuyBonusUseCase
+import com.example.dicedrop.domain.useCases.shop.GetDailyRewardIsReceivedStateUseCase
+import com.example.dicedrop.domain.useCases.shop.GetDailyRewardUseCase
+import com.example.dicedrop.domain.useCases.shop.GetRandomBonusUseCase
+import com.example.dicedrop.domain.useCases.DateHelper
+import com.example.dicedrop.domain.useCases.achievements.GetAchievementsUseCase
+import com.example.dicedrop.domain.useCases.achievements.ObserveAchievementStateUseCase
+import com.example.dicedrop.domain.useCases.game.ObserveGameUseCase
+import com.example.dicedrop.domain.useCases.shop.ObserveDailyRewardUseCase
 import com.example.dicedrop.presentation.menu.MenuStore.Intent
 import com.example.dicedrop.presentation.menu.MenuStore.Label
 import com.example.dicedrop.presentation.menu.MenuStore.State
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 interface MenuStore : Store<Intent, State, Label> {
@@ -19,11 +34,25 @@ interface MenuStore : Store<Intent, State, Label> {
 
         data object ClickNavigateToShop : Intent
 
-        data object ClickCloseApp : Intent
+        data object ClickNavigateToSettings : Intent
+
+        data object Refresh : Intent
+
+        data object ClickGift : Intent
+
+        data object GiftConfirm : Intent
 
     }
 
-    data object State
+    data class State(
+        val coins: Int = 0,
+        val bestScore: Int = 0,
+        val rewardsToClaim: Int = 0,
+        val giftReady: Boolean = false,
+        val streakDay: Int = 1,
+        // Полученный подарок, пока открыто окно "Вы получили"
+        val receivedGift: BonusItem? = null
+    )
 
     sealed interface Label {
 
@@ -33,36 +62,148 @@ interface MenuStore : Store<Intent, State, Label> {
 
         data object ClickNavigateToShop : Label
 
-        data object ClickCloseApp : Label
+        data object ClickNavigateToSettings : Label
+
+        data object GiftAlreadyReceived : Label
     }
 }
 
 class MenuStoreFactory @Inject constructor(
     private val storeFactory: StoreFactory,
+    private val observeGameUseCase: ObserveGameUseCase,
+    private val observeDailyRewardUseCase: ObserveDailyRewardUseCase,
+    private val observeAchievementStateUseCase: ObserveAchievementStateUseCase,
+    private val getAchievementsUseCase: GetAchievementsUseCase,
+    private val getDailyRewardIsReceivedStateUseCase: GetDailyRewardIsReceivedStateUseCase,
+    private val getDailyRewardUseCase: GetDailyRewardUseCase,
+    private val getRandomBonusUseCase: GetRandomBonusUseCase,
+    private val buyBonusUseCase: BuyBonusUseCase,
 ) {
 
     fun create(): MenuStore =
         object : MenuStore, Store<Intent, State, Label> by storeFactory.create(
             name = "MenuStore",
-            initialState = State,
+            initialState = State(),
+            bootstrapper = BootstrapperImpl(),
             executorFactory = ::ExecutorImpl,
-            reducer = NoOpReducer
+            reducer = ReducerImpl
         ) {}
 
-    private object NoOpReducer : Reducer<State, Msg> {
-        override fun State.reduce(msg: Msg): State = this
+    private sealed interface Action {
+
+        data class GameChanged(val coins: Int, val bestScore: Int) : Action
+
+        data class DailyRewardChanged(val reward: DailyReward) : Action
+
+        data class RewardsChanged(val count: Int) : Action
     }
 
-    private inner class ExecutorImpl : CoroutineExecutor<Intent, Nothing, State, Msg, Label>() {
+    private sealed interface Msg {
+
+        data class GameChanged(val coins: Int, val bestScore: Int) : Msg
+
+        data class DailyRewardChanged(val giftReady: Boolean, val streakDay: Int) : Msg
+
+        data class RewardsChanged(val count: Int) : Msg
+
+        data class GiftReceived(val gift: BonusItem?) : Msg
+    }
+
+    private inner class BootstrapperImpl : CoroutineBootstrapper<Action>() {
+        override fun invoke() {
+            scope.launch {
+                observeGameUseCase()
+                    // Рекорд в меню учитывает и текущую партию, если она уже его побила
+                    .map { it.coins to maxOf(it.bestScore, it.totalScore) }
+                    .distinctUntilChanged()
+                    .collect { (coins, best) -> dispatch(Action.GameChanged(coins, best)) }
+            }
+            scope.launch {
+                observeDailyRewardUseCase()
+                    .distinctUntilChanged()
+                    .collect { dispatch(Action.DailyRewardChanged(it)) }
+            }
+            scope.launch {
+                observeAchievementStateUseCase().collect {
+                    dispatch(Action.RewardsChanged(countRewardsToClaim()))
+                }
+            }
+        }
+    }
+
+    private suspend fun countRewardsToClaim(): Int = try {
+        getAchievementsUseCase().count { !it.isRewardClaimed && it.totalCount >= it.requiredCount }
+    } catch (e: Exception) {
+        0
+    }
+
+    private inner class ExecutorImpl : CoroutineExecutor<Intent, Action, State, Msg, Label>() {
+        // Защита от двойного тапа по подарку
+        private var claimingGift = false
+
         override fun executeIntent(intent: Intent, getState: () -> State) {
             when (intent) {
-                Intent.ClickCloseApp -> publish(Label.ClickCloseApp)
+                // Ежедневный подарок выдаётся прямо в меню, так же как в магазине: случайный бонус бесплатно
+                Intent.ClickGift -> {
+                    if (claimingGift) return
+                    claimingGift = true
+                    scope.launch {
+                        try {
+                            if (getDailyRewardIsReceivedStateUseCase()) {
+                                publish(Label.GiftAlreadyReceived)
+                            } else {
+                                getDailyRewardUseCase()
+                                val gift = getRandomBonusUseCase()
+                                buyBonusUseCase(bonusType = gift.type, price = 0, amount = gift.count)
+                                dispatch(Msg.GiftReceived(gift))
+                            }
+                        } finally {
+                            claimingGift = false
+                        }
+                    }
+                }
+                Intent.GiftConfirm -> dispatch(Msg.GiftReceived(null))
                 Intent.ClickNavigateToAchievements -> publish(Label.ClickNavigateToAchievements)
                 Intent.ClickNavigateToGame -> publish(Label.ClickNavigateToGame)
                 Intent.ClickNavigateToShop -> publish(Label.ClickNavigateToShop)
+                Intent.ClickNavigateToSettings -> publish(Label.ClickNavigateToSettings)
+                // Прогресс достижений меняется в игре, поэтому пересчитываем при возврате в меню
+                Intent.Refresh -> {
+                    scope.launch {
+                        dispatch(Msg.RewardsChanged(countRewardsToClaim()))
+                    }
+                }
             }
+        }
+
+        override fun executeAction(action: Action, getState: () -> State) {
+            when (action) {
+                is Action.GameChanged -> dispatch(Msg.GameChanged(action.coins, action.bestScore))
+                is Action.RewardsChanged -> dispatch(Msg.RewardsChanged(action.count))
+                is Action.DailyRewardChanged -> {
+                    val claimedToday = action.reward.lastDate == DateHelper.getCurrentDate()
+                    val claimedInWeek = action.reward.dayStreak.claimedInWeek(claimedToday)
+                    dispatch(
+                        Msg.DailyRewardChanged(
+                            giftReady = !claimedToday,
+                            streakDay = if (claimedToday) claimedInWeek else claimedInWeek + 1
+                        )
+                    )
+                }
+            }
+        }
+    }
+
+    private object ReducerImpl : Reducer<State, Msg> {
+        override fun State.reduce(msg: Msg): State = when (msg) {
+            is Msg.GameChanged -> copy(coins = msg.coins, bestScore = msg.bestScore)
+            is Msg.DailyRewardChanged -> copy(giftReady = msg.giftReady, streakDay = msg.streakDay)
+            is Msg.RewardsChanged -> copy(rewardsToClaim = msg.count)
+            is Msg.GiftReceived -> copy(receivedGift = msg.gift)
         }
     }
 }
 
-private typealias Msg = Nothing
+// Сколько дней текущей недели серии уже забрано (серия идёт кругами по 7 дней)
+fun Int.claimedInWeek(claimedToday: Boolean): Int =
+    if (claimedToday) ((this - 1).coerceAtLeast(0) % 7) + 1 else this % 7

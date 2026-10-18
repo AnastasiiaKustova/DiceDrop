@@ -1,6 +1,13 @@
 package com.example.dicedrop.presentation.menu
 
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.StateFlow
+
 interface MenuComponent {
+
+    val model: StateFlow<MenuStore.State>
+
+    val uiEvents: SharedFlow<UiEvent>
 
     fun onStartGameClick()
 
@@ -8,6 +15,14 @@ interface MenuComponent {
 
     fun onShopClick()
 
-    fun onCloseAppClick()
+    fun onSettingsClick()
+
+    fun onGiftClick()
+
+    fun onGiftConfirm()
+
+    sealed interface UiEvent {
+        data object GiftAlreadyReceived : UiEvent
+    }
 
 }

@@ -11,8 +11,8 @@ import com.example.dicedrop.domain.entity.BonusItem
 import com.example.dicedrop.domain.entity.CoinPack
 import com.example.dicedrop.domain.entity.ShopItem
 import com.example.dicedrop.domain.useCases.DateHelper
+import com.example.dicedrop.domain.useCases.game.ObserveGameUseCase
 import com.example.dicedrop.domain.useCases.shop.BuyBonusUseCase
-import com.example.dicedrop.domain.useCases.game.ObserveCoinsValueUseCase
 import com.example.dicedrop.domain.useCases.shop.GetDailyRewardIsReceivedStateUseCase
 import com.example.dicedrop.domain.useCases.shop.GetDailyRewardUseCase
 import com.example.dicedrop.domain.useCases.shop.GetRandomBonusUseCase
@@ -22,6 +22,7 @@ import com.example.dicedrop.presentation.shop.ShopStore.Intent
 import com.example.dicedrop.presentation.shop.ShopStore.Label
 import com.example.dicedrop.presentation.shop.ShopStore.State
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -40,6 +41,8 @@ interface ShopStore : Store<Intent, State, Label> {
 
     data class State(
         val isDailyRewardReceived: Boolean,
+        // Сколько дней подряд забран подарок; приходит отдельно от данных магазина
+        val dayStreak: Int = 0,
         val shopState: ShopState
     ) {
         sealed interface ShopState {
@@ -51,12 +54,12 @@ interface ShopStore : Store<Intent, State, Label> {
 
             data class GetRandomBonus(val bonus: BonusItem, val prevState: Loaded) : ShopState
 
-            //data object Error : ShopState
-
             data class Loaded(
                 val money: Int,
                 val shopItems: List<ShopItem>,
-                val dailyRewardClaimed: Boolean
+                val dailyRewardClaimed: Boolean,
+                // Сколько бонусов каждого типа уже есть у игрока
+                val bonuses: List<BonusItem> = emptyList()
             ) : ShopState
         }
     }
@@ -78,7 +81,7 @@ interface ShopStore : Store<Intent, State, Label> {
 
 class ShopStoreFactory @Inject constructor(
     private val storeFactory: StoreFactory,
-    private val observeCoinsValueUseCase: ObserveCoinsValueUseCase,
+    private val observeGameUseCase: ObserveGameUseCase,
     private val observeDailyRewardUseCase: ObserveDailyRewardUseCase,
     private val buyBonusUseCase: BuyBonusUseCase,
     private val getRandomBonusUseCase: GetRandomBonusUseCase,
@@ -103,6 +106,7 @@ class ShopStoreFactory @Inject constructor(
 
         data class ShopLoaded(
             val money: Int,
+            val bonuses: List<BonusItem>,
             val shopItems: List<ShopItem>,
             val dailyRewardClaimed: Boolean
         ) : Action
@@ -123,6 +127,7 @@ class ShopStoreFactory @Inject constructor(
 
         data class ShopLoaded(
             val money: Int,
+            val bonuses: List<BonusItem>,
             val shopItems: List<ShopItem>,
             val dailyRewardClaimed: Boolean
         ) : Msg
@@ -151,14 +156,16 @@ class ShopStoreFactory @Inject constructor(
 
             scope.launch {
                 try {
-                    observeCoinsValueUseCase()
+                    observeGameUseCase()
+                        .map { it.coins to it.bonuses }
                         .distinctUntilChanged()
-                        .collect { coins ->
+                        .collect { (coins, bonuses) ->
                             val shopItems = getShopItemsUseCase()
                             val dailyRewardClaimed = getDailyRewardIsReceivedStateUseCase()
                             dispatch(
                                 Action.ShopLoaded(
                                     money = coins,
+                                    bonuses = bonuses,
                                     shopItems = shopItems,
                                     dailyRewardClaimed = dailyRewardClaimed
                                 )
@@ -245,6 +252,7 @@ class ShopStoreFactory @Inject constructor(
                 is Action.ShopLoaded -> dispatch(
                     Msg.ShopLoaded(
                         money = action.money,
+                        bonuses = action.bonuses,
                         shopItems = action.shopItems,
                         dailyRewardClaimed = action.dailyRewardClaimed
                     )
@@ -268,13 +276,15 @@ class ShopStoreFactory @Inject constructor(
         override fun State.reduce(msg: Msg): State {
             return when (msg) {
                 is Msg.ShopLoaded -> {
+                    val current = shopState
                     val loaded = State.ShopState.Loaded(
                         money = msg.money,
                         shopItems = msg.shopItems,
-                        dailyRewardClaimed = msg.dailyRewardClaimed
+                        dailyRewardClaimed = msg.dailyRewardClaimed,
+                        bonuses = msg.bonuses
                     )
                     // Пока открыто окно полученного бонуса, обновляем данные под ним, не закрывая окно
-                    when (val current = shopState) {
+                    when (current) {
                         is State.ShopState.GetRandomBonus -> copy(shopState = current.copy(prevState = loaded))
                         else -> copy(shopState = loaded)
                     }
@@ -293,18 +303,22 @@ class ShopStoreFactory @Inject constructor(
                 }
 
                 is Msg.ObserveDailyReward -> {
+                    val updated = copy(
+                        isDailyRewardReceived = msg.isDailyRewardReceived,
+                        dayStreak = msg.dayStreak
+                    )
                     when (val current = shopState) {
-                        is State.ShopState.Loaded -> copy(
+                        is State.ShopState.Loaded -> updated.copy(
                             shopState = current.copy(dailyRewardClaimed = msg.isDailyRewardReceived)
                         )
 
-                        is State.ShopState.GetRandomBonus -> copy(
+                        is State.ShopState.GetRandomBonus -> updated.copy(
                             shopState = current.copy(
                                 prevState = current.prevState.copy(dailyRewardClaimed = msg.isDailyRewardReceived)
                             )
                         )
 
-                        else -> this
+                        else -> updated
                     }
                 }
 
@@ -312,14 +326,7 @@ class ShopStoreFactory @Inject constructor(
                     val loaded = shopState as? State.ShopState.GetRandomBonus
                         ?: return this
 
-                    val prevState = loaded.prevState
-                    copy(
-                        shopState = State.ShopState.Loaded(
-                            money = prevState.money,
-                            shopItems = prevState.shopItems,
-                            dailyRewardClaimed = prevState.dailyRewardClaimed
-                        )
-                    )
+                    copy(shopState = loaded.prevState)
                 }
 
                 Msg.ShopLoadingError -> copy(shopState = State.ShopState.Error)

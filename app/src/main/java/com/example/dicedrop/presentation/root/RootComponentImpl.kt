@@ -71,8 +71,8 @@ class RootComponentImpl @AssistedInject constructor(
                     onShopClicked = {
                         navigation.push(Config.Shop)
                     },
-                    onCloseAppClicked = {
-                        onExitApp()
+                    onSettingsClicked = {
+                        navigation.push(Config.Settings(OpenReason.RegularSettings))
                     },
                     componentContext = componentContext
                 )

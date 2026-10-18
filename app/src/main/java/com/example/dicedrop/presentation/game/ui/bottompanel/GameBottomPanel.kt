@@ -2,6 +2,7 @@ package com.example.dicedrop.presentation.game.ui.bottompanel
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -13,7 +14,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.dicedrop.domain.entity.BonusItem
 import com.example.dicedrop.domain.entity.BonusType
-import com.example.dicedrop.presentation.ui.theme.BlueGradient
+import com.example.dicedrop.presentation.ui.theme.DeepBlue
+
+// Порядок бонусов в панели, как в магазине
+private val panelOrder = listOf(BonusType.ROTATE, BonusType.FREEZE, BonusType.LUCKY, BonusType.DRAFT)
 
 @Composable
 fun GameBottomPanel(
@@ -23,49 +27,55 @@ fun GameBottomPanel(
     freezeEnabled: Boolean,
     spareActive: Boolean,
     luckyEnabled: Boolean,
-    onCounterClick: (BonusItem) -> Unit,
+    onBuyClick: (BonusType) -> Unit,
     onBonusClick: (BonusType) -> Unit,
 ) {
-    val content = @Composable{
-        bonusStatistic.forEach { bonus ->
-            BonusButton(
-                iconResId = bonus.type.getIconResId(),
-                count = bonus.count,
-                isLandscape = isLandscape,
-                enabled = when (bonus.type) {
-                    BonusType.FREEZE -> freezeEnabled && !spareActive
-                    BonusType.ROTATE, BonusType.DRAFT -> !spareActive
-                    BonusType.LUCKY -> !spareActive && luckyEnabled
-                    else -> true
-                },
-                onBonusClick = {onBonusClick(bonus.type)},
-                onCounterClick = { if (bonus.count <= 0) onCounterClick(bonus) }
-            )
+    val bonuses = panelOrder.mapNotNull { type -> bonusStatistic.firstOrNull { it.type == type } }
+
+    // itemModifier приходит из Row/Column, чтобы кнопки делили место поровну
+    val content = @Composable { itemModifier: Modifier ->
+        bonuses.forEach { bonus ->
+            Box(
+                modifier = itemModifier,
+                contentAlignment = Alignment.Center
+            ) {
+                BonusButton(
+                    iconResId = bonus.type.getIconResId(),
+                    count = bonus.count,
+                    price = bonus.type.getPrice(),
+                    enabled = when (bonus.type) {
+                        BonusType.FREEZE -> freezeEnabled && !spareActive
+                        BonusType.ROTATE, BonusType.DRAFT -> !spareActive
+                        BonusType.LUCKY -> !spareActive && luckyEnabled
+                        else -> true
+                    },
+                    onBonusClick = { onBonusClick(bonus.type) },
+                    onBuyClick = { onBuyClick(bonus.type) }
+                )
+            }
         }
     }
 
-    if (isLandscape){
+    if (isLandscape) {
         Column(
             modifier = modifier
-                .background(BlueGradient)
+                .background(DeepBlue)
                 .fillMaxHeight()
                 .padding(8.dp),
-            verticalArrangement = Arrangement.SpaceAround,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            content()
+            content(Modifier.weight(1f))
         }
-    }
-    else{
+    } else {
         Row(
             modifier = modifier
-                .background(BlueGradient)
+                .background(DeepBlue)
                 .fillMaxWidth()
-                .padding(8.dp),
+                .padding(horizontal = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceAround
         ) {
-            content()
+            content(Modifier.weight(1f))
         }
     }
 }

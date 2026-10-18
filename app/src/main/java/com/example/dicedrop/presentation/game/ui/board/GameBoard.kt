@@ -12,7 +12,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -79,8 +79,9 @@ fun DrawPlayingField(
     Column(
         modifier = modifier
             .background(LightBlue)
-            .padding(horizontal = 8.dp, vertical = 8.dp)
-            .fillMaxSize(),
+            // Высота поля - по содержимому, остальное место достаётся лотку с кубиками
+            .fillMaxWidth()
+            .padding(horizontal = 8.dp, vertical = 12.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
@@ -153,11 +154,10 @@ data class ComboPopup(
     val id: Long = System.nanoTime()
 )
 
-// Цвет комбо по уровню: x2-x4 голубой, x5-x7 оранжевый, x8+ красный
+// Цвет комбо по уровню: до x7 оранжевый, x8+ красный
 fun comboColor(combo: Int): Color = when {
     combo >= 8 -> Red
-    combo >= 5 -> Orange
-    else -> LightBlue
+    else -> Orange
 }
 
 @Composable

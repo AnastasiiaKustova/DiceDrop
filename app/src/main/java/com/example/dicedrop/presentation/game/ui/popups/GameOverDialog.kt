@@ -1,188 +1,243 @@
 package com.example.dicedrop.presentation.game.ui.popups
 
-import androidx.compose.foundation.Image
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.wrapContentHeight
-import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import com.example.dicedrop.R
-import com.example.dicedrop.presentation.animations.AnimatedButton
+import com.example.dicedrop.presentation.common.DialogScrim
+import com.example.dicedrop.presentation.common.GameButton
+import com.example.dicedrop.presentation.common.GameIcons
+import com.example.dicedrop.presentation.common.consumeClicks
+import com.example.dicedrop.presentation.common.drawDie
+import com.example.dicedrop.presentation.common.spaced
+import com.example.dicedrop.presentation.ui.theme.ButtonText
 import com.example.dicedrop.presentation.ui.theme.DarkBlue
-import com.example.dicedrop.presentation.ui.theme.TranslucentBlack
+import com.example.dicedrop.presentation.ui.theme.DeepBlue
+import com.example.dicedrop.presentation.ui.theme.MidBlue
+import com.example.dicedrop.presentation.ui.theme.Navy
 import com.example.dicedrop.presentation.ui.theme.White
-import com.example.dicedrop.presentation.ui.theme.WhiteBlue
 
 @Composable
 fun GameOverDialog(
-    modifier: Modifier = Modifier,
     gameScore: Int,
-    rescueChance: Int,
+    bestScore: Int,
     canUndo: Boolean,
-    isLandscape: Boolean,
     onRestartClick: () -> Unit,
     onWatchAdsClick: () -> Unit
 ) {
-    val spaceHeightModifier = if (isLandscape) Modifier.height(8.dp) else Modifier.height(16.dp)
-    val boxMaxWidth = if (isLandscape) 0.45f  else 0.85f
-
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(TranslucentBlack)
-            .wrapContentSize(Alignment.Center)
-            .clickable { }
-    ) {
+    DialogScrim {
         Box(
-            modifier = modifier
-                .padding(vertical = 20.dp)
-                .wrapContentSize()
-                .fillMaxWidth(boxMaxWidth)
-                .background(White, RoundedCornerShape(20.dp))
-                .border(
-                    width = 5.dp,
-                    color = DarkBlue,
-                    shape = RoundedCornerShape(20.dp)
-                )
-                .padding(8.dp)
-                .padding(bottom = 8.dp),
-            contentAlignment = Alignment.Center
+            modifier = Modifier
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 28.dp, vertical = 16.dp)
+                .fillMaxWidth()
         ) {
             Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.SpaceEvenly
+                modifier = Modifier
+                    .padding(top = 50.dp)
+                    .fillMaxWidth()
+                    .background(DarkBlue, RoundedCornerShape(30.dp))
+                    .consumeClicks()
+                    .padding(start = 20.dp, end = 20.dp, top = 62.dp, bottom = 20.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-
-                Spacer(modifier = Modifier.height(20.dp))
-
-                Image(
-                    modifier = if (isLandscape) Modifier.fillMaxHeight(0.4f) else Modifier.fillMaxWidth(0.6f),
-                    painter = painterResource(id = R.drawable.pic_game_over),
-                    contentDescription = null
-                )
-
-                Spacer(modifier = spaceHeightModifier)
-
                 Text(
                     text = stringResource(R.string.game_over),
-                    fontWeight = FontWeight.Bold,
-                    color = DarkBlue,
-                    fontSize = if (isLandscape) 20.sp else 25.sp
+                    color = White,
+                    fontSize = 30.sp,
+                    fontWeight = FontWeight.Black,
+                    letterSpacing = 1.sp
                 )
-
                 Text(
-                    text = stringResource(R.string.score_with_count, gameScore),
-                    fontWeight = FontWeight.Normal,
-                    color = Color.Black,
-                    fontSize = if (isLandscape) 12.sp else 16.sp
+                    modifier = Modifier.alpha(0.8f),
+                    text = stringResource(R.string.game_over_subtitle),
+                    color = White,
+                    fontSize = 14.sp
                 )
 
-                if (isLandscape) Spacer(modifier = Modifier.height(20.dp)) else Spacer(modifier = Modifier.height(40.dp))
+                Spacer(modifier = Modifier.height(14.dp))
 
-                RerollLabel(
-                    isLandscape = isLandscape,
-                    text = if (canUndo) stringResource(R.string.watch_an_ad_to_undo_move)
-                        else stringResource(R.string.watch_an_ad_to_reroll_the_dice),
-                    chanceText = if (canUndo) null else stringResource(R.string.rescue_chance, rescueChance),
-                    onClick = {onWatchAdsClick()}
-                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    ScorePanel(
+                        modifier = Modifier.weight(1f),
+                        title = stringResource(R.string.score_caps),
+                        value = gameScore
+                    )
+                    ScorePanel(
+                        modifier = Modifier.weight(1f),
+                        title = stringResource(R.string.record_caps),
+                        value = maxOf(bestScore, gameScore)
+                    )
+                }
 
-                Spacer(modifier = spaceHeightModifier)
+                // Отмена хода возможна, только если есть сохранённое состояние до последнего хода
+                if (canUndo) {
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(DeepBlue, RoundedCornerShape(22.dp))
+                            .padding(12.dp),
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(50.dp)
+                                    .background(White, CircleShape),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = GameIcons.Undo,
+                                    contentDescription = null,
+                                    tint = ButtonText,
+                                    modifier = Modifier.size(30.dp)
+                                )
+                            }
+                            Column {
+                                Text(
+                                    text = stringResource(R.string.try_again),
+                                    color = White,
+                                    fontSize = 17.sp,
+                                    fontWeight = FontWeight.Black
+                                )
+                                Text(
+                                    modifier = Modifier.alpha(0.85f),
+                                    text = stringResource(R.string.undo_for_ad),
+                                    color = White,
+                                    fontSize = 13.sp
+                                )
+                            }
+                        }
+                        GameButton(
+                            modifier = Modifier.fillMaxWidth(),
+                            text = stringResource(R.string.watch_ad),
+                            onClick = onWatchAdsClick,
+                            height = 50.dp,
+                            corner = 16.dp
+                        )
+                    }
+                }
 
-                AnimatedButton(
-                    text = stringResource(R.string.restart),
-                    modifier = Modifier.wrapContentHeight(),
-                    onClick = { _ -> onRestartClick() }
+                Spacer(modifier = Modifier.height(12.dp))
+
+                GameButton(
+                    modifier = Modifier.fillMaxWidth(),
+                    text = stringResource(R.string.restart_game),
+                    onClick = onRestartClick,
+                    color = MidBlue,
+                    contentColor = White,
+                    icon = GameIcons.Restart
                 )
             }
+
+            SadDie(modifier = Modifier.align(Alignment.TopCenter))
         }
     }
 }
 
 @Composable
-private fun RerollLabel(
+private fun ScorePanel(
     modifier: Modifier = Modifier,
-    isLandscape: Boolean,
-    text: String,
-    chanceText: String?,
-    onClick: () -> Unit
-){
-    val boxHeight = if (isLandscape) 40.dp else 80.dp
-    val boxMaxWidth = if (isLandscape) 0.8f else 0.9f
+    title: String,
+    value: Int
+) {
+    Column(
+        modifier = modifier
+            .background(MidBlue, RoundedCornerShape(18.dp))
+            .padding(top = 8.dp, bottom = 10.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            modifier = Modifier.alpha(0.85f),
+            text = title,
+            color = White,
+            fontSize = 12.sp,
+            fontWeight = FontWeight.Black,
+            letterSpacing = 1.5.sp
+        )
+        Text(
+            text = value.spaced(),
+            color = White,
+            fontSize = 30.sp,
+            lineHeight = 33.sp,
+            fontWeight = FontWeight.Black,
+            maxLines = 1
+        )
+    }
+}
+
+// Грустный кубик: глаза-крестики и опущенный рот
+@Composable
+private fun SadDie(modifier: Modifier = Modifier) {
     Box(
         modifier = modifier
-            .height(boxHeight)
-            .fillMaxWidth(boxMaxWidth)
-            .clickable { onClick() }
-        ,
+            .size(116.dp)
+            .background(DarkBlue, CircleShape)
+            .padding(8.dp)
+            .background(White, CircleShape),
         contentAlignment = Alignment.Center
     ) {
-        Row(
+        Canvas(
             modifier = Modifier
-                .fillMaxWidth()
-                .align(Alignment.BottomCenter)
-                .background(WhiteBlue, RoundedCornerShape(8.dp))
-                .padding(8.dp)
-                .padding(horizontal = 8.dp)
-            ,
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                .size(56.dp)
+                .rotate(-12f)
         ) {
-            Image(
-                modifier = Modifier.fillMaxHeight(1f),
-                painter = painterResource(id = R.drawable.ic_update_ad),
-                contentDescription = null
+            drawDie(value = 0)
+            val u = size.width / 56f
+            val stroke = 3.2f * u
+            fun line(x1: Float, y1: Float, x2: Float, y2: Float) = drawLine(
+                color = Navy,
+                start = Offset(x1 * u, y1 * u),
+                end = Offset(x2 * u, y2 * u),
+                strokeWidth = stroke,
+                cap = StrokeCap.Round
             )
-            Text(
-                fontWeight = FontWeight.Normal,
-                fontSize = 12.sp,
-                lineHeight = 1.5.em,
-                text = text,
-                color = Color.Black
+            line(10f, 12f, 18f, 20f)
+            line(18f, 12f, 10f, 20f)
+            line(32f, 12f, 40f, 20f)
+            line(40f, 12f, 32f, 20f)
+            drawArc(
+                color = Navy,
+                startAngle = 200f,
+                sweepAngle = 140f,
+                useCenter = false,
+                topLeft = Offset(17f * u, 32f * u),
+                size = androidx.compose.ui.geometry.Size(16f * u, 12f * u),
+                style = Stroke(width = stroke, cap = StrokeCap.Round)
             )
-            if (chanceText != null) {
-                Text(
-                    fontWeight = FontWeight.Normal,
-                    fontSize = 12.sp,
-                    text = chanceText,
-                    color = Color.Black
-                )
-            }
         }
-        Box(
-            modifier = Modifier
-                .offset(y = -16.dp)
-                .align(Alignment.TopCenter)
-                .background(WhiteBlue, RoundedCornerShape(8.dp))
-                .padding(top = 4.dp)
-                .padding(horizontal = 12.dp)
-
-        ) { Text(
-            text = stringResource(R.string.try_again),
-            color = DarkBlue
-        ) }
     }
 }

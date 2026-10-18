@@ -1,12 +1,18 @@
 package com.example.dicedrop.presentation.menu
 
 import com.arkivanov.decompose.ComponentContext
+import com.arkivanov.essenty.lifecycle.doOnResume
 import com.arkivanov.mvikotlin.core.instancekeeper.getStore
 import com.arkivanov.mvikotlin.extensions.coroutines.labels
+import com.arkivanov.mvikotlin.extensions.coroutines.stateFlow
 import com.example.dicedrop.core.componentScope
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
 class MenuComponentImpl @AssistedInject constructor(
@@ -14,23 +20,34 @@ class MenuComponentImpl @AssistedInject constructor(
     @Assisted("onStartGameClicked") private val onStartGameClicked: () -> Unit,
     @Assisted("onAchievementsClicked") private val onAchievementsClicked: () -> Unit,
     @Assisted("onShopClicked") private val onShopClicked: () -> Unit,
-    @Assisted("onCloseAppClicked") private val onCloseAppClicked: () -> Unit,
+    @Assisted("onSettingsClicked") private val onSettingsClicked: () -> Unit,
     @Assisted("componentContext") componentContext: ComponentContext,
 ) : MenuComponent, ComponentContext by componentContext {
 
     private val store = instanceKeeper.getStore { storeFactory.create() }
     private val scope = componentScope()
 
+    @OptIn(ExperimentalCoroutinesApi::class)
+    override val model: StateFlow<MenuStore.State> = store.stateFlow
+
+    private val _uiEvents = MutableSharedFlow<MenuComponent.UiEvent>(extraBufferCapacity = 4)
+    override val uiEvents: SharedFlow<MenuComponent.UiEvent> = _uiEvents
+
     init {
         scope.launch {
             store.labels.collect{
                 when(it){
-                    MenuStore.Label.ClickCloseApp -> onCloseAppClicked()
                     MenuStore.Label.ClickNavigateToAchievements ->  onAchievementsClicked()
                     MenuStore.Label.ClickNavigateToGame -> onStartGameClicked()
                     MenuStore.Label.ClickNavigateToShop -> onShopClicked()
+                    MenuStore.Label.ClickNavigateToSettings -> onSettingsClicked()
+                    MenuStore.Label.GiftAlreadyReceived -> _uiEvents.emit(MenuComponent.UiEvent.GiftAlreadyReceived)
                 }
             }
+        }
+
+        lifecycle.doOnResume {
+            store.accept(MenuStore.Intent.Refresh)
         }
     }
 
@@ -47,8 +64,16 @@ class MenuComponentImpl @AssistedInject constructor(
         store.accept(MenuStore.Intent.ClickNavigateToShop)
     }
 
-    override fun onCloseAppClick() {
-        store.accept(MenuStore.Intent.ClickCloseApp)
+    override fun onSettingsClick() {
+        store.accept(MenuStore.Intent.ClickNavigateToSettings)
+    }
+
+    override fun onGiftClick() {
+        store.accept(MenuStore.Intent.ClickGift)
+    }
+
+    override fun onGiftConfirm() {
+        store.accept(MenuStore.Intent.GiftConfirm)
     }
 
     @AssistedFactory
@@ -57,7 +82,7 @@ class MenuComponentImpl @AssistedInject constructor(
             @Assisted("onStartGameClicked") onStartGameClicked: () -> Unit,
             @Assisted("onAchievementsClicked") onAchievementsClicked: () -> Unit,
             @Assisted("onShopClicked") onShopClicked: () -> Unit,
-            @Assisted("onCloseAppClicked") onCloseAppClicked: () -> Unit,
+            @Assisted("onSettingsClicked") onSettingsClicked: () -> Unit,
             @Assisted("componentContext") componentContext: ComponentContext,
         ): MenuComponentImpl
     }
