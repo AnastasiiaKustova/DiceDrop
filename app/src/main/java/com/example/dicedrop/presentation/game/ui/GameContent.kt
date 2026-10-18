@@ -44,9 +44,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.dicedrop.R
 import com.example.dicedrop.domain.ads.RewardedAdManager
+import com.example.dicedrop.domain.feedback.GameFeedback
+import com.example.dicedrop.domain.feedback.GameFeedback.Companion.lineCleared
 import com.example.dicedrop.presentation.common.ConfettiBit
 import com.example.dicedrop.presentation.common.ConfettiBurst
 import com.example.dicedrop.presentation.common.DialogScrim
+import com.example.dicedrop.presentation.common.LocalGameFeedback
 import com.example.dicedrop.presentation.game.GameComponent
 import com.example.dicedrop.presentation.game.ui.board.ComboPopup
 import com.example.dicedrop.presentation.game.ui.bottompanel.getPrice
@@ -74,6 +77,7 @@ data class AchievementBanner(
 fun GameContent(component: GameComponent) {
 
     val context = LocalContext.current
+    val feedback = LocalGameFeedback.current
 
     val state by component.model.collectAsState()
 
@@ -100,6 +104,7 @@ fun GameContent(component: GameComponent) {
                 handleUiEvent(
                     event = event,
                     context = context,
+                    feedback = feedback,
                     rewardedAdManager = rewardedAdManager,
                     snackbarHostState = snackbarHostState,
                     onClearLine = { clearEvent ->
@@ -115,6 +120,7 @@ fun GameContent(component: GameComponent) {
                         clearedCols = emptyList()
                     },
                     onAdRewarded = {
+                        feedback.play(GameFeedback.Sound.COIN)
                         component.AdRewardReceive()
                     },
                     onAchievement = {
@@ -273,6 +279,7 @@ fun RewardedAdOverlay(state: RewardedAdManager.RewardedAdState) {
 private suspend fun handleUiEvent(
     event: GameComponent.UiEvent,
     context: Context,
+    feedback: GameFeedback,
     rewardedAdManager: RewardedAdManager,
     snackbarHostState: SnackbarHostState,
     onClearLine: (GameComponent.UiEvent.ClearLine) -> Unit,
@@ -284,6 +291,7 @@ private suspend fun handleUiEvent(
 
     when (event) {
         is GameComponent.UiEvent.ClearLine -> {
+            feedback.lineCleared(event.combo)
             onClearLine(event)
             delay(400)
             onClearFinished()
@@ -300,6 +308,7 @@ private suspend fun handleUiEvent(
                     price
                 )
             } ?: ""
+            feedback.play(GameFeedback.Sound.NOT_ENOUGH_COINS)
             snackbarHostState.currentSnackbarData?.dismiss()
             val result = snackbarHostState.showSnackbar(
                 message = context.getString(event.msg.stringRes) + details,
@@ -310,6 +319,8 @@ private suspend fun handleUiEvent(
         }
 
         is GameComponent.UiEvent.AchievementUnlocked -> {
+            feedback.play(GameFeedback.Sound.ACHIEVEMENT)
+            feedback.vibrate(GameFeedback.Haptic.CELEBRATE)
             onAchievement(
                 AchievementBanner(
                     titleId = event.titleId,
@@ -318,6 +329,8 @@ private suspend fun handleUiEvent(
                 )
             )
         }
+
+        GameComponent.UiEvent.BonusBought -> feedback.play(GameFeedback.Sound.BONUS_BUY)
 
         GameComponent.UiEvent.Animate -> Unit
         GameComponent.UiEvent.WatchAd -> {

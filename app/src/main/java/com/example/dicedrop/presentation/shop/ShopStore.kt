@@ -219,6 +219,10 @@ class ShopStoreFactory @Inject constructor(
                                     price = intent.shopItem.price
                                 )
                                 dispatch(Msg.GetRandomBonus(randomBonus))
+                                publish(
+                                    if (intent.shopItem.id == "daily_bonus") Label.DailyRewardSuccess
+                                    else Label.ClickBuyItem(intent.shopItem)
+                                )
                             } else {
                                 buyBonusUseCase(
                                     bonusType = intent.shopItem.bonusType,
@@ -232,6 +236,7 @@ class ShopStoreFactory @Inject constructor(
                                         )
                                     )
                                 )
+                                publish(Label.ClickBuyItem(intent.shopItem))
                             }
                         } catch (e: NotEnoughCoinsException) {
                             publish(Label.NotEnoughCoins)

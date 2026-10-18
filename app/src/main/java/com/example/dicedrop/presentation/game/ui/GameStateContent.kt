@@ -10,6 +10,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.ui.unit.dp
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -24,6 +26,9 @@ import com.example.dicedrop.domain.entity.DiscardTarget
 import com.example.dicedrop.domain.entity.DraggingType
 import com.example.dicedrop.domain.entity.GameStatisticItem
 import com.example.dicedrop.domain.entity.Slot
+import com.example.dicedrop.domain.feedback.GameFeedback
+import com.example.dicedrop.presentation.common.LocalBackgroundMusic
+import com.example.dicedrop.presentation.common.LocalGameFeedback
 import com.example.dicedrop.presentation.game.GameComponent
 import com.example.dicedrop.presentation.game.GameStore
 import com.example.dicedrop.presentation.game.ui.board.BottomBoard
@@ -68,6 +73,14 @@ fun GameStateContent(
     }
 
     val configuration = LocalConfiguration.current
+    val feedback = LocalGameFeedback.current
+    val music = LocalBackgroundMusic.current
+
+    // На паузе музыка молчит; если ушли с экрана с открытой паузой - снова играет
+    DisposableEffect(showPause) {
+        music.setPaused(showPause)
+        onDispose { if (showPause) music.setPaused(false) }
+    }
 
     val isLandscape = when (configuration.orientation) {
         Configuration.ORIENTATION_LANDSCAPE -> true
@@ -98,22 +111,35 @@ fun GameStateContent(
                 onAchievementsClick = component::onAchievementClick,
                 onPauseClick = { showPause = true },
                 onRollEnd = component::onRollEnd,
-                onUseBonusClick = component::onBonusClick,
+                onUseBonusClick = {
+                    if (it == BonusType.ROTATE) feedback.play(GameFeedback.Sound.BONUS_ROTATE)
+                    component.onBonusClick(it)
+                },
                 onBuyBonusClick = component::onBuyBonusClick,
                 onPlaceBlock = component::placeBlock,
-                onFreezeAll = component::onFreezeAll,
-                onDiscardClick = component::onDiscardClick,
+                onFreezeAll = {
+                    feedback.play(GameFeedback.Sound.BONUS_FREEZE)
+                    component.onFreezeAll()
+                },
+                onDiscardClick = {
+                    feedback.play(GameFeedback.Sound.BONUS_DISCARD)
+                    component.onDiscardClick(it)
+                },
                 onSpareRolled = component::onSpareRolled,
                 onLuckyClick = {
                     if (luckyFace != null) cancelLucky() else showLuckySheet = true
                 },
                 onLuckyDieClick = { slot ->
-                    luckyFace?.let { component.onLuckyFace(it, slot) }
+                    luckyFace?.let {
+                        feedback.play(GameFeedback.Sound.BONUS_LUCKY)
+                        component.onLuckyFace(it, slot)
+                    }
                     cancelLucky()
                 }
             )
 
             if (showLuckySheet) {
+                LaunchedEffect(Unit) { feedback.play(GameFeedback.Sound.BONUS_LUCKY_SHEET) }
                 LuckyChoiceDialog(
                     onPick = { face ->
                         luckyFace = face
@@ -128,6 +154,10 @@ fun GameStateContent(
 
         when (state) {
             is GameStore.State.GameState.NewRecord -> {
+                PlayOnce(key = "record${state.score}") {
+                    feedback.play(GameFeedback.Sound.NEW_RECORD)
+                    feedback.vibrate(GameFeedback.Haptic.CELEBRATE)
+                }
                 NewRecordDialog(
                     record = state.score,
                     previousRecord = state.prevState.gameStatistic.bestScore,
@@ -137,6 +167,10 @@ fun GameStateContent(
             }
 
             is GameStore.State.GameState.Over -> {
+                PlayOnce(key = "over${state.score}") {
+                    feedback.play(GameFeedback.Sound.GAME_OVER)
+                    feedback.vibrate(GameFeedback.Haptic.GAME_OVER)
+                }
                 GameOverDialog(
                     gameScore = state.score,
                     bestScore = state.prevState.gameStatistic.bestScore,
@@ -279,6 +313,19 @@ private fun GameScreen(
             }
         } else {
             field(Modifier, Modifier.weight(1f), Modifier.height(120.dp))
+        }
+    }
+}
+
+// Звук окна играет один раз: не повторяется, когда игрок вернулся из магазина или достижений.
+// Состояние экрана в стеке навигации сохраняется, поэтому флаг переживает переход
+@Composable
+private fun PlayOnce(key: String, action: () -> Unit) {
+    var played by rememberSaveable(key) { mutableStateOf(false) }
+    LaunchedEffect(key) {
+        if (!played) {
+            played = true
+            action()
         }
     }
 }

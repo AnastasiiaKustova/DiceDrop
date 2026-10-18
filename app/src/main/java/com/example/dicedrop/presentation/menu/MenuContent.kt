@@ -45,6 +45,8 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.dicedrop.R
+import com.example.dicedrop.domain.feedback.GameFeedback
+import com.example.dicedrop.presentation.common.LocalGameFeedback
 import com.example.dicedrop.presentation.common.CoinChip
 import com.example.dicedrop.presentation.common.DieFace
 import com.example.dicedrop.presentation.common.GameButton
@@ -102,6 +104,8 @@ fun MenuContent(component: MenuComponent) {
         }
 
         state.receivedGift?.let { gift ->
+            val feedback = LocalGameFeedback.current
+            LaunchedEffect(gift) { feedback.play(GameFeedback.Sound.DAILY_GIFT) }
             RandomBonusDialog(
                 bonus = gift,
                 confirmClick = { component.onGiftConfirm() }
@@ -306,13 +310,17 @@ private fun MenuTile(
     onClick: () -> Unit,
     badge: @Composable androidx.compose.foundation.layout.BoxScope.() -> Unit = {}
 ) {
+    val feedback = LocalGameFeedback.current
     Box(modifier = modifier.height(116.dp)) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .clip(RoundedCornerShape(22.dp))
                 .background(MidBlue)
-                .clickable(onClick = onClick)
+                .clickable {
+                    feedback.play(GameFeedback.Sound.BUTTON_CLICK)
+                    onClick()
+                }
                 .padding(top = 10.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterVertically)

@@ -45,14 +45,17 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import com.example.dicedrop.R
+import com.example.dicedrop.domain.feedback.GameFeedback
 import com.example.dicedrop.domain.entity.BoardItem
 import com.example.dicedrop.domain.entity.DiceItem
 import com.example.dicedrop.domain.entity.DiscardTarget
 import com.example.dicedrop.domain.entity.TrayDie
 import com.example.dicedrop.domain.entity.TrayState
 import com.example.dicedrop.presentation.common.DieFace
+import com.example.dicedrop.presentation.common.LocalGameFeedback
 import com.example.dicedrop.presentation.game.ui.board.animation.AnimatedDices
 import com.example.dicedrop.presentation.game.ui.board.animation.AnimatedDie
+import com.example.dicedrop.presentation.game.ui.board.animation.DiceRollFeedback
 import com.example.dicedrop.presentation.game.ui.board.components.GameCell
 import com.example.dicedrop.presentation.game.ui.board.components.Grid
 import com.example.dicedrop.presentation.game.ui.drag.BoardUiState
@@ -64,8 +67,11 @@ import com.example.dicedrop.presentation.ui.theme.Yellow
 
 private val RulerColor = White.copy(alpha = 0.6f)
 private val TrayDieSize = 38.dp
+private val SpareDieSize = 54.dp
 private val RulerSide = 43.dp
 private val RulerGap = 8.dp
+// Линейка не короче кубика с засечками и отрезками линии по бокам: засечки 2×2, отступы 4×4 и линии по 6
+private val RulerMinLength = TrayDieSize + 32.dp
 
 @Composable
 fun BottomBoard(
@@ -156,8 +162,8 @@ private fun RulersWithBlock(
     val blockW = cell * width
     val blockH = cell * height
     // Линейка не короче кубика с засечками, даже если блок узкий
-    val rulerW = maxOf(blockW, TrayDieSize + 12.dp)
-    val rulerH = maxOf(blockH, TrayDieSize + 12.dp)
+    val rulerW = maxOf(blockW, RulerMinLength)
+    val rulerH = maxOf(blockH, RulerMinLength)
     val glow = if (facePick) hintPulse() else 0f
 
     // Слева от блока стоит линейка высоты, поэтому сдвигаем всё на половину её ширины,
@@ -212,6 +218,7 @@ private fun DraggableBlock(
     onPlaceBlock: (r: Int, c: Int) -> Unit
 ) {
     val density = LocalDensity.current
+    val feedback = LocalGameFeedback.current
     Box(
         modifier = Modifier
             // Смещение читается в фазе layout, поэтому драг не вызывает рекомпозицию блока
@@ -238,7 +245,13 @@ private fun DraggableBlock(
                         )
                     },
                     onDragEnd = {
-                        DragController.onDragEnd(uiState, boardItem, dices) { r, c, _ ->
+                        DragController.onDragEnd(
+                            gameState = uiState,
+                            boardItem = boardItem,
+                            diceItem = dices,
+                            onReject = { feedback.vibrate(GameFeedback.Haptic.REJECT) }
+                        ) { r, c, _ ->
+                            feedback.vibrate(GameFeedback.Haptic.PLACE)
                             onPlaceBlock(r, c)
                         }
                     },
@@ -359,11 +372,11 @@ private fun SpareChoice(
         Text(
             text = stringResource(R.string.discard_hint),
             color = White,
-            fontSize = 15.sp,
+            fontSize = 17.sp,
             fontWeight = FontWeight.ExtraBold
         )
-        Spacer(modifier = Modifier.height(8.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(24.dp)) {
+        Spacer(modifier = Modifier.height(14.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
             // Убрали A: ширина = B, высота = третий; убрали B: ширина = A, высота = третий
             SpareOption(removed = a, blockW = b, blockH = s, glow = glow, enabled = ready) {
                 onDieClick(DiscardTarget.A)
@@ -400,32 +413,33 @@ private fun SpareOption(
     val interaction = remember { MutableInteractionSource() }
     Column(
         modifier = Modifier
-            .width(76.dp)
+            .width(100.dp)
             .clickable(enabled = enabled, interactionSource = interaction, indication = null, onClick = onClick),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(6.dp)
+        verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
         if (rollingSpare) {
+            DiceRollFeedback()
             AnimatedDie(
                 rolling = true,
-                dieSize = 40.dp,
-                jump = 24.dp,
+                dieSize = SpareDieSize,
+                jump = 32.dp,
                 onRollEnd = onSpareRolled
             )
         } else {
-            DieFace(value = removed, size = 40.dp, glow = glow)
+            DieFace(value = removed, size = SpareDieSize, glow = glow)
         }
-        // Превью блока 6×6 занимает около 44dp
+        // Превью блока 6×6: 6 клеток по 9dp и 5 зазоров по 2dp = 64dp
         Box(
-            modifier = Modifier.height(46.dp),
+            modifier = Modifier.height(66.dp),
             contentAlignment = Alignment.Center
         ) {
             if (blockW != null && blockH != null) {
-                Column(verticalArrangement = Arrangement.spacedBy(1.5.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                     repeat(blockH) {
-                        Row(horizontalArrangement = Arrangement.spacedBy(1.5.dp)) {
+                        Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
                             repeat(blockW) {
-                                Box(modifier = Modifier.size(6.dp).background(Yellow, RoundedCornerShape(1.5.dp)))
+                                Box(modifier = Modifier.size(9.dp).background(Yellow, RoundedCornerShape(2.dp)))
                             }
                         }
                     }
@@ -435,7 +449,7 @@ private fun SpareOption(
         Text(
             text = if (blockW != null && blockH != null) "$blockW × $blockH" else "?",
             color = White,
-            fontSize = 14.sp,
+            fontSize = 17.sp,
             fontWeight = FontWeight.Black
         )
     }

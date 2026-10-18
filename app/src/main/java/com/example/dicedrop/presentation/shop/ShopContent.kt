@@ -17,6 +17,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.example.dicedrop.R
+import com.example.dicedrop.domain.feedback.GameFeedback
+import com.example.dicedrop.presentation.common.LocalGameFeedback
 import com.example.dicedrop.presentation.game.ui.GameSnackbarHost
 import com.example.dicedrop.presentation.shop.ui.RandomBonusDialog
 import com.example.dicedrop.presentation.shop.ui.ShopItems
@@ -30,6 +32,7 @@ fun ShopContent(component: ShopComponent) {
     val state by component.model.collectAsState()
 
     val context = LocalContext.current
+    val feedback = LocalGameFeedback.current
     val snackbarHostState = remember { SnackbarHostState() }
 
     val coins = when (val shopState = state.shopState) {
@@ -40,6 +43,17 @@ fun ShopContent(component: ShopComponent) {
 
     LaunchedEffect(Unit) {
         component.uiEvents.collect { event ->
+            when (event) {
+                is ShopComponent.UiEvent.ShowMessage -> feedback.play(
+                    when (event.message) {
+                        ShopComponent.UiEvent.MessageType.DailyBonusClaimed -> GameFeedback.Sound.DAILY_GIFT
+                        ShopComponent.UiEvent.MessageType.PurchaseSuccess -> GameFeedback.Sound.BONUS_BUY
+                    }
+                )
+                is ShopComponent.UiEvent.ShowError -> if (event.error == ShopComponent.UiEvent.ErrorType.NotEnoughCoins) {
+                    feedback.play(GameFeedback.Sound.NOT_ENOUGH_COINS)
+                }
+            }
             val messageRes = when (event) {
                 is ShopComponent.UiEvent.ShowError -> when (event.error) {
                     ShopComponent.UiEvent.ErrorType.NotEnoughCoins -> R.string.not_enough_coins

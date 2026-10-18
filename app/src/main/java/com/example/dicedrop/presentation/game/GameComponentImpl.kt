@@ -59,6 +59,7 @@ class GameComponentImpl @AssistedInject constructor(
                         UiEvent.AchievementUnlocked(it.titleId, it.descriptionId, it.reward)
                     )
                     GameStore.Label.WatchAd -> _uiEvents.emit(UiEvent.WatchAd)
+                    GameStore.Label.BonusBought -> _uiEvents.emit(UiEvent.BonusBought)
                     is GameStore.Label.NotEnoughCoins -> _uiEvents.emit(
                         UiEvent.Error(GameComponent.UiEvent.ErrorType.NotEnoughCoins, it.bonusType)
                     )

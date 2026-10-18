@@ -22,6 +22,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.dicedrop.R
+import com.example.dicedrop.domain.feedback.GameFeedback
+import com.example.dicedrop.presentation.common.LocalGameFeedback
 import com.example.dicedrop.domain.entity.settings.GameSettings
 import com.example.dicedrop.domain.entity.settings.SettingTypes
 import com.example.dicedrop.presentation.common.DialogScrim
@@ -42,6 +44,7 @@ fun DrawSettings(
     onRestartClick: () -> Unit,
     onSettingsChange: (settingType: SettingTypes) -> Unit
 ) {
+    val feedback = LocalGameFeedback.current
     DialogScrim(onDismiss = onBackClick) {
         Column(
             modifier = modifier
@@ -66,7 +69,10 @@ fun DrawSettings(
                         .size(44.dp)
                         .clip(CircleShape)
                         .background(DeepBlue)
-                        .clickable(onClick = onBackClick),
+                        .clickable {
+                            feedback.play(GameFeedback.Sound.BUTTON_CLICK)
+                            onBackClick()
+                        },
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
@@ -78,11 +84,26 @@ fun DrawSettings(
                 }
             }
 
-            MusicSetting(
-                title = stringResource(R.string.music),
-                value = settings.musicVolume,
-                onValueChangeFinished = { onSettingsChange(SettingTypes.MusicVolume(it)) }
-            )
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                ToggleSetting(
+                    icon = GameIcons.Sound,
+                    title = stringResource(R.string.sound),
+                    checked = settings.isSoundOn,
+                    onCheckedChange = { onSettingsChange(SettingTypes.Sound(it)) }
+                )
+                ToggleSetting(
+                    icon = GameIcons.Music,
+                    title = stringResource(R.string.music),
+                    checked = settings.isMusicOn,
+                    onCheckedChange = { onSettingsChange(SettingTypes.Music(it)) }
+                )
+                ToggleSetting(
+                    icon = GameIcons.Vibration,
+                    title = stringResource(R.string.vibration),
+                    checked = settings.isVibrationOn,
+                    onCheckedChange = { onSettingsChange(SettingTypes.Vibration(it)) }
+                )
+            }
 
             GameButton(
                 modifier = Modifier.fillMaxWidth(),

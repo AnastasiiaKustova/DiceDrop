@@ -9,6 +9,9 @@ import com.example.dicedrop.domain.entity.settings.GameSettings
 import com.example.dicedrop.domain.entity.settings.SettingTypes
 import com.example.dicedrop.domain.useCases.game.RestartGameUseCase
 import com.example.dicedrop.domain.useCases.settings.ChangeLanguageUseCase
+import com.example.dicedrop.domain.useCases.settings.ChangeMusicUseCase
+import com.example.dicedrop.domain.useCases.settings.ChangeSoundUseCase
+import com.example.dicedrop.domain.useCases.settings.ChangeVibrationUseCase
 import com.example.dicedrop.domain.useCases.settings.GetSettingsUseCase
 import com.example.dicedrop.presentation.settings.SettingsStore.Intent
 import com.example.dicedrop.presentation.settings.SettingsStore.Label
@@ -69,6 +72,9 @@ class SettingsStoreFactory @Inject constructor(
     private val storeFactory: StoreFactory,
     private val getSettingsUseCase: GetSettingsUseCase,
     private val changeLanguageUseCase: ChangeLanguageUseCase,
+    private val changeSoundUseCase: ChangeSoundUseCase,
+    private val changeVibrationUseCase: ChangeVibrationUseCase,
+    private val changeMusicUseCase: ChangeMusicUseCase,
     private val restartGameUseCase: RestartGameUseCase,
 ) {
 
@@ -98,6 +104,12 @@ class SettingsStoreFactory @Inject constructor(
         data class LanguageChanged(val language: String): Msg
 
         data class AdsTurnedOff(val isAdsOff: Boolean): Msg
+
+        data class SoundChanged(val isOn: Boolean): Msg
+
+        data class VibrationChanged(val isOn: Boolean): Msg
+
+        data class MusicChanged(val isOn: Boolean): Msg
 
         data class SettingsLoaded(val settings: GameSettings, val openReason: OpenReason) : Msg
 
@@ -155,8 +167,18 @@ class SettingsStoreFactory @Inject constructor(
                                     publish(Label.ClickChangeLanguageError(intent.newSetting.language))
                                 }
                             }
-                            is SettingTypes.MusicVolume -> {
-
+                            is SettingTypes.Sound -> {
+                                // Переключатель меняется сразу, сохранение идёт следом
+                                dispatch(Msg.SoundChanged(intent.newSetting.isOn))
+                                changeSoundUseCase(intent.newSetting.isOn)
+                            }
+                            is SettingTypes.Vibration -> {
+                                dispatch(Msg.VibrationChanged(intent.newSetting.isOn))
+                                changeVibrationUseCase(intent.newSetting.isOn)
+                            }
+                            is SettingTypes.Music -> {
+                                dispatch(Msg.MusicChanged(intent.newSetting.isOn))
+                                changeMusicUseCase(intent.newSetting.isOn)
                             }
                         }
                     }
@@ -177,6 +199,9 @@ class SettingsStoreFactory @Inject constructor(
         override fun State.reduce(msg: Msg): State = when (msg) {
             is Msg.LanguageChanged -> updateSettings { it.copy(language = msg.language) }
             is Msg.AdsTurnedOff -> updateSettings { it.copy(isAdsOff = msg.isAdsOff) }
+            is Msg.SoundChanged -> updateSettings { it.copy(isSoundOn = msg.isOn) }
+            is Msg.VibrationChanged -> updateSettings { it.copy(isVibrationOn = msg.isOn) }
+            is Msg.MusicChanged -> updateSettings { it.copy(isMusicOn = msg.isOn) }
             Msg.SettingsLoadingError -> copy(settingsState = State.SettingsState.Error)
             Msg.SettingsStartLoading ->  copy(settingsState = State.SettingsState.Loading)
             is Msg.SettingsLoaded -> copy(

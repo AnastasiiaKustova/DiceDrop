@@ -51,6 +51,7 @@ interface GameComponent {
     sealed interface UiEvent {
         data object WatchAd : UiEvent
         data object Animate : UiEvent
+        data object BonusBought : UiEvent
         // bonusType - какой бонус не удалось купить, чтобы показать его название и цену
         data class Error(val msg: ErrorType, val bonusType: BonusType? = null) : UiEvent
         data class ClearLine(

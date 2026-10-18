@@ -130,6 +130,8 @@ interface GameStore : Store<Intent, State, Label> {
 
         data object NotEnoughBonus : Label
 
+        data object BonusBought : Label
+
         data class AnimateDice(val dices: DiceItem) : Label
 
         data class PlayLineClearAnimation(
@@ -392,6 +394,7 @@ class GameStoreFactory @Inject constructor(
                                 price = ShopItemCatalog.all
                                     .firstOrNull { it.bonusType == intent.bonusType }?.price ?: 1
                             )
+                            publish(Label.BonusBought)
                         } catch (e: NotEnoughCoinsException) {
                             publish(Label.NotEnoughCoins(intent.bonusType))
                         }

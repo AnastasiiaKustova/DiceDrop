@@ -29,6 +29,8 @@
     <string name="continue_game">Продолжить</string>
     <string name="to_menu">В меню</string>
     <string name="music">Музыка</string>
+    <string name="sound">Звуки</string>
+    <string name="vibration">Вибрация</string>
     <string name="cancel">Отмена</string>
     <string name="great">Отлично!</string>
     <string name="new_record">НОВЫЙ РЕКОРД!</string>

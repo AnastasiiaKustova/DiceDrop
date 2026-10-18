@@ -14,10 +14,12 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import com.example.dicedrop.domain.feedback.GameFeedback
 import com.example.dicedrop.presentation.achievements.animation.ConfettiOverlay
 import com.example.dicedrop.presentation.achievements.animation.RewardAnimationData
 import com.example.dicedrop.presentation.achievements.ui.AchievementTopBar
 import com.example.dicedrop.presentation.achievements.ui.AchievementsList
+import com.example.dicedrop.presentation.common.LocalGameFeedback
 import com.example.dicedrop.presentation.ui.theme.DarkBlue
 import com.example.dicedrop.presentation.ui.theme.White
 import kotlinx.coroutines.delay
@@ -29,6 +31,7 @@ fun AchievementsContent(component: AchievementsComponent) {
 
     var rewardAnimation by remember { mutableStateOf<RewardAnimationData?>(null) }
     val scope = rememberCoroutineScope()
+    val feedback = LocalGameFeedback.current
 
     Box(
         modifier = Modifier
@@ -45,6 +48,7 @@ fun AchievementsContent(component: AchievementsComponent) {
                     achievements = achievementsState.achievements,
                     onGetRewardClick = { achievementId, cardCenter ->
 
+                        feedback.play(GameFeedback.Sound.COINS_REWARD)
                         rewardAnimation = RewardAnimationData(
                             achievementId = achievementId,
                             start = cardCenter
