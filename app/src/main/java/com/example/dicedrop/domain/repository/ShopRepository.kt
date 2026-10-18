@@ -11,7 +11,8 @@ interface ShopRepository {
 
     suspend fun isDailyRewardReceived(date: String): Boolean
 
-    suspend fun getDailyReward()
+    // Отмечает подарок забранным и возвращает новый номер дня серии
+    suspend fun getDailyReward(): Int
 
     suspend fun getShopItems(): List<ShopItem>
 }

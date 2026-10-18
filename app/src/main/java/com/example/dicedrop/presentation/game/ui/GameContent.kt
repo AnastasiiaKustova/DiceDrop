@@ -44,6 +44,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.dicedrop.R
 import com.example.dicedrop.domain.ads.RewardedAdManager
+import com.example.dicedrop.domain.entity.AdReward
 import com.example.dicedrop.domain.feedback.GameFeedback
 import com.example.dicedrop.domain.feedback.GameFeedback.Companion.lineCleared
 import com.example.dicedrop.presentation.common.ConfettiBit
@@ -112,16 +113,17 @@ fun GameContent(component: GameComponent) {
                         clearedCols = clearEvent.clearedCols
                         comboPopup = ComboPopup(
                             combo = clearEvent.combo,
-                            points = clearEvent.points
+                            points = clearEvent.points,
+                            coins = clearEvent.coins
                         )
                     },
                     onClearFinished = {
                         clearedRows = emptyList()
                         clearedCols = emptyList()
                     },
-                    onAdRewarded = {
-                        feedback.play(GameFeedback.Sound.COIN)
-                        component.AdRewardReceive()
+                    onAdRewarded = { reward ->
+                        if (reward == AdReward.DOUBLE_COINS) feedback.play(GameFeedback.Sound.COINS_REWARD)
+                        component.AdRewardReceive(reward)
                     },
                     onAchievement = {
                         banner = it
@@ -155,6 +157,7 @@ fun GameContent(component: GameComponent) {
             comboPopup = comboPopup,
             trophyHighlighted = bannerVisible,
             rewardsToClaim = state.rewardsToClaim,
+            settings = state.settings,
             component = component
         )
 
@@ -284,7 +287,7 @@ private suspend fun handleUiEvent(
     snackbarHostState: SnackbarHostState,
     onClearLine: (GameComponent.UiEvent.ClearLine) -> Unit,
     onClearFinished: () -> Unit,
-    onAdRewarded: () -> Unit,
+    onAdRewarded: (AdReward) -> Unit,
     onAchievement: (AchievementBanner) -> Unit,
     onGoToShop: () -> Unit
 ) {
@@ -333,9 +336,9 @@ private suspend fun handleUiEvent(
         GameComponent.UiEvent.BonusBought -> feedback.play(GameFeedback.Sound.BONUS_BUY)
 
         GameComponent.UiEvent.Animate -> Unit
-        GameComponent.UiEvent.WatchAd -> {
+        is GameComponent.UiEvent.WatchAd -> {
             rewardedAdManager.showAd {
-                onAdRewarded()
+                onAdRewarded(event.reward)
             }
         }
     }

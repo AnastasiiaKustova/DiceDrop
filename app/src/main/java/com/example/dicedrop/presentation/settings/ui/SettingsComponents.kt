@@ -6,6 +6,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.offset
@@ -19,8 +20,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
@@ -77,6 +82,60 @@ fun ToggleSetting(
             fontWeight = FontWeight.Black
         )
         GameSwitch(checked = checked)
+    }
+}
+
+// Круглый переключатель с подписью для окна паузы: включено - светлый круг, выключено - тёмный и перечёркнутый
+@Composable
+fun RoundToggle(
+    icon: ImageVector,
+    title: String,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit
+) {
+    val feedback = LocalGameFeedback.current
+    Column(
+        modifier = Modifier.alpha(if (checked) 1f else 0.7f),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(6.dp)
+    ) {
+        Box(
+            modifier = Modifier
+                .size(56.dp)
+                .clip(CircleShape)
+                .background(if (checked) White else DeepBlue)
+                .clickable(role = Role.Switch) {
+                    feedback.play(GameFeedback.Sound.BUTTON_CLICK)
+                    onCheckedChange(!checked)
+                }
+                .drawWithContent {
+                    drawContent()
+                    if (!checked) {
+                        val inset = size.minDimension * 0.27f
+                        drawLine(
+                            color = White,
+                            start = Offset(inset, inset),
+                            end = Offset(size.width - inset, size.height - inset),
+                            strokeWidth = 3.dp.toPx(),
+                            cap = StrokeCap.Round
+                        )
+                    }
+                },
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = title,
+                tint = if (checked) ButtonText else White,
+                modifier = Modifier.size(28.dp)
+            )
+        }
+        Text(
+            text = title,
+            color = White,
+            fontSize = 13.sp,
+            fontWeight = FontWeight.ExtraBold
+        )
     }
 }
 

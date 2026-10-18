@@ -21,6 +21,8 @@ interface MenuComponent {
 
     fun onGiftConfirm()
 
+    fun onTutorialClose()
+
     sealed interface UiEvent {
         data object GiftAlreadyReceived : UiEvent
     }

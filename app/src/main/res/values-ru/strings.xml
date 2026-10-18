@@ -41,7 +41,7 @@
     <string name="undo_for_ad">Отменить последний ход за рекламу</string>
     <string name="watch_ad">Смотреть рекламу</string>
     <string name="achievement_banner">ДОСТИЖЕНИЕ ПОЛУЧЕНО</string>
-    <string name="daily_gift_subtitle">Заходи каждый день за бонусом</string>
+    <string name="daily_gift_subtitle">Награда растёт с каждым днём</string>
     <string name="bonuses_title">Бонусы</string>
     <string name="buy">Купить</string>
     <string name="rotate_desc">Поворачивает блок на 90°</string>
@@ -133,4 +133,32 @@
 
     <!-- Комбо -->
     <string name="combo_popup">КОМБО x%1$d!</string>
+    <string name="coins_earned">Заработано за партию</string>
+    <string name="double_coins_hint">Посмотри рекламу — монеты удвоятся, и начнётся новая игра</string>
+    <string name="double_and_restart">×2 и новая игра</string>
+    <!-- Обучение -->
+    <string name="how_to_play">Как играть</string>
+    <string name="tutorial_skip">Пропустить</string>
+    <string name="tutorial_back">Назад</string>
+    <string name="tutorial_next">Далее</string>
+    <string name="tutorial_play">Играть!</string>
+    <string name="tutorial_step">Шаг %1$d из %2$d</string>
+    <string name="tutorial_title_roll">Брось кубики</string>
+    <string name="tutorial_title_place">Поставь блок на поле</string>
+    <string name="tutorial_title_lines">Собирай линии</string>
+    <string name="tutorial_title_combo">Делай комбо</string>
+    <string name="tutorial_title_bonuses">Бонусы</string>
+    <string name="tutorial_text_roll">Числа на кубиках задают размер блока</string>
+    <string name="tutorial_text_place">Перетащи блок на свободное место. Когда места под блок не останется — игра закончится</string>
+    <string name="tutorial_text_lines">Заполни ряд или столбец целиком — он исчезнет, а ты получишь награду</string>
+    <string name="tutorial_text_combo">Собирай линии несколько ходов подряд, и каждая следующая принесёт больше очков</string>
+    <string name="tutorial_text_bonuses">Выручают, когда блок не влезает. Покупай их за монеты в магазине или прямо в игре</string>
+    <string name="tutorial_text_rotate">Кубики поменяются местами, и блок повернётся на 90°</string>
+    <string name="tutorial_text_freeze">Заморозит оба кубика: следующий бросок даст тот же блок</string>
+    <string name="tutorial_text_draft">Докинет ещё один кубик. Убери лишний, и блок соберётся из двух других</string>
+    <string name="tutorial_text_lucky">Выбери любую грань, а потом кубик, который её получит</string>
+    <string name="tutorial_move">%1$d-й ход</string>
+    <string name="tutorial_price_from">от %1$d монет</string>
+    <string name="tutorial_freeze_next">Следующий бросок: снова %1$d и %2$d</string>
+    <string name="tutorial_block">Блок %1$d × %2$d</string>
 </resources>

@@ -10,6 +10,8 @@ data class GameSettings(
     val isMusicOn: Boolean = true,
     val language: String = Locale.getDefault().language,
     val isAdsOff: Boolean = false,
+    // Обучение показывается при первом запуске, пока игрок его не закроет
+    val isTutorialShown: Boolean = false,
 ){
     companion object{
         fun default() = GameSettings()

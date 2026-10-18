@@ -117,7 +117,7 @@ fun ShopContent(component: ShopComponent) {
         when (val shopState = state.shopState) {
             is ShopStore.State.ShopState.GetRandomBonus ->
                 RandomBonusDialog(
-                    bonus = shopState.bonus,
+                    bonuses = shopState.bonuses,
                     confirmClick = component::onRandomBonusConfirmClick
                 )
 

@@ -5,7 +5,6 @@ import com.arkivanov.mvikotlin.core.instancekeeper.getStore
 import com.arkivanov.mvikotlin.extensions.coroutines.labels
 import com.arkivanov.mvikotlin.extensions.coroutines.stateFlow
 import com.example.dicedrop.core.componentScope
-import com.example.dicedrop.domain.entity.CoinPack
 import com.example.dicedrop.domain.entity.ShopItem
 import com.example.dicedrop.presentation.shop.ShopComponent.UiEvent
 import dagger.assisted.Assisted
@@ -34,7 +33,6 @@ class ShopComponentImpl @AssistedInject constructor(
             store.labels.collect {
                 when (it) {
                     ShopStore.Label.ClickBack -> onBackClicked()
-                    is ShopStore.Label.ClickBuyCoinPack -> _uiEvents.emit(UiEvent.ShowMessage(UiEvent.MessageType.PurchaseSuccess))
                     is ShopStore.Label.ClickBuyItem -> _uiEvents.emit(UiEvent.ShowMessage(UiEvent.MessageType.PurchaseSuccess))
                     ShopStore.Label.DailyRewardError -> _uiEvents.emit(UiEvent.ShowError(UiEvent.ErrorType.DailyBonusFailed))
                     ShopStore.Label.DailyRewardSuccess -> _uiEvents.emit(UiEvent.ShowMessage(UiEvent.MessageType.DailyBonusClaimed))
@@ -53,10 +51,6 @@ class ShopComponentImpl @AssistedInject constructor(
 
     override fun onBuyItemClick(shopItem: ShopItem) {
         store.accept(ShopStore.Intent.ClickBuyItem(shopItem))
-    }
-
-    override fun onBuyCoinPackClick(coinPack: CoinPack) {
-        store.accept(ShopStore.Intent.ClickBuyCoinPack(coinPack))
     }
 
     override fun onRandomBonusConfirmClick(){

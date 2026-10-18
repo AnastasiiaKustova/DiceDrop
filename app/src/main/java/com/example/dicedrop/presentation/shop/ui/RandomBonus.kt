@@ -12,7 +12,12 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.res.painterResource
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -49,9 +54,12 @@ import com.example.dicedrop.presentation.ui.theme.Yellow
 @Composable
 fun RandomBonusDialog(
     modifier: Modifier = Modifier,
-    bonus: BonusItem,
+    // Первая награда - главная, крупно; остальные (бонус к подарку 7-го дня) - строкой ниже
+    bonuses: List<BonusItem>,
     confirmClick: () -> Unit
 ) {
+    val bonus = bonuses.first()
+
     // Окно "выпрыгивает" с лёгкой пружиной
     val appear = remember { Animatable(0.3f) }
     LaunchedEffect(Unit) {
@@ -142,6 +150,29 @@ fun RandomBonusDialog(
                         fontSize = 14.sp,
                         textAlign = TextAlign.Center
                     )
+                }
+
+                bonuses.drop(1).forEach { extra ->
+                    Row(
+                        modifier = Modifier
+                            .padding(top = 12.dp)
+                            .background(MidBlue, RoundedCornerShape(16.dp))
+                            .padding(horizontal = 12.dp, vertical = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Image(
+                            painter = painterResource(extra.type.getRewardIconResId()),
+                            contentDescription = null,
+                            modifier = Modifier.size(32.dp)
+                        )
+                        Text(
+                            text = "+${extra.count} " + stringResource(extra.type.getTitleResId()),
+                            color = White,
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Black
+                        )
+                    }
                 }
 
                 Spacer(modifier = Modifier.height(18.dp))

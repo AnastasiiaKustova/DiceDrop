@@ -2,11 +2,13 @@ package com.example.dicedrop.presentation.game
 
 import com.example.dicedrop.R
 import com.example.dicedrop.domain.ads.RewardedAdManager
+import com.example.dicedrop.domain.entity.AdReward
 import com.example.dicedrop.domain.entity.BonusItem
 import com.example.dicedrop.domain.entity.BonusType
 import com.example.dicedrop.domain.entity.DiceItem
 import com.example.dicedrop.domain.entity.DiscardTarget
 import com.example.dicedrop.domain.entity.Slot
+import com.example.dicedrop.domain.entity.settings.SettingTypes
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 
@@ -30,7 +32,9 @@ interface GameComponent {
 
     fun onWatchAdsClick()
 
-    fun AdRewardReceive()
+    fun onDoubleCoinsClick()
+
+    fun AdRewardReceive(reward: AdReward)
 
     fun placeBlock(r: Int, c: Int)
 
@@ -48,8 +52,10 @@ interface GameComponent {
 
     fun onLuckyFace(value: Int, slot: Slot)
 
+    fun onSettingsChange(setting: SettingTypes)
+
     sealed interface UiEvent {
-        data object WatchAd : UiEvent
+        data class WatchAd(val reward: AdReward) : UiEvent
         data object Animate : UiEvent
         data object BonusBought : UiEvent
         // bonusType - какой бонус не удалось купить, чтобы показать его название и цену
@@ -58,7 +64,8 @@ interface GameComponent {
             val clearedRows: List<Int>,
             val clearedCols: List<Int>,
             val combo: Int,
-            val points: Int
+            val points: Int,
+            val coins: Int
         ) : UiEvent
         data class AchievementUnlocked(
             val titleId: Int,

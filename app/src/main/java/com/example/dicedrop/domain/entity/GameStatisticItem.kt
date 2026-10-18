@@ -1,13 +1,14 @@
 package com.example.dicedrop.domain.entity
 
 import android.os.Parcelable
+import com.example.dicedrop.domain.catalog.EconomyCatalog
 import kotlinx.android.parcel.Parcelize
 
 @Parcelize
 data class GameStatisticItem (
     val bestScore: Int = 0,
     val totalScore: Int = 0,
-    val coins: Int = 10000,
+    val coins: Int = EconomyCatalog.START_COINS,
     val bonuses: List<BonusItem> = BonusItem.default(),
     val boardItem: BoardItem = BoardItem.default(),
     val dice: DiceItem = DiceItem.empty(),
@@ -20,11 +21,30 @@ data class GameStatisticItem (
     val isNewRecord: Boolean = false,
     // Сколько линий очищено подряд, сбрасывается ходом без очистки
     val combo: Int = 0,
-    val reviveSnapshot: ReviveSnapshot? = null
+    val reviveSnapshot: ReviveSnapshot? = null,
+    // Монеты, заработанные в этой партии; показываются в конце игры и удваиваются за рекламу
+    val coinsEarned: Int = 0,
+    val coinsDoubled: Boolean = false
 ): Parcelable{
     companion object{
         fun default() = GameStatisticItem()
     }
+}
+
+// Начислить награды: монеты в кошелёк, бонусы в запас
+fun GameStatisticItem.withRewards(rewards: List<BonusItem>): GameStatisticItem {
+    var coins = coins
+    var bonuses = bonuses
+    for (reward in rewards) {
+        if (reward.type == BonusType.COIN) {
+            coins += reward.count
+        } else {
+            bonuses = bonuses.map {
+                if (it.type == reward.type) it.copy(count = it.count + reward.count) else it
+            }
+        }
+    }
+    return copy(coins = coins, bonuses = bonuses)
 }
 
 // Состояние до последней установки блока, к нему откатывает просмотр рекламы после Game Over

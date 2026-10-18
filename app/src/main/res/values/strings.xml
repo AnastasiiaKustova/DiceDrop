@@ -41,7 +41,7 @@
     <string name="undo_for_ad">Undo the last move for an ad</string>
     <string name="watch_ad">Watch ad</string>
     <string name="achievement_banner">ACHIEVEMENT UNLOCKED</string>
-    <string name="daily_gift_subtitle">Come back every day for a bonus</string>
+    <string name="daily_gift_subtitle">The reward grows every day</string>
     <string name="bonuses_title">Bonuses</string>
     <string name="buy">Buy</string>
     <string name="rotate_desc">Rotates the block by 90°</string>
@@ -129,4 +129,32 @@
 
     <!-- Combo -->
     <string name="combo_popup">COMBO x%1$d!</string>
+    <string name="coins_earned">Earned this game</string>
+    <string name="double_coins_hint">Watch an ad to double your coins and start a new game</string>
+    <string name="double_and_restart">×2 and new game</string>
+    <!-- Tutorial -->
+    <string name="how_to_play">How to play</string>
+    <string name="tutorial_skip">Skip</string>
+    <string name="tutorial_back">Back</string>
+    <string name="tutorial_next">Next</string>
+    <string name="tutorial_play">Play!</string>
+    <string name="tutorial_step">Step %1$d of %2$d</string>
+    <string name="tutorial_title_roll">Roll the dice</string>
+    <string name="tutorial_title_place">Place the block</string>
+    <string name="tutorial_title_lines">Clear lines</string>
+    <string name="tutorial_title_combo">Make combos</string>
+    <string name="tutorial_title_bonuses">Bonuses</string>
+    <string name="tutorial_text_roll">The numbers on the dice set the block size</string>
+    <string name="tutorial_text_place">Drag the block to a free spot. When there is no room left for it, the game ends</string>
+    <string name="tutorial_text_lines">Fill a whole row or column — it disappears and you get a reward</string>
+    <string name="tutorial_text_combo">Clear lines several moves in a row, and each one brings more points</string>
+    <string name="tutorial_text_bonuses">They help when a block doesn\'t fit. Buy them with coins in the shop or right in the game</string>
+    <string name="tutorial_text_rotate">The dice will swap places and the block will turn 90°</string>
+    <string name="tutorial_text_freeze">Will freeze both dice: the next roll will give the same block</string>
+    <string name="tutorial_text_draft">Will roll one more die. Remove the extra one and the block will be made from the other two</string>
+    <string name="tutorial_text_lucky">Pick any face, then the die that will get it</string>
+    <string name="tutorial_move">Move %1$d</string>
+    <string name="tutorial_price_from">from %1$d coins</string>
+    <string name="tutorial_freeze_next">Next roll: %1$d and %2$d again</string>
+    <string name="tutorial_block">Block %1$d × %2$d</string>
 </resources>

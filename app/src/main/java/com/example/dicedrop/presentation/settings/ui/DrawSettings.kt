@@ -13,6 +13,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -29,6 +33,7 @@ import com.example.dicedrop.domain.entity.settings.SettingTypes
 import com.example.dicedrop.presentation.common.DialogScrim
 import com.example.dicedrop.presentation.common.GameButton
 import com.example.dicedrop.presentation.common.GameIcons
+import com.example.dicedrop.presentation.common.TutorialDialog
 import com.example.dicedrop.presentation.common.consumeClicks
 import com.example.dicedrop.presentation.ui.theme.DarkBlue
 import com.example.dicedrop.presentation.ui.theme.DeepBlue
@@ -45,6 +50,14 @@ fun DrawSettings(
     onSettingsChange: (settingType: SettingTypes) -> Unit
 ) {
     val feedback = LocalGameFeedback.current
+
+    // Обучение открывается вместо окна настроек и возвращает к нему по закрытии
+    var showTutorial by rememberSaveable { mutableStateOf(false) }
+    if (showTutorial) {
+        TutorialDialog(onClose = { showTutorial = false })
+        return
+    }
+
     DialogScrim(onDismiss = onBackClick) {
         Column(
             modifier = modifier
@@ -104,6 +117,15 @@ fun DrawSettings(
                     onCheckedChange = { onSettingsChange(SettingTypes.Vibration(it)) }
                 )
             }
+
+            GameButton(
+                modifier = Modifier.fillMaxWidth(),
+                text = stringResource(R.string.how_to_play),
+                onClick = { showTutorial = true },
+                color = MidBlue,
+                contentColor = White,
+                icon = GameIcons.Help
+            )
 
             GameButton(
                 modifier = Modifier.fillMaxWidth(),

@@ -165,27 +165,34 @@ private fun ComboBadge(combo: Int) {
         }
     }
 
-    AnimatedVisibility(
-        visible = combo >= 2,
-        enter = fadeIn() + scaleIn(),
-        exit = fadeOut() + scaleOut()
+    // Место под плашку занято всегда, чтобы счёт не прыгал, когда комбо появляется и пропадает
+    Box(
+        modifier = Modifier
+            .padding(top = 1.dp)
+            .height(16.dp),
+        contentAlignment = Alignment.Center
     ) {
-        Text(
-            modifier = Modifier
-                .padding(top = 1.dp)
-                .graphicsLayer {
-                    scaleX = pulse.value
-                    scaleY = pulse.value
-                }
-                .background(comboColor(shownCombo), RoundedCornerShape(8.dp))
-                .padding(horizontal = 8.dp),
-            text = stringResource(R.string.combo_badge, shownCombo),
-            color = androidx.compose.ui.graphics.Color.White,
-            fontSize = 12.sp,
-            lineHeight = 18.sp,
-            fontWeight = FontWeight.Black,
-            maxLines = 1
-        )
+        AnimatedVisibility(
+            visible = combo >= 2,
+            enter = fadeIn() + scaleIn(),
+            exit = fadeOut() + scaleOut()
+        ) {
+            Text(
+                modifier = Modifier
+                    .graphicsLayer {
+                        scaleX = pulse.value
+                        scaleY = pulse.value
+                    }
+                    .background(comboColor(shownCombo), RoundedCornerShape(7.dp))
+                    .padding(horizontal = 7.dp),
+                text = stringResource(R.string.combo_badge, shownCombo),
+                color = androidx.compose.ui.graphics.Color.White,
+                fontSize = 11.sp,
+                lineHeight = 16.sp,
+                fontWeight = FontWeight.Black,
+                maxLines = 1
+            )
+        }
     }
 }
 

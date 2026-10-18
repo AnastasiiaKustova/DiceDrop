@@ -53,6 +53,7 @@ import com.example.dicedrop.presentation.common.GameButton
 import com.example.dicedrop.presentation.common.GameIcons
 import com.example.dicedrop.presentation.common.IconCircle
 import com.example.dicedrop.presentation.common.RoundImageButton
+import com.example.dicedrop.presentation.common.TutorialDialog
 import com.example.dicedrop.presentation.common.spaced
 import com.example.dicedrop.presentation.ui.theme.DarkBlue
 import com.example.dicedrop.presentation.ui.theme.Green
@@ -107,8 +108,19 @@ fun MenuContent(component: MenuComponent) {
             val feedback = LocalGameFeedback.current
             LaunchedEffect(gift) { feedback.play(GameFeedback.Sound.DAILY_GIFT) }
             RandomBonusDialog(
-                bonus = gift,
+                bonuses = gift,
                 confirmClick = { component.onGiftConfirm() }
+            )
+        }
+
+        // При первом запуске; «Играть!» на последнем шаге сразу начинает игру
+        if (state.showTutorial) {
+            TutorialDialog(
+                onClose = { component.onTutorialClose() },
+                onFinish = {
+                    component.onTutorialClose()
+                    component.onStartGameClick()
+                }
             )
         }
     }

@@ -1,6 +1,7 @@
 package com.example.dicedrop.presentation.game.ui.popups
 
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -25,6 +26,7 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -48,6 +50,8 @@ fun GameOverDialog(
     gameScore: Int,
     bestScore: Int,
     canUndo: Boolean,
+    coinsEarned: Int,
+    onDoubleCoinsClick: () -> Unit,
     onRestartClick: () -> Unit,
     onWatchAdsClick: () -> Unit
 ) {
@@ -98,6 +102,13 @@ fun GameOverDialog(
                         value = maxOf(bestScore, gameScore)
                     )
                 }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                CoinsEarnedPanel(
+                    coinsEarned = coinsEarned,
+                    onDoubleCoinsClick = onDoubleCoinsClick
+                )
 
                 // Отмена хода возможна, только если есть сохранённое состояние до последнего хода
                 if (canUndo) {
@@ -196,6 +207,65 @@ private fun ScorePanel(
             fontWeight = FontWeight.Black,
             maxLines = 1
         )
+    }
+}
+
+// Монеты за партию и кнопка удвоить их за рекламу. Удвоение сразу начинает новую игру,
+// иначе можно было бы удвоить, а потом отменить ход и играть дальше
+@Composable
+private fun CoinsEarnedPanel(
+    coinsEarned: Int,
+    onDoubleCoinsClick: () -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(DeepBlue, RoundedCornerShape(18.dp))
+            .padding(horizontal = 14.dp, vertical = 10.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Image(
+                painter = painterResource(R.drawable.coin_star),
+                contentDescription = null,
+                modifier = Modifier.size(36.dp)
+            )
+            Column {
+                Text(
+                    modifier = Modifier.alpha(0.85f),
+                    text = stringResource(R.string.coins_earned),
+                    color = White,
+                    fontSize = 13.sp
+                )
+                Text(
+                    text = "+$coinsEarned",
+                    color = White,
+                    fontSize = 22.sp,
+                    lineHeight = 24.sp,
+                    fontWeight = FontWeight.Black
+                )
+            }
+        }
+
+        if (coinsEarned > 0) {
+            Text(
+                modifier = Modifier.alpha(0.85f),
+                text = stringResource(R.string.double_coins_hint),
+                color = White,
+                fontSize = 13.sp
+            )
+            GameButton(
+                modifier = Modifier.fillMaxWidth(),
+                text = stringResource(R.string.double_and_restart),
+                onClick = onDoubleCoinsClick,
+                height = 46.dp,
+                corner = 14.dp,
+                fontSize = 16.sp
+            )
+        }
     }
 }
 

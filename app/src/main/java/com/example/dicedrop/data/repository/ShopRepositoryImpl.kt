@@ -60,16 +60,19 @@ class ShopRepositoryImpl @Inject constructor(
         return _rewardFlow.value.lastDate == date
     }
 
-    override suspend fun getDailyReward() {
+    override suspend fun getDailyReward(): Int {
         loadJob.join()
         val data = _rewardFlow.value
+        // Серия продолжается, только если вчера подарок тоже забрали, иначе начинается заново
+        val streak = if (data.lastDate == DateHelper.getYesterdayDate()) data.dayStreak + 1 else 1
 
         save(
             data.copy(
                 lastDate = DateHelper.getCurrentDate(),
-                dayStreak = data.dayStreak + 1
+                dayStreak = streak
             )
         )
+        return streak
     }
 
     override suspend fun getShopItems(): List<ShopItem> {

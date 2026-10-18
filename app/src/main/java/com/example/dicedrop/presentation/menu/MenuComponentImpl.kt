@@ -76,6 +76,10 @@ class MenuComponentImpl @AssistedInject constructor(
         store.accept(MenuStore.Intent.GiftConfirm)
     }
 
+    override fun onTutorialClose() {
+        store.accept(MenuStore.Intent.TutorialClose)
+    }
+
     @AssistedFactory
     interface Factory{
         fun create(

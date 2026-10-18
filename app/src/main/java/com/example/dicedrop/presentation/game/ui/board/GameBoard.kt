@@ -9,7 +9,11 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.size
+import androidx.compose.ui.res.painterResource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -151,6 +155,8 @@ fun DrawPlayingField(
 data class ComboPopup(
     val combo: Int,
     val points: Int,
+    // Монеты за ход, показываются под очками
+    val coins: Int = 0,
     val id: Long = System.nanoTime()
 )
 
@@ -212,6 +218,24 @@ private fun ComboPopupText(
             fontSize = 26.sp,
             style = textStyle
         )
+        if (popup.coins > 0) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Image(
+                    painter = painterResource(R.drawable.coin_star),
+                    contentDescription = null,
+                    modifier = Modifier.size(24.dp)
+                )
+                Text(
+                    text = "+${popup.coins}",
+                    color = Yellow,
+                    fontSize = 22.sp,
+                    style = textStyle
+                )
+            }
+        }
     }
 }
 

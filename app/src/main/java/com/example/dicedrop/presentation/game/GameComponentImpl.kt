@@ -8,11 +8,13 @@ import com.arkivanov.mvikotlin.extensions.coroutines.labels
 import com.arkivanov.mvikotlin.extensions.coroutines.stateFlow
 import com.example.dicedrop.core.componentScope
 import com.example.dicedrop.domain.ads.RewardedAdManager
+import com.example.dicedrop.domain.entity.AdReward
 import com.example.dicedrop.domain.entity.BonusItem
 import com.example.dicedrop.domain.entity.BonusType
 import com.example.dicedrop.domain.entity.DiceItem
 import com.example.dicedrop.domain.entity.DiscardTarget
 import com.example.dicedrop.domain.entity.Slot
+import com.example.dicedrop.domain.entity.settings.SettingTypes
 import com.example.dicedrop.presentation.game.GameComponent.UiEvent
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
@@ -58,7 +60,7 @@ class GameComponentImpl @AssistedInject constructor(
                     is GameStore.Label.AchievementUnlocked -> _uiEvents.emit(
                         UiEvent.AchievementUnlocked(it.titleId, it.descriptionId, it.reward)
                     )
-                    GameStore.Label.WatchAd -> _uiEvents.emit(UiEvent.WatchAd)
+                    is GameStore.Label.WatchAd -> _uiEvents.emit(UiEvent.WatchAd(it.reward))
                     GameStore.Label.BonusBought -> _uiEvents.emit(UiEvent.BonusBought)
                     is GameStore.Label.NotEnoughCoins -> _uiEvents.emit(
                         UiEvent.Error(GameComponent.UiEvent.ErrorType.NotEnoughCoins, it.bonusType)
@@ -68,7 +70,8 @@ class GameComponentImpl @AssistedInject constructor(
                         clearedRows = it.clearedRows,
                         clearedCols = it.clearedCols,
                         combo = it.combo,
-                        points = it.points))
+                        points = it.points,
+                        coins = it.coins))
                 }
             }
         }
@@ -106,6 +109,10 @@ class GameComponentImpl @AssistedInject constructor(
         store.accept(GameStore.Intent.LuckyFace(value, slot))
     }
 
+    override fun onSettingsChange(setting: SettingTypes) {
+        store.accept(GameStore.Intent.ChangeSetting(setting))
+    }
+
     override fun onConfirmNewRecord(rewardsList: List<BonusItem>) {
         store.accept(GameStore.Intent.NewRecordConfirm(rewardsList))
     }
@@ -130,11 +137,15 @@ class GameComponentImpl @AssistedInject constructor(
     }
 
     override fun onWatchAdsClick() {
-        store.accept(GameStore.Intent.WatchAd)
+        store.accept(GameStore.Intent.WatchAd(AdReward.REVIVE))
     }
 
-    override fun AdRewardReceive() {
-        store.accept(GameStore.Intent.AdRewardReceive)
+    override fun onDoubleCoinsClick() {
+        store.accept(GameStore.Intent.WatchAd(AdReward.DOUBLE_COINS))
+    }
+
+    override fun AdRewardReceive(reward: AdReward) {
+        store.accept(GameStore.Intent.AdRewardReceive(reward))
     }
 
     override fun placeBlock(r: Int, c: Int) {
