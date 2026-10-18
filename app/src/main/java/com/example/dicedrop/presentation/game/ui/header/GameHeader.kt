@@ -2,30 +2,35 @@ package com.example.dicedrop.presentation.game.ui.header
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.layout.offset
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import com.example.dicedrop.presentation.ui.theme.Navy
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -35,24 +40,23 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.PlatformTextStyle
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.LineHeightStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.dicedrop.R
+import com.example.dicedrop.presentation.common.CoinChip
+import com.example.dicedrop.presentation.common.GameIcons
+import com.example.dicedrop.presentation.common.RoundImageButton
+import com.example.dicedrop.presentation.common.spaced
 import com.example.dicedrop.presentation.game.ui.board.comboColor
-import com.example.dicedrop.presentation.ui.theme.BlueGradientDark
-import com.example.dicedrop.presentation.ui.theme.BlueGradientLight
+import com.example.dicedrop.presentation.ui.theme.DarkBlue
 import com.example.dicedrop.presentation.ui.theme.White
+import com.example.dicedrop.presentation.ui.theme.Yellow
 
 @Composable
 fun GameHeader(
@@ -61,140 +65,89 @@ fun GameHeader(
     bestScore: Int,
     coins: Int,
     combo: Int,
-    isLandscape: Boolean,
+    trophyHighlighted: Boolean,
+    rewardsToClaim: Int,
     onPauseClick: () -> Unit,
-    onShopClick: () -> Unit
+    onShopClick: () -> Unit,
+    onAchievementsClick: () -> Unit
 ) {
-
     Row(
         modifier = modifier
-            .background(
-                Brush.linearGradient(
-                    colors = listOf(BlueGradientLight, BlueGradientDark),
-                    start = Offset(0f, 0f),
-                    end = Offset(0f, Float.POSITIVE_INFINITY)
-                )
-            )
+            .background(DarkBlue)
             .fillMaxWidth()
-            .padding(vertical = 4.dp, horizontal = 16.dp),
-        verticalAlignment = Alignment.Bottom,
-        horizontalArrangement = Arrangement.Center
+            .heightIn(min = 92.dp)
+            .padding(vertical = 8.dp, horizontal = 14.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
+        CoinChip(
+            coins = coins,
+            height = 38.dp,
+            fontSize = 15.sp
+        ) {
+            Box(
+                modifier = Modifier
+                    .width(1.dp)
+                    .height(20.dp)
+                    .background(White.copy(alpha = 0.3f))
+            )
+            Icon(
+                modifier = Modifier
+                    .size(28.dp)
+                    .clip(CircleShape)
+                    .clickable(onClick = onShopClick)
+                    .padding(4.dp),
+                imageVector = GameIcons.Bag,
+                contentDescription = stringResource(R.string.store),
+                tint = White
+            )
+        }
 
-        CoinsCounter(
-            coins = coins
-        )
+        // Равные распорки: счёт на одинаковом расстоянии от монет и от кнопок справа
+        Spacer(modifier = Modifier.weight(1f))
+
         Score(
             totalScore = totalScore,
             bestScore = bestScore,
-            combo = combo,
-            isLandscape = isLandscape,
+            combo = combo
         )
-        Shop(
+
+        Spacer(modifier = Modifier.weight(1f))
+
+        Buttons(
+            trophyHighlighted = trophyHighlighted,
+            rewardsToClaim = rewardsToClaim,
             onPauseClick = onPauseClick,
-            onClick = onShopClick
+            onAchievementsClick = onAchievementsClick
         )
     }
 }
 
 @Composable
-private fun RowScope.CoinsCounter(
-    modifier: Modifier = Modifier,
-    coins: Int,
-){
-    Row(
-        modifier = modifier.weight(1f).padding(bottom = 5.dp),
-        verticalAlignment = Alignment.Bottom,
-        horizontalArrangement = Arrangement.Start
-    ) {
-        Image(
-            painter = painterResource(id = R.drawable.coin),
-            contentDescription = "",
-            modifier = Modifier
-                .width(27.dp)
-
-        )
-        Spacer(modifier = Modifier.width(8.dp))
-        Text(
-            color = White,
-            text = "$coins",
-            fontSize = if (coins >= 1000) 15.sp else 22.sp,
-            maxLines = 1
-        )
-    }
-}
-
-@Composable
-private fun RowScope.Score(
-    modifier: Modifier = Modifier,
+private fun Score(
     totalScore: Int,
     bestScore: Int,
-    combo: Int,
-    isLandscape: Boolean,
-){
-
-    if (isLandscape){
-        Row(
-            modifier = modifier
-                .weight(2f).padding(bottom = 5.dp),
-            horizontalArrangement = Arrangement.SpaceAround,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                color = White,
-                text = stringResource(R.string.best_score_short) + bestScore,
-                fontSize = 16.sp
-            )
-
-            Text(
-                color = White,
-                text = stringResource(R.string.total_score_short) + totalScore,
-                fontSize = 16.sp
-            )
-
-            ComboBadge(combo = combo)
-        }
-        
+    combo: Int
+) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(
+            modifier = Modifier.alpha(0.8f),
+            text = stringResource(R.string.record_with_value, maxOf(bestScore, totalScore).spaced()),
+            color = White,
+            fontSize = 11.sp,
+            fontWeight = FontWeight.ExtraBold,
+            letterSpacing = 1.sp,
+            maxLines = 1
+        )
+        Text(
+            text = totalScore.spaced(),
+            color = White,
+            fontSize = 34.sp,
+            lineHeight = 36.sp,
+            fontWeight = FontWeight.Black,
+            maxLines = 1
+        )
+        ComboBadge(combo = combo)
     }
-    else{
-        Column(
-            modifier = modifier
-                .weight(2f),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(
-                modifier = Modifier
-                    .offset(y = 5.dp),
-                color = White,
-                text = stringResource(R.string.best_score_short) + bestScore,
-                fontSize = 12.sp
-            )
-
-            Row(
-                modifier = Modifier
-                    .height(38.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(6.dp)
-            ) {
-                Text(
-                    text = "$totalScore",
-                    color = Color.White,
-                    fontSize = if (isLandscape) 12.sp else 36.sp,
-                    style = TextStyle(
-                        platformStyle = PlatformTextStyle(includeFontPadding = false),
-                        lineHeightStyle = LineHeightStyle(
-                            alignment = LineHeightStyle.Alignment.Bottom,
-                            trim = LineHeightStyle.Trim.Both
-                        )
-                    )
-                )
-
-                ComboBadge(combo = combo)
-            }
-        }
-    }
-
-
 }
 
 // Плашка текущего комбо, видна от x2; при росте пульсирует, при сбросе плавно исчезает
@@ -219,61 +172,94 @@ private fun ComboBadge(combo: Int) {
     ) {
         Text(
             modifier = Modifier
+                .padding(top = 1.dp)
                 .graphicsLayer {
                     scaleX = pulse.value
                     scaleY = pulse.value
                 }
                 .background(comboColor(shownCombo), RoundedCornerShape(8.dp))
-                .padding(horizontal = 6.dp, vertical = 2.dp),
-            text = "x$shownCombo",
-            color = White,
-            fontSize = 16.sp,
-            fontWeight = FontWeight.Bold,
+                .padding(horizontal = 8.dp),
+            text = stringResource(R.string.combo_badge, shownCombo),
+            color = androidx.compose.ui.graphics.Color.White,
+            fontSize = 12.sp,
+            lineHeight = 18.sp,
+            fontWeight = FontWeight.Black,
             maxLines = 1
         )
     }
 }
 
 @Composable
-private fun RowScope.Shop(
-    modifier: Modifier = Modifier,
+private fun Buttons(
+    trophyHighlighted: Boolean,
+    rewardsToClaim: Int,
     onPauseClick: () -> Unit,
-    onClick: () -> Unit
-){
-    Row(
-        modifier = modifier
-            .weight(1f),
-        verticalAlignment = Alignment.Bottom,
-        horizontalArrangement = Arrangement.spacedBy(4.dp, Alignment.End)
-    ) {
-        Button(
-            modifier = Modifier.size(40.dp),
-            onClick = { onPauseClick() },
-            colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
-            contentPadding = PaddingValues(0.dp),
-            shape = RectangleShape
-        ) {
-            Image(
-                modifier = Modifier
-                    .width(27.dp),
-                painter = painterResource(id = R.drawable.pause),
-                contentDescription = stringResource(R.string.pause_title),
-            )
-        }
+    onAchievementsClick: () -> Unit
+) {
+    // Пока висит баннер достижения, кубок светится в полную силу - подсказка, куда идти за наградой
+    val bannerGlow by animateFloatAsState(
+        targetValue = if (trophyHighlighted) 1f else 0f,
+        animationSpec = tween(300),
+        label = "trophyGlow"
+    )
+    // Пока есть незабранные награды, кубок мягко пульсирует
+    val pulse = if (rewardsToClaim > 0) trophyPulse() else 0f
+    val glow = maxOf(bannerGlow, pulse)
 
-        Button(
-            modifier = Modifier.size(40.dp),
-            onClick = { onClick() },
-            colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
-            contentPadding = PaddingValues(0.dp),
-            shape = RectangleShape
-        ) {
-            Image(
-                modifier = Modifier
-                    .width(27.dp),
-                painter = painterResource(id = R.drawable.ic_shop),
-                contentDescription = "",
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Box {
+            RoundImageButton(
+                modifier = Modifier.drawBehind {
+                    if (glow > 0f) {
+                        drawCircle(Yellow.copy(alpha = 0.55f * glow), radius = size.minDimension / 2 + 5.dp.toPx())
+                    }
+                },
+                iconRes = R.drawable.btn_trophy,
+                contentDescription = stringResource(R.string.achievements),
+                size = 38.dp,
+                onClick = onAchievementsClick
             )
+            if (rewardsToClaim > 0) {
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .offset(x = 3.dp, y = (-3).dp)
+                        .size(18.dp)
+                        .background(Yellow, CircleShape),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = if (rewardsToClaim > 9) "9+" else rewardsToClaim.toString(),
+                        color = Navy,
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Black
+                    )
+                }
+            }
         }
+        RoundImageButton(
+            iconRes = R.drawable.btn_pause,
+            contentDescription = stringResource(R.string.pause_title),
+            size = 38.dp,
+            onClick = onPauseClick
+        )
     }
+}
+
+// Плавная пульсация свечения кубка
+@Composable
+private fun trophyPulse(): Float {
+    val pulse by rememberInfiniteTransition(label = "trophyPulse").animateFloat(
+        initialValue = 0.25f,
+        targetValue = 0.8f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 900),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "trophyPulseValue"
+    )
+    return pulse
 }

@@ -1,50 +1,50 @@
 package com.example.dicedrop.presentation.shop.ui
 
-import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.scaleIn
-import androidx.compose.animation.scaleOut
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.dicedrop.R
 import com.example.dicedrop.domain.entity.BonusItem
-import com.example.dicedrop.domain.entity.BonusType
-import com.example.dicedrop.presentation.common.OutlinedText
-import com.example.dicedrop.presentation.game.ui.bottompanel.getIconResId
+import com.example.dicedrop.presentation.common.ConfettiBit
+import com.example.dicedrop.presentation.common.ConfettiBurst
+import com.example.dicedrop.presentation.common.DialogScrim
+import com.example.dicedrop.presentation.common.GameButton
+import com.example.dicedrop.presentation.common.IconCircle
+import com.example.dicedrop.presentation.common.consumeClicks
+import com.example.dicedrop.presentation.game.ui.bottompanel.getDescriptionResId
+import com.example.dicedrop.presentation.game.ui.bottompanel.getRewardIconResId
 import com.example.dicedrop.presentation.game.ui.bottompanel.getTitleResId
+import com.example.dicedrop.presentation.ui.theme.ButtonText
 import com.example.dicedrop.presentation.ui.theme.DarkBlue
+import com.example.dicedrop.presentation.ui.theme.Green
+import com.example.dicedrop.presentation.ui.theme.LightBlue
+import com.example.dicedrop.presentation.ui.theme.MidBlue
+import com.example.dicedrop.presentation.ui.theme.Orange
 import com.example.dicedrop.presentation.ui.theme.White
+import com.example.dicedrop.presentation.ui.theme.Yellow
 
 @Composable
 fun RandomBonusDialog(
@@ -52,66 +52,107 @@ fun RandomBonusDialog(
     bonus: BonusItem,
     confirmClick: () -> Unit
 ) {
-    var visible by remember { mutableStateOf(true) }
-
+    // Окно "выпрыгивает" с лёгкой пружиной
+    val appear = remember { Animatable(0.3f) }
     LaunchedEffect(Unit) {
-        visible = true
+        appear.animateTo(
+            1f,
+            spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow)
+        )
     }
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color(0x88000000))
-            .clickable { confirmClick() },
-        contentAlignment = Alignment.Center
-    ) {
-        AnimatedVisibility(
-            visible = visible,
-            enter = scaleIn(
-                initialScale = 0.2f,
-                animationSpec = spring(
-                    dampingRatio = Spring.DampingRatioMediumBouncy,
-                    stiffness = Spring.StiffnessLow
-                )
-            ) + fadeIn(),
-            exit = scaleOut() + fadeOut()
+    DialogScrim(onDismiss = confirmClick) {
+        Box(
+            modifier = modifier
+                .padding(horizontal = 44.dp)
+                .fillMaxWidth()
+                .graphicsLayer {
+                    scaleX = appear.value
+                    scaleY = appear.value
+                }
+                .background(DarkBlue, RoundedCornerShape(30.dp))
+                .consumeClicks()
         ) {
+            ConfettiBit(x = 30.dp, y = 74.dp, size = 14.dp, color = Orange, rotation = 20f)
+            ConfettiBit(x = 50.dp, y = 170.dp, size = 9.dp, color = Green, rotation = -15f)
+            ConfettiBit(x = 34.dp, y = 84.dp, size = 12.dp, color = Yellow, rotation = 35f, alignRight = true)
+            ConfettiBit(x = 48.dp, y = 186.dp, size = 8.dp, color = LightBlue, round = true, alignRight = true)
+
             Column(
-                verticalArrangement = Arrangement.spacedBy(20.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = 20.dp, end = 20.dp, top = 22.dp, bottom = 20.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Column(
-                    modifier = modifier
-                        .fillMaxWidth(0.55f)
-                        .wrapContentHeight()
-                        .background(White, RoundedCornerShape(20.dp))
-                        .border(
-                            width = 5.dp,
-                            color = DarkBlue,
-                            shape = RoundedCornerShape(20.dp)
-                        )
-                        .padding(36.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    Text(
-                        text = stringResource(R.string.you_got),
-                        color = DarkBlue,
-                        fontSize = 20.sp)
-                    OutlinedText(
-                        text = stringResource(bonus.type.getTitleResId()),
-                        fillColor = DarkBlue,
-                        outlineColor = DarkBlue,
-                        fontSize = 28.sp
+                Text(
+                    modifier = Modifier.alpha(0.85f),
+                    text = stringResource(R.string.you_got).uppercase(),
+                    color = White,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Black,
+                    letterSpacing = 1.5.sp
+                )
+
+                Spacer(modifier = Modifier.height(14.dp))
+
+                Box {
+                    // Конфетти вылетает из-за иконки полученного бонуса
+                    ConfettiBurst(
+                        key = Unit,
+                        modifier = Modifier.matchParentSize(),
+                        count = 48
                     )
-                    Spacer(Modifier.size(12.dp))
-                    Image(
-                        modifier = Modifier.size(125.dp),
-                        painter = painterResource(id = bonus.type.getIconResId()),
-                        contentDescription = null,
+                    IconCircle(
+                        iconRes = bonus.type.getRewardIconResId(),
+                        size = 132.dp,
+                        iconSize = 96.dp,
+                        ring = 8.dp,
+                        ringColor = MidBlue
+                    )
+                    Text(
+                        modifier = Modifier
+                            .align(Alignment.BottomEnd)
+                            .offset(x = (-4).dp, y = (-10).dp)
+                            .background(Yellow, CircleShape)
+                            .padding(horizontal = 10.dp, vertical = 3.dp),
+                        text = "+${bonus.count}",
+                        color = ButtonText,
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Black
                     )
                 }
-                Text(stringResource(R.string.tap_to_continue), color = Color.White)
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Text(
+                    text = stringResource(bonus.type.getTitleResId()),
+                    color = White,
+                    fontSize = 30.sp,
+                    lineHeight = 33.sp,
+                    fontWeight = FontWeight.Black,
+                    textAlign = TextAlign.Center
+                )
+                bonus.type.getDescriptionResId()?.let {
+                    Text(
+                        modifier = Modifier
+                            .padding(top = 2.dp)
+                            .alpha(0.85f),
+                        text = stringResource(it),
+                        color = White,
+                        fontSize = 14.sp,
+                        textAlign = TextAlign.Center
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(18.dp))
+
+                GameButton(
+                    modifier = Modifier.fillMaxWidth(),
+                    text = stringResource(R.string.great),
+                    onClick = confirmClick,
+                    height = 54.dp,
+                    fontSize = 21.sp
+                )
             }
         }
     }

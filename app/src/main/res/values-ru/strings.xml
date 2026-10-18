@@ -1,13 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="rolling_dice">Бросок кубиков...</string>
-    <string name="startGame">Начать игру</string>
-    <string name="best_score_short">"ЛУЧШЕЕ: "</string>
-    <string name="total_score_short">"СЧЁТ: "</string>
     <string name="settings_title">Настройки</string>
     <string name="pause_title">Пауза</string>
     <string name="back">Назад</string>
-    <string name="music_volume">Громкость музыки</string>
     <string name="restart_game">Начать заново</string>
     <string name="exit">Выход</string>
     <string name="not_enough_coins">Недостаточно монет</string>
@@ -19,24 +14,63 @@
     <string name="achievements">Достижения</string>
     <string name="store">Магазин</string>
     <string name="close">Закрыть</string>
-    <string name="completed">Завершено</string>
     <string name="game_over">ИГРА ОКОНЧЕНА</string>
-    <string name="restart">ПОПРОБОВАТЬ ЕЩЁ РАЗ</string>
-    <string name="watch_an_ad_to_reroll_the_dice">Посмотреть рекламу для переброса кубиков</string>
-    <string name="watch_an_ad_to_undo_move">Посмотреть рекламу и отменить последний ход</string>
     <string name="try_again">Ещё одна попытка</string>
-    <string name="rescue_chance">Шанс спастись: %1$d%%</string>
-    <string name="score_with_count">Счёт: %1$s</string>
-    <string name="score">Счёт</string>
-    <string name="rewards">Награды</string>
-    <string name="tap_to_continue">Нажмите, чтобы продолжить</string>
     <string name="you_got">Вы получили</string>
+
+    <!-- Новый дизайн -->
+    <string name="play">ИГРАТЬ</string>
+    <string name="record_caps">РЕКОРД</string>
+    <string name="record_with_value">РЕКОРД %1$s</string>
+    <string name="combo_badge">КОМБО x%1$d</string>
+    <string name="gift">Подарок</string>
+    <string name="gift_ready">Готов!</string>
+    <string name="daily_streak">День %1$d из 7 · ежедневная серия</string>
+    <string name="continue_game">Продолжить</string>
+    <string name="to_menu">В меню</string>
+    <string name="music">Музыка</string>
+    <string name="cancel">Отмена</string>
+    <string name="great">Отлично!</string>
+    <string name="new_record">НОВЫЙ РЕКОРД!</string>
+    <string name="previous_record">Прошлый рекорд: %1$s</string>
+    <string name="rewards_caps">НАГРАДЫ</string>
+    <string name="score_caps">СЧЁТ</string>
+    <string name="game_over_subtitle">Места для блока больше нет</string>
+    <string name="undo_for_ad">Отменить последний ход за рекламу</string>
+    <string name="watch_ad">Смотреть рекламу</string>
+    <string name="achievement_banner">ДОСТИЖЕНИЕ ПОЛУЧЕНО</string>
+    <string name="daily_gift_subtitle">Заходи каждый день за бонусом</string>
+    <string name="bonuses_title">Бонусы</string>
+    <string name="buy">Купить</string>
+    <string name="rotate_desc">Поворачивает блок на 90°</string>
+    <string name="freeze_desc">Сохраняет кубики на следующий бросок</string>
+    <string name="lucky_desc">Выбери любую грань кубика</string>
+    <string name="draft_desc">Докинь кубик и убери лишний</string>
+    <string name="random_bonus_title">Случайный бонус</string>
+    <string name="random_bonus_desc">Один из четырёх — повезёт?</string>
+    <string name="owned_hint">В скобках — сколько бонусов у вас</string>
+    <string name="achievements_done">Выполнено</string>
+    <string name="tab_all">Все</string>
+    <string name="tab_claim">Забрать · %1$d</string>
+    <string name="tab_progress">В процессе</string>
+    <string name="tab_done">Готово</string>
+    <plurals name="rewards_waiting">
+        <item quantity="one">Ждёт получения: %1$d награда</item>
+        <item quantity="few">Ждут получения: %1$d награды</item>
+        <item quantity="many">Ждут получения: %1$d наград</item>
+        <item quantity="other">Ждут получения: %1$d награды</item>
+    </plurals>
+    <plurals name="bonus_price_coins">
+        <item quantity="one">«%1$s» — %2$d монета</item>
+        <item quantity="few">«%1$s» — %2$d монеты</item>
+        <item quantity="many">«%1$s» — %2$d монет</item>
+        <item quantity="other">«%1$s» — %2$d монеты</item>
+    </plurals>
 
     <!-- Магазин -->
     <string name="daily_gift">Ежедневная награда</string>
     <string name="daily_gift_already_received">Подарок на сегодня уже получен</string>
     <string name="random">Случайный</string>
-    <string name="free">Бесплатно</string>
     <string name="claimed">Получено</string>
     <string name="coins">Монеты</string>
 
@@ -44,15 +78,14 @@
     <string name="rotate">Перевернуть</string>
     <string name="freeze">Заморозка</string>
     <string name="lucky">Счастливый</string>
-    <string name="draft">Докинуть третий</string>
-    <string name="face_hint">Выбери кубик</string>
+    <string name="draft">Третий кубик</string>
+    <string name="face_hint">Выбери кубик для замены грани</string>
     <string name="discard_hint">Убери лишний кубик</string>
     <string name="lucky_dialog_title">Закажи грань</string>
-    <string name="lucky_dialog_hint">Грань встанет сразу — нажми на кубик</string>
+    <string name="lucky_dialog_hint">Выбери новую грань для кубика</string>
 
     <!-- Достижения -->
     <string name="claim">Забрать</string>
-    <string name="achievement_unlocked">Достижение выполнено: %1$s</string>
     <string name="just_the_beginning">Только начало</string>
     <string name="getting_the_hang_of_it">Входим во вкус</string>
     <string name="on_a_roll">В ударе</string>
@@ -90,7 +123,7 @@
     <string name="lucky_one">Везунчик</string>
     <string name="use_lucky_10_times">Использовать «Счастливый» 10 раз</string>
     <string name="third_wheel">Третий не лишний</string>
-    <string name="use_draft_10_times">Использовать «Докинуть третий» 10 раз</string>
+    <string name="use_draft_10_times">Использовать «Третий кубик» 10 раз</string>
     <string name="combo_5_title">Цепная реакция</string>
     <string name="combo_5_description">Набрать комбо x5</string>
     <string name="combo_10_title">Неудержимый</string>

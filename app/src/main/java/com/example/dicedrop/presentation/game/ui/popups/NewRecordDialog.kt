@@ -1,135 +1,190 @@
 package com.example.dicedrop.presentation.game.ui.popups
 
-import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.scaleIn
-import androidx.compose.animation.scaleOut
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.example.dicedrop.R
 import com.example.dicedrop.domain.entity.BonusItem
-import com.example.dicedrop.presentation.achievements.animation.ConfettiParticle
-import com.example.dicedrop.presentation.game.ui.board.animation.particles.Particles
-import com.example.dicedrop.presentation.game.ui.board.animation.particles.ParticlesCanvas
-import com.example.dicedrop.presentation.ui.theme.TranslucentBlack
+import com.example.dicedrop.presentation.common.ConfettiBit
+import com.example.dicedrop.presentation.common.ConfettiBurst
+import com.example.dicedrop.presentation.common.DialogScrim
+import com.example.dicedrop.presentation.common.GameButton
+import com.example.dicedrop.presentation.common.IconCircle
+import com.example.dicedrop.presentation.common.consumeClicks
+import com.example.dicedrop.presentation.common.spaced
+import com.example.dicedrop.presentation.game.ui.bottompanel.getRewardIconResId
+import com.example.dicedrop.presentation.ui.theme.ButtonText
+import com.example.dicedrop.presentation.ui.theme.DarkBlue
+import com.example.dicedrop.presentation.ui.theme.Green
+import com.example.dicedrop.presentation.ui.theme.LightBlue
+import com.example.dicedrop.presentation.ui.theme.MidBlue
+import com.example.dicedrop.presentation.ui.theme.Orange
 import com.example.dicedrop.presentation.ui.theme.White
-import kotlinx.coroutines.delay
+import com.example.dicedrop.presentation.ui.theme.Yellow
 
 @Composable
 fun NewRecordDialog(
     record: Int,
+    previousRecord: Int,
     rewardsList: List<BonusItem>,
-    isLandscape: Boolean,
     confirmClick: () -> Unit
 ) {
-    var visible by remember { mutableStateOf(true) }
-    var dialogSize by remember { mutableStateOf(IntSize.Zero) }
-    val particles = remember { mutableStateListOf<ConfettiParticle>() }
-
+    // Окно "выпрыгивает" с лёгкой пружиной
+    val appear = remember { Animatable(0.3f) }
     LaunchedEffect(Unit) {
-        visible = true
+        appear.animateTo(
+            1f,
+            spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow)
+        )
     }
 
-    LaunchedEffect(Unit) {
-        delay(100)
-        Particles.generateParticles(dialogSize, particles)
-    }
+    // Три награды в ряд не помещаются в размере макета, поэтому круги чуть меньше
+    val many = rewardsList.size > 2
+    val circle = if (many) 70.dp else 84.dp
+    val icon = if (many) 50.dp else 60.dp
 
-    LaunchedEffect(Unit) {
-        Particles.moveParticles(particles)
-    }
-
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(TranslucentBlack)
-            .clickable { confirmClick() },
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-
-    ) {
-        AnimatedVisibility(
-            visible = visible,
-            enter = scaleIn(
-                initialScale = 0.2f,
-                animationSpec = spring(
-                    dampingRatio = Spring.DampingRatioMediumBouncy,
-                    stiffness = Spring.StiffnessLow
-                )
-            ) + fadeIn(),
-            exit = scaleOut() + fadeOut()
+    DialogScrim {
+        Box(
+            modifier = Modifier
+                .padding(horizontal = 28.dp, vertical = 16.dp)
+                .fillMaxWidth()
+                .graphicsLayer {
+                    scaleX = appear.value
+                    scaleY = appear.value
+                }
         ) {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally
+            Box(
+                modifier = Modifier
+                    .padding(top = 54.dp)
+                    .fillMaxWidth()
+                    .background(DarkBlue, RoundedCornerShape(30.dp))
+                    .consumeClicks()
             ) {
-                Box(
+                ConfettiBit(x = 26.dp, y = 22.dp, size = 14.dp, color = Orange, rotation = 20f)
+                ConfettiBit(x = 66.dp, y = 52.dp, size = 9.dp, color = Green, rotation = -15f)
+                ConfettiBit(x = 30.dp, y = 30.dp, size = 12.dp, color = Yellow, rotation = 35f, alignRight = true)
+                ConfettiBit(x = 70.dp, y = 58.dp, size = 8.dp, color = LightBlue, round = true, alignRight = true)
+
+                Column(
                     modifier = Modifier
-                        .padding(vertical = 20.dp),
-                    contentAlignment = Alignment.Center
+                        .fillMaxWidth()
+                        .padding(start = 20.dp, end = 20.dp, top = 66.dp, bottom = 20.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Column(
-                        modifier = Modifier
-                            .wrapContentSize()
-                            .padding(top = (if (isLandscape) 70.dp else 90.dp))
-                            .fillMaxWidth(if (isLandscape) 0.5f else 0.65f)
-                            .background(White, RoundedCornerShape(20.dp))
-                            .padding(bottom = 20.dp)
-                            .onGloballyPositioned { layout -> dialogSize = layout.size }
-                            ,
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                    ) {
-
-                        Spacer(
-                            modifier = Modifier.height(if (isLandscape) 70.dp else 100.dp)
+                    Text(
+                        text = stringResource(R.string.new_record),
+                        color = Yellow,
+                        fontSize = 30.sp,
+                        fontWeight = FontWeight.Black,
+                        letterSpacing = 1.sp
+                    )
+                    Text(
+                        text = record.spaced(),
+                        color = White,
+                        fontSize = 58.sp,
+                        lineHeight = 62.sp,
+                        fontWeight = FontWeight.Black
+                    )
+                    if (previousRecord > 0) {
+                        Text(
+                            modifier = Modifier.alpha(0.8f),
+                            text = stringResource(R.string.previous_record, previousRecord.spaced()),
+                            color = White,
+                            fontSize = 14.sp
                         )
-
-                        NewRecordContent(
-                            record = record.toString(),
-                            isLandscape = isLandscape,
-                            rewardsList = rewardsList)
-
-                        ParticlesCanvas(dialogSize, particles)
                     }
-                    Image(
-                        modifier = Modifier
-                            .align(Alignment.TopCenter)
-                            .fillMaxWidth(if (isLandscape) 0.4f else 0.9f),
-                        painter = painterResource(id = R.drawable.ic_new_record),
-                        contentDescription = null
+
+                    if (rewardsList.isNotEmpty()) {
+                        Spacer(modifier = Modifier.height(18.dp))
+                        Text(
+                            modifier = Modifier.alpha(0.85f),
+                            text = stringResource(R.string.rewards_caps),
+                            color = White,
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Black,
+                            letterSpacing = 1.5.sp
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Row(
+                            modifier = Modifier.padding(bottom = 6.dp),
+                            horizontalArrangement = Arrangement.spacedBy(if (many) 22.dp else 34.dp)
+                        ) {
+                            rewardsList.forEach { reward ->
+                                Box {
+                                    IconCircle(
+                                        iconRes = reward.type.getRewardIconResId(),
+                                        size = circle,
+                                        iconSize = icon,
+                                        ring = 7.dp,
+                                        ringColor = MidBlue
+                                    )
+                                    Text(
+                                        modifier = Modifier
+                                            .align(Alignment.BottomEnd)
+                                            .offset(x = 3.dp, y = 3.dp)
+                                            .background(Yellow, CircleShape)
+                                            .padding(horizontal = 9.dp, vertical = 2.dp),
+                                        text = "+${reward.count}",
+                                        color = ButtonText,
+                                        fontSize = 15.sp,
+                                        fontWeight = FontWeight.Black
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(18.dp))
+
+                    GameButton(
+                        modifier = Modifier.fillMaxWidth(),
+                        text = stringResource(R.string.continue_game),
+                        onClick = confirmClick,
+                        height = 56.dp,
+                        fontSize = 22.sp
                     )
                 }
+            }
 
-                Text(stringResource(R.string.tap_to_continue), color = Color.White)
+            Box(modifier = Modifier.align(Alignment.TopCenter)) {
+                // Праздничный залп из-за кубка
+                ConfettiBurst(
+                    key = Unit,
+                    modifier = Modifier.matchParentSize(),
+                    count = 64,
+                    power = 1.15f
+                )
+                IconCircle(
+                    iconRes = R.drawable.ic_trophy,
+                    size = 108.dp,
+                    iconSize = 78.dp,
+                    ring = 8.dp,
+                    ringColor = DarkBlue
+                )
             }
         }
     }

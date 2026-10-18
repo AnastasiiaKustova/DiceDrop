@@ -2,15 +2,14 @@ package com.example.dicedrop.presentation.game.ui.board
 
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -20,7 +19,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -31,13 +32,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -48,6 +50,7 @@ import com.example.dicedrop.domain.entity.DiceItem
 import com.example.dicedrop.domain.entity.DiscardTarget
 import com.example.dicedrop.domain.entity.TrayDie
 import com.example.dicedrop.domain.entity.TrayState
+import com.example.dicedrop.presentation.common.DieFace
 import com.example.dicedrop.presentation.game.ui.board.animation.AnimatedDices
 import com.example.dicedrop.presentation.game.ui.board.animation.AnimatedDie
 import com.example.dicedrop.presentation.game.ui.board.components.GameCell
@@ -59,6 +62,10 @@ import com.example.dicedrop.presentation.ui.theme.DarkBlue
 import com.example.dicedrop.presentation.ui.theme.White
 import com.example.dicedrop.presentation.ui.theme.Yellow
 
+private val RulerColor = White.copy(alpha = 0.6f)
+private val TrayDieSize = 38.dp
+private val RulerSide = 43.dp
+private val RulerGap = 8.dp
 
 @Composable
 fun BottomBoard(
@@ -67,9 +74,8 @@ fun BottomBoard(
     boardItem: BoardItem,
     boardState: BoardUiState,
     diceItem: DiceItem,
-    isLandscape: Boolean,
     tray: TrayState,
-    facePick: Boolean,
+    pickedFace: Int?,
     onDieClick: (DiscardTarget) -> Unit,
     onRollEnd: (result: DiceItem) -> Unit,
     onPlaceBlock: (r: Int, c: Int) -> Unit,
@@ -82,115 +88,114 @@ fun BottomBoard(
         if (diceItem == DiceItem.empty()) rolling.value = true
     }
 
-    Column(
-        modifier = modifier.fillMaxSize().background(DarkBlue).padding(top = 16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            .background(DarkBlue)
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        contentAlignment = Alignment.Center
     ) {
+        val spare = tray.spare
+        when {
+            spare != null -> SpareChoice(
+                slotA = tray.slotA,
+                slotB = tray.slotB,
+                spare = spare,
+                onDieClick = onDieClick,
+                onSpareRolled = onSpareRolled
+            )
 
-        DiceLabel(
-            dice1 = diceItem.dice2, // левый кубик = ширина
-            dice2 = diceItem.dice1, // правый кубик = высота
-            frozenA = tray.slotA?.frozen == true,
-            frozenB = tray.slotB?.frozen == true,
-            discardMode = tray.spare?.value != null,
-            spare = tray.spare,
-            isLandscape = isLandscape,
-            facePick = facePick,
-            onDieClick = onDieClick,
-            onSpareRolled = onSpareRolled
-        )
-
-        BottomBoardField(
-            dices = diceItem,
-            rolling = rolling.value,
-            tray = tray,
-            boardItem = boardItem,
-            boardState = boardState,
-            uiState = uiState,
-            onPlaceBlock = onPlaceBlock,
-            onRollEnd = {
-                rolling.value = false
-                onRollEnd(it)
+            diceItem.dice1 > 0 && diceItem.dice2 > 0 -> Column(
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                if (pickedFace != null) {
+                    LuckyHint(face = pickedFace)
+                    Spacer(modifier = Modifier.height(8.dp))
+                }
+                RulersWithBlock(
+                    dices = diceItem,
+                    tray = tray,
+                    boardItem = boardItem,
+                    boardState = boardState,
+                    uiState = uiState,
+                    facePick = pickedFace != null,
+                    onDieClick = onDieClick,
+                    onPlaceBlock = onPlaceBlock
+                )
             }
-        )
+
+            rolling.value -> AnimatedDices(
+                rolling = rolling.value,
+                frozenValue = tray.slotA?.takeIf { it.frozen }?.value,
+                frozenValue2 = tray.slotB?.takeIf { it.frozen }?.value,
+                onRollEnd = {
+                    rolling.value = false
+                    onRollEnd(DiceItem(dice1 = it.dice2, dice2 = it.dice1))
+                }
+            )
+        }
     }
 }
 
-
+// Кубик ширины лежит на горизонтальной "линейке" над блоком, кубик высоты - на вертикальной слева
 @Composable
-private fun BottomBoardField(
-    modifier: Modifier = Modifier,
-    uiState: GameUiState,
+private fun RulersWithBlock(
+    dices: DiceItem,
+    tray: TrayState,
     boardItem: BoardItem,
     boardState: BoardUiState,
-    dices: DiceItem,
-    rolling: Boolean,
-    tray: TrayState,
-    onPlaceBlock: (r: Int, c: Int) -> Unit,
-    onRollEnd: (result: DiceItem) -> Unit
+    uiState: GameUiState,
+    facePick: Boolean,
+    onDieClick: (DiscardTarget) -> Unit,
+    onPlaceBlock: (r: Int, c: Int) -> Unit
 ) {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(DarkBlue)
-    ) {
-        if (dices.dice1 > 0 && dices.dice2 > 0) {
-            val density = LocalDensity.current
-            // Пока третий кубик не сброшен, блок перетаскивать нельзя
-            val dragEnabled = tray.spare == null
+    val width = dices.dice2
+    val height = dices.dice1
+    // Блок в лотке того же размера, что и клетки поля, чтобы при переносе он совпадал с подсветкой
+    val cell = boardState.cellSize
+    val blockW = cell * width
+    val blockH = cell * height
+    // Линейка не короче кубика с засечками, даже если блок узкий
+    val rulerW = maxOf(blockW, TrayDieSize + 12.dp)
+    val rulerH = maxOf(blockH, TrayDieSize + 12.dp)
+    val glow = if (facePick) hintPulse() else 0f
 
-            Box(
-                modifier = modifier
-                    // Смещение читается в фазе layout, поэтому драг не вызывает рекомпозицию блока
-                    .offset {
-                        IntOffset(
-                            x = uiState.dragOffsetX.roundToPx(),
-                            y = uiState.dragOffsetY.roundToPx()
-                        )
-                    }
-                    .align(Alignment.Center)
-                    .alpha(if (dragEnabled) 1f else 0.5f)
-                    .onGloballyPositioned { coords ->
-                        uiState.elementStartX = coords.positionInRoot().x
-                        uiState.elementStartY = coords.positionInRoot().y
-                    }
-                    .pointerInput(dices, boardItem, dragEnabled) {
-                        if (!dragEnabled) return@pointerInput
-                        detectDragGestures(
-                            onDragStart = { DragController.onDragStart(uiState) },
-                            onDrag = { _, dragAmount ->
-                                DragController.onDrag(
-                                    uiState,
-                                    dragAmount,
-                                    boardItem,
-                                    boardState,
-                                    density
-                                )
-                            },
-                            onDragEnd = {
-                                DragController.onDragEnd(uiState, boardItem, dices) { r, c, _ ->
-                                    onPlaceBlock(r, c)
-                                }
-                            },
-                            onDragCancel = { DragController.onDragCancel(uiState) }
-                        )
-                    }
-                    .zIndex(10f)
-            ) {
-                Grid(dices.dice1, dices.dice2) { _, _ ->
-                    GameCell(Yellow, boardState.cellSize)
-                }
+    // Слева от блока стоит линейка высоты, поэтому сдвигаем всё на половину её ширины,
+    // чтобы по центру лотка оказался сам блок, а не блок вместе с линейкой
+    Column(modifier = Modifier.offset(x = -(RulerSide + RulerGap) / 2)) {
+        Row {
+            Spacer(modifier = Modifier.width(RulerSide + RulerGap))
+            HorizontalRuler(length = rulerW) {
+                TrayDieView(
+                    value = width,
+                    frozen = tray.slotA?.frozen == true,
+                    glow = glow,
+                    onClick = { onDieClick(DiscardTarget.A) }
+                )
             }
-        } else if (rolling) {
+        }
+        Spacer(modifier = Modifier.height(RulerGap))
+        Row {
+            VerticalRuler(length = rulerH) {
+                TrayDieView(
+                    value = height,
+                    frozen = tray.slotB?.frozen == true,
+                    glow = glow,
+                    onClick = { onDieClick(DiscardTarget.B) }
+                )
+            }
+            Spacer(modifier = Modifier.width(RulerGap))
             Box(
-                modifier = Modifier
-                    .align(Alignment.Center)
+                modifier = Modifier.size(rulerW, rulerH),
+                contentAlignment = Alignment.Center
             ) {
-                AnimatedDices(
-                    rolling = rolling,
-                    frozenValue = tray.slotA?.takeIf { it.frozen }?.value,
-                    frozenValue2 = tray.slotB?.takeIf { it.frozen }?.value,
-                    onRollEnd = { onRollEnd(DiceItem(dice1 = it.dice2, dice2 = it.dice1)) }
+                DraggableBlock(
+                    dices = dices,
+                    cellSize = cell,
+                    boardItem = boardItem,
+                    boardState = boardState,
+                    uiState = uiState,
+                    onPlaceBlock = onPlaceBlock
                 )
             }
         }
@@ -198,138 +203,255 @@ private fun BottomBoardField(
 }
 
 @Composable
-private fun DiceLabel(
-    dice1: Int,
-    dice2: Int,
-    frozenA: Boolean,
-    frozenB: Boolean,
-    discardMode: Boolean,
-    spare: TrayDie?,
-    isLandscape: Boolean,
-    facePick: Boolean,
+private fun DraggableBlock(
+    dices: DiceItem,
+    cellSize: Dp,
+    boardItem: BoardItem,
+    boardState: BoardUiState,
+    uiState: GameUiState,
+    onPlaceBlock: (r: Int, c: Int) -> Unit
+) {
+    val density = LocalDensity.current
+    Box(
+        modifier = Modifier
+            // Смещение читается в фазе layout, поэтому драг не вызывает рекомпозицию блока
+            .offset {
+                IntOffset(
+                    x = uiState.dragOffsetX.roundToPx(),
+                    y = uiState.dragOffsetY.roundToPx()
+                )
+            }
+            .onGloballyPositioned { coords ->
+                uiState.elementStartX = coords.positionInRoot().x
+                uiState.elementStartY = coords.positionInRoot().y
+            }
+            .pointerInput(dices, boardItem) {
+                detectDragGestures(
+                    onDragStart = { DragController.onDragStart(uiState) },
+                    onDrag = { _, dragAmount ->
+                        DragController.onDrag(
+                            uiState,
+                            dragAmount,
+                            boardItem,
+                            boardState,
+                            density
+                        )
+                    },
+                    onDragEnd = {
+                        DragController.onDragEnd(uiState, boardItem, dices) { r, c, _ ->
+                            onPlaceBlock(r, c)
+                        }
+                    },
+                    onDragCancel = { DragController.onDragCancel(uiState) }
+                )
+            }
+            .zIndex(10f)
+    ) {
+        Grid(dices.dice1, dices.dice2) { _, _ ->
+            GameCell(Yellow, cellSize)
+        }
+    }
+}
+
+@Composable
+private fun HorizontalRuler(length: Dp, die: @Composable () -> Unit) {
+    Row(
+        modifier = Modifier
+            .width(length)
+            .height(RulerSide),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        Box(modifier = Modifier.size(2.dp, 12.dp).background(RulerColor, RoundedCornerShape(1.dp)))
+        Box(modifier = Modifier.weight(1f).height(2.dp).background(RulerColor, RoundedCornerShape(1.dp)))
+        die()
+        Box(modifier = Modifier.weight(1f).height(2.dp).background(RulerColor, RoundedCornerShape(1.dp)))
+        Box(modifier = Modifier.size(2.dp, 12.dp).background(RulerColor, RoundedCornerShape(1.dp)))
+    }
+}
+
+@Composable
+private fun VerticalRuler(length: Dp, die: @Composable () -> Unit) {
+    Column(
+        modifier = Modifier
+            .width(RulerSide)
+            .height(length),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        Box(modifier = Modifier.size(12.dp, 2.dp).background(RulerColor, RoundedCornerShape(1.dp)))
+        Box(modifier = Modifier.weight(1f).width(2.dp).background(RulerColor, RoundedCornerShape(1.dp)))
+        die()
+        Box(modifier = Modifier.weight(1f).width(2.dp).background(RulerColor, RoundedCornerShape(1.dp)))
+        Box(modifier = Modifier.size(12.dp, 2.dp).background(RulerColor, RoundedCornerShape(1.dp)))
+    }
+}
+
+@Composable
+private fun TrayDieView(
+    value: Int,
+    frozen: Boolean,
+    glow: Float,
+    onClick: () -> Unit
+) {
+    val interaction = remember { MutableInteractionSource() }
+    Box(
+        modifier = Modifier
+            .size(TrayDieSize)
+            .clickable(interactionSource = interaction, indication = null, onClick = onClick)
+    ) {
+        DieFace(value = value, size = TrayDieSize, glow = glow)
+        if (frozen) {
+            // requiredSize: лёд больше кубика и выходит за его границы равномерно со всех сторон
+            Image(
+                painter = painterResource(R.drawable.ic_ice_shell),
+                contentDescription = null,
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .requiredSize(TrayDieSize + 14.dp)
+                    .alpha(0.72f)
+            )
+            Image(
+                painter = painterResource(R.drawable.freeze_badge),
+                contentDescription = null,
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .offset(x = 12.dp, y = (-12).dp)
+                    .size(22.dp)
+            )
+        }
+    }
+}
+
+// Подсказка "Счастливого": выбери кубик, рядом золотой кубик-иконка
+@Composable
+private fun LuckyHint(face: Int) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Text(
+            text = stringResource(R.string.face_hint),
+            color = White,
+            fontSize = 15.sp,
+            fontWeight = FontWeight.ExtraBold
+        )
+        DieFace(value = face, size = 24.dp, gold = true)
+    }
+}
+
+// Режим "Третий кубик": под каждым кубиком - какой блок останется, если убрать именно его
+@Composable
+private fun SpareChoice(
+    slotA: TrayDie?,
+    slotB: TrayDie?,
+    spare: TrayDie,
     onDieClick: (DiscardTarget) -> Unit,
     onSpareRolled: (Int) -> Unit
 ) {
-    val isDiceNull = (dice1 == 0 || dice2 == 0)
-
-    // Пульсация нужна только в режиме выбора кубика, иначе анимация не создается
-    val glow = if (discardMode || facePick) diceHintPulse() else 1f
+    val a = slotA?.value
+    val b = slotB?.value
+    val s = spare.value
+    val ready = s != null
+    val glow = if (ready) hintPulse() else 0f
 
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        if (isDiceNull) {
-            Text(
-                text = stringResource(R.string.rolling_dice),
-                fontSize = 14.sp,
-                color = White
+        Text(
+            text = stringResource(R.string.discard_hint),
+            color = White,
+            fontSize = 15.sp,
+            fontWeight = FontWeight.ExtraBold
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(24.dp)) {
+            // Убрали A: ширина = B, высота = третий; убрали B: ширина = A, высота = третий
+            SpareOption(removed = a, blockW = b, blockH = s, glow = glow, enabled = ready) {
+                onDieClick(DiscardTarget.A)
+            }
+            SpareOption(removed = b, blockW = a, blockH = s, glow = glow, enabled = ready) {
+                onDieClick(DiscardTarget.B)
+            }
+            SpareOption(
+                removed = s,
+                blockW = a,
+                blockH = b,
+                glow = glow,
+                enabled = ready,
+                rollingSpare = !ready,
+                onSpareRolled = onSpareRolled
+            ) {
+                onDieClick(DiscardTarget.SPARE)
+            }
+        }
+    }
+}
+
+@Composable
+private fun SpareOption(
+    removed: Int?,
+    blockW: Int?,
+    blockH: Int?,
+    glow: Float,
+    enabled: Boolean,
+    rollingSpare: Boolean = false,
+    onSpareRolled: (Int) -> Unit = {},
+    onClick: () -> Unit
+) {
+    val interaction = remember { MutableInteractionSource() }
+    Column(
+        modifier = Modifier
+            .width(76.dp)
+            .clickable(enabled = enabled, interactionSource = interaction, indication = null, onClick = onClick),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(6.dp)
+    ) {
+        if (rollingSpare) {
+            AnimatedDie(
+                rolling = true,
+                dieSize = 40.dp,
+                jump = 24.dp,
+                onRollEnd = onSpareRolled
             )
         } else {
-            if (discardMode) {
-                Text(text = stringResource(R.string.discard_hint), fontSize = 14.sp, color = White)
-                Spacer(modifier = Modifier.height(4.dp))
-            } else if (facePick) {
-                Text(text = stringResource(R.string.face_hint), fontSize = 14.sp, color = White)
-                Spacer(modifier = Modifier.height(4.dp))
-            }
-
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(2.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                DiceFace(dice1.toDiceRes(), frozenA, glow) { onDieClick(DiscardTarget.A) }
-                DiceFace(dice2.toDiceRes(), frozenB, glow) { onDieClick(DiscardTarget.B) }
-                if (spare != null) {
-                    if (spare.value != null) {
-                        DiceFace(spare.value.toDiceRes(), false, if (discardMode) glow else 1f) {
-                            onDieClick(DiscardTarget.SPARE)
-                        }
-                    } else {
-                        Box(
-                            modifier = Modifier.size(52.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            AnimatedDie(
-                                rolling = true,
-                                skipAnimation = false,
-                                imageSize = 28.dp,
-                                boxPadding = 0.dp,
-                                onRollEnd = { onSpareRolled(it) }
-                            )
+            DieFace(value = removed, size = 40.dp, glow = glow)
+        }
+        // Превью блока 6×6 занимает около 44dp
+        Box(
+            modifier = Modifier.height(46.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            if (blockW != null && blockH != null) {
+                Column(verticalArrangement = Arrangement.spacedBy(1.5.dp)) {
+                    repeat(blockH) {
+                        Row(horizontalArrangement = Arrangement.spacedBy(1.5.dp)) {
+                            repeat(blockW) {
+                                Box(modifier = Modifier.size(6.dp).background(Yellow, RoundedCornerShape(1.5.dp)))
+                            }
                         }
                     }
                 }
             }
         }
+        Text(
+            text = if (blockW != null && blockH != null) "$blockW × $blockH" else "?",
+            color = White,
+            fontSize = 14.sp,
+            fontWeight = FontWeight.Black
+        )
     }
 }
 
-
+// Мягкая пульсация подсветки кубиков, когда игрок должен выбрать один из них
 @Composable
-private fun diceHintPulse(): Float {
+private fun hintPulse(): Float {
     val pulse by rememberInfiniteTransition(label = "diceHint").animateFloat(
         initialValue = 1f,
-        targetValue = 0.35f,
+        targetValue = 0.4f,
         animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 500),
+            animation = tween(durationMillis = 600),
             repeatMode = RepeatMode.Reverse
         ),
-        label = "diceAlpha"
+        label = "diceGlow"
     )
     return pulse
-}
-
-@Composable
-private fun DiceFace(resId: Int?, badge: Boolean, alpha: Float, onClick: () -> Unit) {
-    val iceTarget = if (badge) 1f else 0f
-    val ice by animateFloatAsState(iceTarget,
-        animationSpec = tween(durationMillis = 400),
-        label = "iceAnim"
-    )
-
-    Box(
-        modifier = Modifier
-            .size(52.dp)
-            .alpha(alpha)
-            .clickable { onClick() },
-        contentAlignment = Alignment.Center
-    ) {
-        if (resId != null) {
-            Image(
-                painter = painterResource(id = resId),
-                contentDescription = null,
-                modifier = Modifier
-                    .size(38.dp)
-            )
-        } else {
-            Box(
-                modifier = Modifier
-                    .size(36.dp)
-                    .border(2.dp, White, RoundedCornerShape(10.dp)),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(text = "?", fontSize = 22.sp, color = White)
-            }
-        }
-        if (ice > 0.02f) {
-            Image(
-                painter = painterResource(id = R.drawable.ic_ice_shell),
-                contentDescription = null,
-                modifier = Modifier
-                    .size(54.dp)
-                    .graphicsLayer {
-                        scaleX = 0.9f + 0.1f * ice
-                        scaleY = 0.9f + 0.1f * ice
-                    }
-                    .alpha(0.75f * ice)
-            )
-        }
-    }
-}
-
-fun Int.toDiceRes(): Int = when (this) {
-    1 -> R.drawable.dice_1
-    2 -> R.drawable.dice_2
-    3 -> R.drawable.dice_3
-    4 -> R.drawable.dice_4
-    5 -> R.drawable.dice_5
-    else -> R.drawable.dice_6
 }

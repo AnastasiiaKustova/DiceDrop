@@ -1,173 +1,149 @@
 package com.example.dicedrop.presentation.shop.ui
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Card
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.dicedrop.R
 import com.example.dicedrop.domain.entity.BonusType
+import com.example.dicedrop.presentation.common.GameButton
+import com.example.dicedrop.presentation.common.IconCircle
+import com.example.dicedrop.presentation.common.PriceTag
+import com.example.dicedrop.presentation.game.ui.bottompanel.getDescriptionResId
 import com.example.dicedrop.presentation.game.ui.bottompanel.getIconResId
-import com.example.dicedrop.presentation.ui.theme.BlackGradientDark
-import com.example.dicedrop.presentation.ui.theme.BlackGradientLight
-import com.example.dicedrop.presentation.ui.theme.DarkBlue
-import com.example.dicedrop.presentation.ui.theme.LightBlue
+import com.example.dicedrop.presentation.game.ui.bottompanel.getTitleResId
+import com.example.dicedrop.presentation.ui.theme.MidBlue
 import com.example.dicedrop.presentation.ui.theme.White
 
+// Карточка бонуса в магазине: цена сверху, иконка, название, количество у игрока, описание и покупка.
+// Высоту карточкам в ряду выравнивает родитель, кнопка всегда прижата к низу
 @Composable
 fun BonusCard(
-    bonusId: String,
-    titleId: Int,
-    iconResId: Int,
+    bonusType: BonusType,
     price: Int,
+    owned: Int,
     modifier: Modifier = Modifier,
-    dailyRewardClaimed: Boolean,
-    onCardClick: () -> Unit
+    onBuyClick: () -> Unit
 ) {
-
-    val isDailyRewardClaimed = (bonusId == "daily_bonus" && dailyRewardClaimed)
-
-    Card(
+    Column(
         modifier = modifier
-
-            .width(150.dp)
-            .height(200.dp)
-
+            .background(MidBlue, RoundedCornerShape(22.dp))
+            .padding(start = 12.dp, end = 12.dp, top = 10.dp, bottom = 12.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-            modifier = Modifier
-                .background(Color.White)
-                .fillMaxWidth()
-                .weight(0.7f)
-                .padding(
-                    top = 20.dp,
-                    start = 12.dp,
-                    end = 12.dp,
-                    bottom = 16.dp,
-                )
-        ) {
-
-            Text(
-                text = stringResource(titleId),
-                color = DarkBlue,
-                fontWeight = FontWeight.Bold,
-                fontSize = 18.sp,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.align(Alignment.CenterHorizontally)
-            )
-
-            if (isDailyRewardClaimed) {
-                Image(
-                    modifier = Modifier.size(75.dp),
-                    painter = painterResource(id = R.drawable.ic_gift_open),
-                    contentDescription = null,
-                )
-            } else {
-                Image(
-                    modifier = Modifier.size(75.dp),
-                    painter = painterResource(id = iconResId),
-                    contentDescription = null,
-                )
-            }
-
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+            PriceTag(price = price)
         }
-
-        Row(
+        Spacer(modifier = Modifier.height(6.dp))
+        IconCircle(iconRes = bonusType.getIconResId(), size = 58.dp, iconSize = 43.dp)
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(
+            text = stringResource(bonusType.getTitleResId()),
+            color = White,
+            fontSize = 16.sp,
+            lineHeight = 18.sp,
+            fontWeight = FontWeight.Black,
+            textAlign = TextAlign.Center,
+            maxLines = 1
+        )
+        Text(
+            modifier = Modifier.alpha(0.75f),
+            text = "($owned)",
+            color = White,
+            fontSize = 14.sp,
+            fontWeight = FontWeight.ExtraBold
+        )
+        bonusType.getDescriptionResId()?.let {
+            Text(
+                modifier = Modifier
+                    .padding(top = 4.dp)
+                    .alpha(0.85f),
+                text = stringResource(it),
+                color = White,
+                fontSize = 12.sp,
+                lineHeight = 15.sp,
+                textAlign = TextAlign.Center
+            )
+        }
+        Spacer(modifier = Modifier.weight(1f).height(10.dp))
+        GameButton(
             modifier = Modifier
-                .background(Color.White)
-                .padding(
-                    start = 12.dp,
-                    end = 12.dp,
-                    bottom = 20.dp,
-                )
-                .background(
-                    brush = if (isDailyRewardClaimed) {
-                        Brush.linearGradient(
-                            colors = listOf(BlackGradientDark, BlackGradientLight),
-                            start = Offset(0f, 0f),
-                            end = Offset(0f, Float.POSITIVE_INFINITY)
-                        )
-                    } else {
-                        Brush.linearGradient(
-                            colors = listOf(LightBlue, DarkBlue),
-                            start = Offset(0f, 0f),
-                            end = Offset(0f, Float.POSITIVE_INFINITY)
-                        )
-                    }, shape = RoundedCornerShape(12.dp)
-                )
-                .border(
-                    width = 2.dp,
-                    brush = if (isDailyRewardClaimed) {
-                        Brush.linearGradient(
-                            colors = listOf(BlackGradientLight, BlackGradientDark),
-                            start = Offset(0f, 0f),
-                            end = Offset(0f, Float.POSITIVE_INFINITY)
-                        )
-                    } else {
-                        Brush.linearGradient(
-                            colors = listOf(DarkBlue, LightBlue),
-                            start = Offset(0f, 0f),
-                            end = Offset(0f, Float.POSITIVE_INFINITY)
-                        )
-                    },
-                    shape = RoundedCornerShape(12.dp)
-                )
-                .fillMaxWidth()
-                .weight(0.3f)
-                .clickable { if (isDailyRewardClaimed) Unit else onCardClick() },
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center
+                .padding(top = 10.dp)
+                .fillMaxWidth(),
+            text = stringResource(R.string.buy),
+            onClick = onBuyClick,
+            height = 36.dp,
+            corner = 12.dp,
+            fontSize = 16.sp
+        )
+    }
+}
+
+// Строка "Случайный бонус": цена в углу, как у карточек бонусов
+@Composable
+fun RandomBonusRow(
+    price: Int,
+    onBuyClick: () -> Unit
+) {
+    // Картинка и текст - по центру карточки по высоте; справа цена сверху, кнопка снизу
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(IntrinsicSize.Min)
+            .background(MidBlue, RoundedCornerShape(22.dp))
+            .padding(start = 14.dp, end = 12.dp, top = 10.dp, bottom = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        IconCircle(iconRes = R.drawable.ic_random_die, size = 54.dp, iconSize = 40.dp)
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = stringResource(R.string.random_bonus_title),
+                color = White,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Black,
+                maxLines = 1,
+                softWrap = false
+            )
+            Text(
+                modifier = Modifier.alpha(0.85f),
+                text = stringResource(R.string.random_bonus_desc),
+                color = White,
+                fontSize = 12.sp,
+                lineHeight = 15.sp
+            )
+        }
+        Column(
+            modifier = Modifier.fillMaxHeight(),
+            horizontalAlignment = Alignment.End,
+            verticalArrangement = Arrangement.SpaceBetween
         ) {
-            if (price == 0) {
-                Text(
-                    fontWeight = FontWeight.Bold,
-                    fontSize = if (isDailyRewardClaimed) 16.sp else 21.sp,
-                    text = if (isDailyRewardClaimed) stringResource(R.string.claimed) else stringResource(R.string.free),
-                    color = White
-                )
-
-            } else {
-                Image(
-                    modifier = Modifier.size(24.dp),
-                    painter = painterResource(id = R.drawable.coin),
-                    contentDescription = null,
-                )
-                Spacer(Modifier.size(8.dp))
-                Text(
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 21.sp,
-                    text = price.toString(),
-                    color = White
-                )
-            }
-
-
+            PriceTag(price = price)
+            GameButton(
+                modifier = Modifier.padding(top = 8.dp),
+                text = stringResource(R.string.buy),
+                onClick = onBuyClick,
+                height = 36.dp,
+                corner = 12.dp,
+                fontSize = 16.sp
+            )
         }
     }
 }

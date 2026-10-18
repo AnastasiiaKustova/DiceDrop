@@ -9,6 +9,8 @@ import com.example.dicedrop.core.NotEnoughBonusException
 import com.example.dicedrop.core.NotEnoughCoinsException
 import com.example.dicedrop.domain.action.CheckAndClearFullRowsAction
 import com.example.dicedrop.domain.action.RollDiceAction
+import com.example.dicedrop.domain.catalog.ShopItemCatalog
+import com.example.dicedrop.domain.entity.achievement.Achievement
 import com.example.dicedrop.domain.engine.AchievementTracker
 import com.example.dicedrop.domain.entity.BonusItem
 import com.example.dicedrop.domain.entity.BonusType
@@ -16,6 +18,8 @@ import com.example.dicedrop.domain.entity.DiceItem
 import com.example.dicedrop.domain.entity.DiscardTarget
 import com.example.dicedrop.domain.entity.GameStatisticItem
 import com.example.dicedrop.domain.entity.Slot
+import com.example.dicedrop.domain.useCases.achievements.GetAchievementsUseCase
+import com.example.dicedrop.domain.useCases.achievements.ObserveAchievementStateUseCase
 import com.example.dicedrop.domain.useCases.game.CheckGameOverUseCase
 import com.example.dicedrop.domain.useCases.game.ConfirmNewRecordUseCase
 import com.example.dicedrop.domain.useCases.game.DiscardSpareUseCase
@@ -78,7 +82,9 @@ interface GameStore : Store<Intent, State, Label> {
     }
 
     data class State(
-        val gameState: GameState
+        val gameState: GameState,
+        // Сколько выполненных достижений ждут, пока игрок заберёт награду
+        val rewardsToClaim: Int = 0
     ) {
         sealed interface GameState {
 
@@ -114,9 +120,13 @@ interface GameStore : Store<Intent, State, Label> {
 
         data object ClickNavigateToAchievements : Label
 
-        data class AchievementUnlocked(val titleId: Int) : Label
+        data class AchievementUnlocked(
+            val titleId: Int,
+            val descriptionId: Int,
+            val reward: Int
+        ) : Label
 
-        data object NotEnoughCoins : Label
+        data class NotEnoughCoins(val bonusType: BonusType) : Label
 
         data object NotEnoughBonus : Label
 
@@ -151,7 +161,9 @@ class GameStoreFactory @Inject constructor(
     private val observeGameUseCase: ObserveGameUseCase,
     private val discardSpareUseCase: DiscardSpareUseCase,
     private val rollSpareUseCase: RollSpareUseCase,
-    private val achievementTracker: AchievementTracker
+    private val achievementTracker: AchievementTracker,
+    private val getAchievementsUseCase: GetAchievementsUseCase,
+    private val observeAchievementStateUseCase: ObserveAchievementStateUseCase
 ) {
 
     fun create(): GameStore =
@@ -175,12 +187,16 @@ class GameStoreFactory @Inject constructor(
 
         data object GameError : Action
 
-        data class AchievementUnlocked(val titleId: Int) : Action
+        data class AchievementUnlocked(val achievement: Achievement) : Action
+
+        data class RewardsChanged(val count: Int) : Action
     }
 
     private sealed interface Msg {
 
         data class GameLoaded(val game: GameStatisticItem) : Msg
+
+        data class RewardsChanged(val count: Int) : Msg
 
         data object GameLoading : Msg
 
@@ -213,10 +229,22 @@ class GameStoreFactory @Inject constructor(
 
             scope.launch {
                 achievementTracker.events.collect { event ->
-                    dispatch(Action.AchievementUnlocked(event.achievement.titleId))
+                    dispatch(Action.AchievementUnlocked(event.achievement))
+                }
+            }
+
+            scope.launch {
+                observeAchievementStateUseCase().collect {
+                    dispatch(Action.RewardsChanged(countRewardsToClaim()))
                 }
             }
         }
+    }
+
+    private suspend fun countRewardsToClaim(): Int = try {
+        getAchievementsUseCase().count { !it.isRewardClaimed && it.totalCount >= it.requiredCount }
+    } catch (e: Exception) {
+        0
     }
 
     //Обрабатывает Action и Intent, если нужно изменить стейт экрана, то отправляем Msg вызывая dispatch, этот Msg поступает в Reducer
@@ -230,7 +258,17 @@ class GameStoreFactory @Inject constructor(
                 Action.GameError -> dispatch(Msg.GameError)
                 is Action.GameLoaded -> showGame(action.game)
                 Action.GameLoading -> dispatch(Msg.GameLoading)
-                is Action.AchievementUnlocked -> publish(Label.AchievementUnlocked(action.titleId))
+                is Action.AchievementUnlocked -> {
+                    publish(
+                        Label.AchievementUnlocked(
+                            titleId = action.achievement.titleId,
+                            descriptionId = action.achievement.descriptionId,
+                            reward = action.achievement.reward
+                        )
+                    )
+                    scope.launch { dispatch(Msg.RewardsChanged(countRewardsToClaim())) }
+                }
+                is Action.RewardsChanged -> dispatch(Msg.RewardsChanged(action.count))
             }
         }
 
@@ -349,9 +387,13 @@ class GameStoreFactory @Inject constructor(
                 is Intent.BuyBonus -> {
                     scope.launch {
                         try {
-                            buyBonusUseCase(intent.bonusType)
+                            buyBonusUseCase(
+                                bonusType = intent.bonusType,
+                                price = ShopItemCatalog.all
+                                    .firstOrNull { it.bonusType == intent.bonusType }?.price ?: 1
+                            )
                         } catch (e: NotEnoughCoinsException) {
-                            publish(Label.NotEnoughCoins)
+                            publish(Label.NotEnoughCoins(intent.bonusType))
                         }
                     }
                 }
@@ -359,6 +401,10 @@ class GameStoreFactory @Inject constructor(
                 Intent.ResumeGame -> {
                     scope.launch {
                         showGame(resumeGameUseCase())
+                    }
+                    // Пока игрок был в достижениях, он мог забрать награды
+                    scope.launch {
+                        dispatch(Msg.RewardsChanged(countRewardsToClaim()))
                     }
                 }
 
@@ -414,6 +460,7 @@ class GameStoreFactory @Inject constructor(
                 }
 
                 is Msg.GameLoaded -> copy(gameState = State.GameState.Loaded(msg.game))
+                is Msg.RewardsChanged -> copy(rewardsToClaim = msg.count)
             }
         }
     }

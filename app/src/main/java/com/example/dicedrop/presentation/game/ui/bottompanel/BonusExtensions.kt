@@ -1,6 +1,7 @@
 package com.example.dicedrop.presentation.game.ui.bottompanel
 
 import com.example.dicedrop.R
+import com.example.dicedrop.domain.catalog.ShopItemCatalog
 import com.example.dicedrop.domain.entity.BonusItem
 import com.example.dicedrop.domain.entity.BonusType
 import com.example.dicedrop.domain.entity.DraggingType
@@ -33,3 +34,25 @@ fun BonusType.getTitleResId(): Int {
         BonusType.COIN -> R.string.coins
     }
 }
+
+fun BonusType.getDescriptionResId(): Int? {
+    return when (this) {
+        BonusType.ROTATE -> R.string.rotate_desc
+        BonusType.FREEZE -> R.string.freeze_desc
+        BonusType.LUCKY -> R.string.lucky_desc
+        BonusType.DRAFT -> R.string.draft_desc
+        BonusType.COIN -> null
+    }
+}
+
+// Иконка монет в новом стиле, у бонусов - их собственные
+fun BonusType.getRewardIconResId(): Int {
+    return when (this) {
+        BonusType.COIN -> R.drawable.coin_star
+        else -> getIconResId()
+    }
+}
+
+// Цена бонуса берётся из каталога магазина, чтобы в игре и в магазине она совпадала
+fun BonusType.getPrice(): Int =
+    ShopItemCatalog.all.firstOrNull { it.bonusType == this }?.price ?: 1

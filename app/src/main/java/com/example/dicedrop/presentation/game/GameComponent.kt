@@ -51,14 +51,19 @@ interface GameComponent {
     sealed interface UiEvent {
         data object WatchAd : UiEvent
         data object Animate : UiEvent
-        data class Error(val msg: ErrorType) : UiEvent
+        // bonusType - какой бонус не удалось купить, чтобы показать его название и цену
+        data class Error(val msg: ErrorType, val bonusType: BonusType? = null) : UiEvent
         data class ClearLine(
             val clearedRows: List<Int>,
             val clearedCols: List<Int>,
             val combo: Int,
             val points: Int
         ) : UiEvent
-        data class AchievementUnlocked(val titleId: Int) : UiEvent
+        data class AchievementUnlocked(
+            val titleId: Int,
+            val descriptionId: Int,
+            val reward: Int
+        ) : UiEvent
 
         enum class ErrorType(val stringRes: Int) {
             NotEnoughCoins(R.string.not_enough_coins),

@@ -55,9 +55,13 @@ class GameComponentImpl @AssistedInject constructor(
                     GameStore.Label.ClickNavigateBack -> navigateBackClicked()
                     GameStore.Label.ClickNavigateToAchievements -> navigateToAchievementsClicked()
                     GameStore.Label.ClickNavigateToShop -> navigateToShopClicked()
-                    is GameStore.Label.AchievementUnlocked -> _uiEvents.emit(UiEvent.AchievementUnlocked(it.titleId))
+                    is GameStore.Label.AchievementUnlocked -> _uiEvents.emit(
+                        UiEvent.AchievementUnlocked(it.titleId, it.descriptionId, it.reward)
+                    )
                     GameStore.Label.WatchAd -> _uiEvents.emit(UiEvent.WatchAd)
-                    GameStore.Label.NotEnoughCoins -> _uiEvents.emit(UiEvent.Error(GameComponent.UiEvent.ErrorType.NotEnoughCoins))
+                    is GameStore.Label.NotEnoughCoins -> _uiEvents.emit(
+                        UiEvent.Error(GameComponent.UiEvent.ErrorType.NotEnoughCoins, it.bonusType)
+                    )
                     GameStore.Label.NotEnoughBonus -> _uiEvents.emit(UiEvent.Error(GameComponent.UiEvent.ErrorType.NotEnoughBonus))
                     is GameStore.Label.PlayLineClearAnimation -> _uiEvents.emit(UiEvent.ClearLine(
                         clearedRows = it.clearedRows,

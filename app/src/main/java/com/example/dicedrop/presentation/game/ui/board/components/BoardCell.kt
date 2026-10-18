@@ -39,6 +39,6 @@ fun GameCell(color: Color, size: Dp, isNew: Boolean = false) {
                 scaleY = scale
             }
             .padding(2.dp)
-            .background(color, RoundedCornerShape(4.dp))
+            .background(color, RoundedCornerShape(5.dp))
     )
 }

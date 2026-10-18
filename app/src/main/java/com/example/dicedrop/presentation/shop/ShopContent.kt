@@ -1,10 +1,10 @@
 package com.example.dicedrop.presentation.shop
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
@@ -14,14 +14,15 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
 import com.example.dicedrop.R
 import com.example.dicedrop.presentation.game.ui.GameSnackbarHost
 import com.example.dicedrop.presentation.shop.ui.RandomBonusDialog
 import com.example.dicedrop.presentation.shop.ui.ShopItems
 import com.example.dicedrop.presentation.shop.ui.ShopTopBar
-import com.example.dicedrop.presentation.ui.theme.LightBlue
+import com.example.dicedrop.presentation.ui.theme.DarkBlue
+import com.example.dicedrop.presentation.ui.theme.White
 import kotlinx.coroutines.launch
 
 @Composable
@@ -59,19 +60,19 @@ fun ShopContent(component: ShopComponent) {
             }
         }
     }
-    Scaffold(
-        topBar = {
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(DarkBlue)
+    ) {
+        Column(modifier = Modifier.fillMaxSize()) {
             ShopTopBar(
                 coinsValue = coins,
                 onBackClick = component::onBackClick
             )
-        },
-        snackbarHost = { GameSnackbarHost(snackbarHostState) },
-        modifier = Modifier.fillMaxSize(),
-        containerColor = LightBlue
-    ) { padding ->
-        Box(modifier = Modifier.padding(padding)) {
-            when (val state = state.shopState) {
+
+            when (val shopState = state.shopState) {
                 ShopStore.State.ShopState.Error -> Error()
                 ShopStore.State.ShopState.Initial -> Loading()
                 ShopStore.State.ShopState.Loading -> Loading()
@@ -79,29 +80,35 @@ fun ShopContent(component: ShopComponent) {
                 is ShopStore.State.ShopState.GetRandomBonus,
                 is ShopStore.State.ShopState.Loaded -> {
 
-                    val shopState = when (state) {
-                        is ShopStore.State.ShopState.Loaded -> state
-                        is ShopStore.State.ShopState.GetRandomBonus -> state.prevState
+                    val loaded = when (shopState) {
+                        is ShopStore.State.ShopState.Loaded -> shopState
+                        is ShopStore.State.ShopState.GetRandomBonus -> shopState.prevState
                         else -> error("Impossible")
                     }
 
                     ShopItems(
-                        dailyRewardClaimed = shopState.dailyRewardClaimed,
+                        dailyRewardClaimed = loaded.dailyRewardClaimed,
+                        dayStreak = state.dayStreak,
+                        bonuses = loaded.bonuses,
                         onCardClick = { component.onBuyItemClick(it) }
                     )
                 }
             }
         }
-    }
 
-    when (val state = state.shopState) {
-        is ShopStore.State.ShopState.GetRandomBonus ->
-            RandomBonusDialog(
-                bonus = state.bonus,
-                confirmClick = component::onRandomBonusConfirmClick
-            )
+        Box(modifier = Modifier.align(Alignment.BottomCenter)) {
+            GameSnackbarHost(snackbarHostState, bottomPadding = 24.dp)
+        }
 
-        else -> Unit
+        when (val shopState = state.shopState) {
+            is ShopStore.State.ShopState.GetRandomBonus ->
+                RandomBonusDialog(
+                    bonus = shopState.bonus,
+                    confirmClick = component::onRandomBonusConfirmClick
+                )
+
+            else -> Unit
+        }
     }
 }
 
@@ -117,7 +124,7 @@ private fun Loading() {
     ) {
         CircularProgressIndicator(
             modifier = Modifier.align(Alignment.Center),
-            color = Color.White
+            color = White
         )
     }
 }
