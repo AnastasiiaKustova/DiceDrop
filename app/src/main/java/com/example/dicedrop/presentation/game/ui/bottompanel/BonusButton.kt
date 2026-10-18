@@ -19,6 +19,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.CompositingStrategy
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -46,7 +48,11 @@ fun BonusButton(
     Box(
         modifier = modifier
             .size(66.dp)
-            .alpha(if (enabled) 1f else 0.45f)
+            // Прозрачность без отдельного слоя: слой размером с кнопку обрезал бы значок, торчащий за край
+            .graphicsLayer {
+                alpha = if (enabled) 1f else 0.45f
+                compositingStrategy = CompositingStrategy.ModulateAlpha
+            }
     ) {
         Box(
             modifier = Modifier

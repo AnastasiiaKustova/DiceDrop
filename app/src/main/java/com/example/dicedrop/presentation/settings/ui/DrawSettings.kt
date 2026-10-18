@@ -13,6 +13,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -22,11 +26,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.dicedrop.R
+import com.example.dicedrop.domain.feedback.GameFeedback
+import com.example.dicedrop.presentation.common.LocalGameFeedback
 import com.example.dicedrop.domain.entity.settings.GameSettings
 import com.example.dicedrop.domain.entity.settings.SettingTypes
 import com.example.dicedrop.presentation.common.DialogScrim
 import com.example.dicedrop.presentation.common.GameButton
 import com.example.dicedrop.presentation.common.GameIcons
+import com.example.dicedrop.presentation.common.TutorialDialog
 import com.example.dicedrop.presentation.common.consumeClicks
 import com.example.dicedrop.presentation.ui.theme.DarkBlue
 import com.example.dicedrop.presentation.ui.theme.DeepBlue
@@ -42,6 +49,15 @@ fun DrawSettings(
     onRestartClick: () -> Unit,
     onSettingsChange: (settingType: SettingTypes) -> Unit
 ) {
+    val feedback = LocalGameFeedback.current
+
+    // Обучение открывается вместо окна настроек и возвращает к нему по закрытии
+    var showTutorial by rememberSaveable { mutableStateOf(false) }
+    if (showTutorial) {
+        TutorialDialog(onClose = { showTutorial = false })
+        return
+    }
+
     DialogScrim(onDismiss = onBackClick) {
         Column(
             modifier = modifier
@@ -66,7 +82,10 @@ fun DrawSettings(
                         .size(44.dp)
                         .clip(CircleShape)
                         .background(DeepBlue)
-                        .clickable(onClick = onBackClick),
+                        .clickable {
+                            feedback.play(GameFeedback.Sound.BUTTON_CLICK)
+                            onBackClick()
+                        },
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
@@ -78,10 +97,34 @@ fun DrawSettings(
                 }
             }
 
-            MusicSetting(
-                title = stringResource(R.string.music),
-                value = settings.musicVolume,
-                onValueChangeFinished = { onSettingsChange(SettingTypes.MusicVolume(it)) }
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                ToggleSetting(
+                    icon = GameIcons.Sound,
+                    title = stringResource(R.string.sound),
+                    checked = settings.isSoundOn,
+                    onCheckedChange = { onSettingsChange(SettingTypes.Sound(it)) }
+                )
+                ToggleSetting(
+                    icon = GameIcons.Music,
+                    title = stringResource(R.string.music),
+                    checked = settings.isMusicOn,
+                    onCheckedChange = { onSettingsChange(SettingTypes.Music(it)) }
+                )
+                ToggleSetting(
+                    icon = GameIcons.Vibration,
+                    title = stringResource(R.string.vibration),
+                    checked = settings.isVibrationOn,
+                    onCheckedChange = { onSettingsChange(SettingTypes.Vibration(it)) }
+                )
+            }
+
+            GameButton(
+                modifier = Modifier.fillMaxWidth(),
+                text = stringResource(R.string.how_to_play),
+                onClick = { showTutorial = true },
+                color = MidBlue,
+                contentColor = White,
+                icon = GameIcons.Help
             )
 
             GameButton(

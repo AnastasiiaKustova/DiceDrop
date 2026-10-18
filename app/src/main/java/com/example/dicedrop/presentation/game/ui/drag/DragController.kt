@@ -19,15 +19,23 @@ object DragController {
         gameState: GameUiState,
         boardItem: BoardItem,
         diceItem: DiceItem? = null,
+        // Блок отпустили там, где он не помещается, и он возвращается в лоток
+        onReject: () -> Unit = {},
         onAction: (row: Int, col: Int, GameActionType) -> Unit
     ) {
-        val row = gameState.ghostRow ?: return resetDragState(gameState)
-        val col = gameState.ghostCol ?: return resetDragState(gameState)
+        val row = gameState.ghostRow
+        val col = gameState.ghostCol
+        if (row == null || col == null) {
+            onReject()
+            return resetDragState(gameState)
+        }
 
         when (gameState.draggingType) {
             DraggingType.BLOCK -> {
                 if (gameState.canPlace(boardItem, diceItem)) {
                     onAction(row, col, GameActionType.PLACE_BLOCK)
+                } else {
+                    onReject()
                 }
             }
         }

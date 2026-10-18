@@ -34,6 +34,8 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.example.dicedrop.R
 import com.example.dicedrop.domain.entity.DiceItem
+import com.example.dicedrop.domain.feedback.GameFeedback
+import com.example.dicedrop.presentation.common.LocalGameFeedback
 import com.example.dicedrop.presentation.common.DieFace
 import com.example.dicedrop.presentation.ui.theme.Orange
 import com.example.dicedrop.presentation.ui.theme.ShadowBlue
@@ -63,6 +65,16 @@ fun AnimatedDices(
     val rolling2 = remember { mutableStateOf(rolling) }
 
     val result = remember { mutableStateOf(DiceItem.empty()) }
+
+    // Если оба кубика заморожены, броска нет - лёд просто тает
+    if (rolling && !skipAnimation && (frozenValue == null || frozenValue2 == null)) {
+        DiceRollFeedback()
+    }
+    // Лёд с замороженных кубиков тает
+    if (rolling && (frozenValue != null || frozenValue2 != null)) {
+        val feedback = LocalGameFeedback.current
+        LaunchedEffect(Unit) { feedback.play(GameFeedback.Sound.BONUS_THAW) }
+    }
 
     Row(horizontalArrangement = Arrangement.spacedBy(26.dp)) {
         AnimatedDie(
@@ -95,6 +107,17 @@ fun AnimatedDices(
         }
     }
 
+}
+
+// Звук броска и лёгкий "тик" вибрации в момент приземления
+@Composable
+fun DiceRollFeedback() {
+    val feedback = LocalGameFeedback.current
+    LaunchedEffect(Unit) {
+        feedback.play(GameFeedback.Sound.DICE_ROLL)
+        delay(TUMBLE_MS.toLong())
+        feedback.vibrate(GameFeedback.Haptic.TICK)
+    }
 }
 
 // Один кубик: подлетает с кувырком, тень под ним сжимается, на приземлении он сплющивается,

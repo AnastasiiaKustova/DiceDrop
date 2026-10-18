@@ -12,17 +12,21 @@ import com.example.dicedrop.domain.action.RollDiceAction
 import com.example.dicedrop.domain.catalog.ShopItemCatalog
 import com.example.dicedrop.domain.entity.achievement.Achievement
 import com.example.dicedrop.domain.engine.AchievementTracker
+import com.example.dicedrop.domain.entity.AdReward
 import com.example.dicedrop.domain.entity.BonusItem
 import com.example.dicedrop.domain.entity.BonusType
 import com.example.dicedrop.domain.entity.DiceItem
 import com.example.dicedrop.domain.entity.DiscardTarget
 import com.example.dicedrop.domain.entity.GameStatisticItem
 import com.example.dicedrop.domain.entity.Slot
+import com.example.dicedrop.domain.entity.settings.GameSettings
+import com.example.dicedrop.domain.entity.settings.SettingTypes
 import com.example.dicedrop.domain.useCases.achievements.GetAchievementsUseCase
 import com.example.dicedrop.domain.useCases.achievements.ObserveAchievementStateUseCase
 import com.example.dicedrop.domain.useCases.game.CheckGameOverUseCase
 import com.example.dicedrop.domain.useCases.game.ConfirmNewRecordUseCase
 import com.example.dicedrop.domain.useCases.game.DiscardSpareUseCase
+import com.example.dicedrop.domain.useCases.game.DoubleCoinsUseCase
 import com.example.dicedrop.domain.useCases.game.GetRecordRewardsUseCase
 import com.example.dicedrop.domain.useCases.game.GrantAdRewardUseCase
 import com.example.dicedrop.domain.useCases.game.LoadGameUseCase
@@ -33,6 +37,10 @@ import com.example.dicedrop.domain.useCases.game.ResumeGameUseCase
 import com.example.dicedrop.domain.useCases.game.RollSpareUseCase
 import com.example.dicedrop.domain.useCases.game.SaveGameUseCase
 import com.example.dicedrop.domain.useCases.game.UseBonusUseCase
+import com.example.dicedrop.domain.useCases.settings.ChangeMusicUseCase
+import com.example.dicedrop.domain.useCases.settings.ChangeSoundUseCase
+import com.example.dicedrop.domain.useCases.settings.ChangeVibrationUseCase
+import com.example.dicedrop.domain.useCases.settings.ObserveSettingsUseCase
 import com.example.dicedrop.domain.useCases.shop.BuyBonusUseCase
 import com.example.dicedrop.presentation.game.GameStore.Intent
 import com.example.dicedrop.presentation.game.GameStore.Label
@@ -60,9 +68,9 @@ interface GameStore : Store<Intent, State, Label> {
 
         data class BuyBonus(val bonusType: BonusType) : Intent
 
-        data object WatchAd : Intent
+        data class WatchAd(val reward: AdReward) : Intent
 
-        data object AdRewardReceive : Intent
+        data class AdRewardReceive(val reward: AdReward) : Intent
 
         data object RestartGame : Intent
 
@@ -79,12 +87,16 @@ interface GameStore : Store<Intent, State, Label> {
         data class SpareRolled(val value: Int) : Intent
 
         data class LuckyFace(val value: Int, val slot: Slot) : Intent
+
+        // Переключатели звуков, музыки и вибрации в окне паузы
+        data class ChangeSetting(val setting: SettingTypes) : Intent
     }
 
     data class State(
         val gameState: GameState,
         // Сколько выполненных достижений ждут, пока игрок заберёт награду
-        val rewardsToClaim: Int = 0
+        val rewardsToClaim: Int = 0,
+        val settings: GameSettings = GameSettings.default()
     ) {
         sealed interface GameState {
 
@@ -130,16 +142,19 @@ interface GameStore : Store<Intent, State, Label> {
 
         data object NotEnoughBonus : Label
 
+        data object BonusBought : Label
+
         data class AnimateDice(val dices: DiceItem) : Label
 
         data class PlayLineClearAnimation(
             val clearedRows: List<Int>,
             val clearedCols: List<Int>,
             val combo: Int,
-            val points: Int
+            val points: Int,
+            val coins: Int
         ) : Label
 
-        data object WatchAd : Label
+        data class WatchAd(val reward: AdReward) : Label
     }
 }
 
@@ -158,12 +173,17 @@ class GameStoreFactory @Inject constructor(
     private val restartGameUseCase: RestartGameUseCase,
     private val resumeGameUseCase: ResumeGameUseCase,
     private val grantAdRewardUseCase: GrantAdRewardUseCase,
+    private val doubleCoinsUseCase: DoubleCoinsUseCase,
     private val observeGameUseCase: ObserveGameUseCase,
     private val discardSpareUseCase: DiscardSpareUseCase,
     private val rollSpareUseCase: RollSpareUseCase,
     private val achievementTracker: AchievementTracker,
     private val getAchievementsUseCase: GetAchievementsUseCase,
-    private val observeAchievementStateUseCase: ObserveAchievementStateUseCase
+    private val observeAchievementStateUseCase: ObserveAchievementStateUseCase,
+    private val observeSettingsUseCase: ObserveSettingsUseCase,
+    private val changeSoundUseCase: ChangeSoundUseCase,
+    private val changeMusicUseCase: ChangeMusicUseCase,
+    private val changeVibrationUseCase: ChangeVibrationUseCase
 ) {
 
     fun create(): GameStore =
@@ -190,6 +210,8 @@ class GameStoreFactory @Inject constructor(
         data class AchievementUnlocked(val achievement: Achievement) : Action
 
         data class RewardsChanged(val count: Int) : Action
+
+        data class SettingsChanged(val settings: GameSettings) : Action
     }
 
     private sealed interface Msg {
@@ -197,6 +219,8 @@ class GameStoreFactory @Inject constructor(
         data class GameLoaded(val game: GameStatisticItem) : Msg
 
         data class RewardsChanged(val count: Int) : Msg
+
+        data class SettingsChanged(val settings: GameSettings) : Msg
 
         data object GameLoading : Msg
 
@@ -223,7 +247,10 @@ class GameStoreFactory @Inject constructor(
                 observeGameUseCase()
                     .distinctUntilChanged()
                     .collect { game ->
-                        dispatch(Action.GameLoaded(game))
+                        // После конца игры бонусы могли прийти из достижений или магазина -
+                        // тогда ход снова может найтись, перепроверяем
+                        val actualGame = if (game.isGameOver) checkGameOverUseCase() else game
+                        dispatch(Action.GameLoaded(actualGame))
                     }
             }
 
@@ -236,6 +263,12 @@ class GameStoreFactory @Inject constructor(
             scope.launch {
                 observeAchievementStateUseCase().collect {
                     dispatch(Action.RewardsChanged(countRewardsToClaim()))
+                }
+            }
+
+            scope.launch {
+                observeSettingsUseCase().collect {
+                    dispatch(Action.SettingsChanged(it))
                 }
             }
         }
@@ -269,6 +302,7 @@ class GameStoreFactory @Inject constructor(
                     scope.launch { dispatch(Msg.RewardsChanged(countRewardsToClaim())) }
                 }
                 is Action.RewardsChanged -> dispatch(Msg.RewardsChanged(action.count))
+                is Action.SettingsChanged -> dispatch(Msg.SettingsChanged(action.settings))
             }
         }
 
@@ -278,7 +312,7 @@ class GameStoreFactory @Inject constructor(
                 game.isNewRecord -> dispatch(
                     Msg.NewRecord(
                         game = game,
-                        rewardsList = getRecordRewardsUseCase(newRecord = game.totalScore)
+                        rewardsList = getRecordRewardsUseCase()
                     )
                 )
 
@@ -317,7 +351,8 @@ class GameStoreFactory @Inject constructor(
                                         clearedRows = clearedResult.clearedRows,
                                         clearedCols = clearedResult.clearedCols,
                                         combo = clearedResult.combo,
-                                        points = clearedResult.points
+                                        points = clearedResult.points,
+                                        coins = clearedResult.coins
                                     )
                                 )
                             }
@@ -380,8 +415,8 @@ class GameStoreFactory @Inject constructor(
                     }
                 }
 
-                Intent.WatchAd -> {
-                    publish(Label.WatchAd)
+                is Intent.WatchAd -> {
+                    publish(Label.WatchAd(intent.reward))
                 }
 
                 is Intent.BuyBonus -> {
@@ -392,6 +427,7 @@ class GameStoreFactory @Inject constructor(
                                 price = ShopItemCatalog.all
                                     .firstOrNull { it.bonusType == intent.bonusType }?.price ?: 1
                             )
+                            publish(Label.BonusBought)
                         } catch (e: NotEnoughCoinsException) {
                             publish(Label.NotEnoughCoins(intent.bonusType))
                         }
@@ -421,9 +457,29 @@ class GameStoreFactory @Inject constructor(
                     }
                 }
 
-                Intent.AdRewardReceive -> {
+                is Intent.ChangeSetting -> {
+                    // Новые настройки придут обратно через observeSettingsUseCase
                     scope.launch {
-                        grantAdRewardUseCase()
+                        when (val setting = intent.setting) {
+                            is SettingTypes.Sound -> changeSoundUseCase(setting.isOn)
+                            is SettingTypes.Music -> changeMusicUseCase(setting.isOn)
+                            is SettingTypes.Vibration -> changeVibrationUseCase(setting.isOn)
+                            is SettingTypes.Language -> Unit
+                        }
+                    }
+                }
+
+                is Intent.AdRewardReceive -> {
+                    scope.launch {
+                        when (intent.reward) {
+                            AdReward.REVIVE -> grantAdRewardUseCase()
+                            // Удвоение завершает партию - сразу начинаем новую
+                            AdReward.DOUBLE_COINS -> {
+                                doubleCoinsUseCase()
+                                restartGameUseCase()
+                                showGame(checkGameOverUseCase())
+                            }
+                        }
                     }
                 }
             }
@@ -461,6 +517,7 @@ class GameStoreFactory @Inject constructor(
 
                 is Msg.GameLoaded -> copy(gameState = State.GameState.Loaded(msg.game))
                 is Msg.RewardsChanged -> copy(rewardsToClaim = msg.count)
+                is Msg.SettingsChanged -> copy(settings = msg.settings)
             }
         }
     }

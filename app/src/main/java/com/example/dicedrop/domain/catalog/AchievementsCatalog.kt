@@ -16,7 +16,7 @@ object AchievementsCatalog {
             descriptionId = R.string.roll_the_dice_50_times,
             type = AchievementType.ROLL_TIMES,
             requiredCount = 50,
-            reward = 5,
+            reward = 10,
         ),
         Achievement(
             id = "roll_100_times",
@@ -24,7 +24,7 @@ object AchievementsCatalog {
             descriptionId = R.string.roll_the_dice_100_times,
             type = AchievementType.ROLL_TIMES,
             requiredCount = 100,
-            reward = 10,
+            reward = 20,
         ),
         Achievement(
             id = "roll_500_times",
@@ -32,7 +32,7 @@ object AchievementsCatalog {
             descriptionId = R.string.roll_the_dice_500_times,
             type = AchievementType.ROLL_TIMES,
             requiredCount = 500,
-            reward = 15,
+            reward = 30,
         ),
         Achievement(
             id = "roll_1000_times",
@@ -40,7 +40,7 @@ object AchievementsCatalog {
             descriptionId = R.string.roll_the_dice_1000_times,
             type = AchievementType.ROLL_TIMES,
             requiredCount = 1000,
-            reward = 20,
+            reward = 40,
             additionalRewards = listOf(
                 AchievementReward(
                     bonusType = BonusType.FREEZE,
@@ -56,7 +56,7 @@ object AchievementsCatalog {
             descriptionId = R.string.clear_10_lines,
             type = AchievementType.CLEAR_ROWS,
             requiredCount = 10,
-            reward = 5,
+            reward = 10,
         ),
         Achievement(
             id = "clear_50_rows",
@@ -64,7 +64,7 @@ object AchievementsCatalog {
             descriptionId = R.string.clear_the_rows_50_times,
             type = AchievementType.CLEAR_ROWS,
             requiredCount = 50,
-            reward = 10,
+            reward = 20,
         ),
         Achievement(
             id = "clear_250_rows",
@@ -72,7 +72,7 @@ object AchievementsCatalog {
             descriptionId = R.string.clear_250_lines,
             type = AchievementType.CLEAR_ROWS,
             requiredCount = 250,
-            reward = 20,
+            reward = 40,
             additionalRewards = listOf(
                 AchievementReward(
                     bonusType = BonusType.FREEZE,
@@ -88,7 +88,7 @@ object AchievementsCatalog {
             descriptionId = R.string.clear_2_lines_at_once,
             type = AchievementType.LINES_AT_ONCE,
             requiredCount = 2,
-            reward = 5,
+            reward = 10,
         ),
         Achievement(
             id = "lines_at_once_3",
@@ -96,7 +96,7 @@ object AchievementsCatalog {
             descriptionId = R.string.clear_3_lines_at_once,
             type = AchievementType.LINES_AT_ONCE,
             requiredCount = 3,
-            reward = 15,
+            reward = 30,
             additionalRewards = listOf(
                 AchievementReward(
                     bonusType = BonusType.LUCKY,
@@ -112,7 +112,7 @@ object AchievementsCatalog {
             descriptionId = R.string.combo_5_description,
             type = AchievementType.COMBO,
             requiredCount = 5,
-            reward = 10,
+            reward = 20,
         ),
         Achievement(
             id = "combo_10",
@@ -120,7 +120,7 @@ object AchievementsCatalog {
             descriptionId = R.string.combo_10_description,
             type = AchievementType.COMBO,
             requiredCount = 10,
-            reward = 20,
+            reward = 40,
             additionalRewards = listOf(
                 AchievementReward(
                     bonusType = BonusType.ROTATE,
@@ -136,7 +136,7 @@ object AchievementsCatalog {
             descriptionId = R.string.clear_whole_board,
             type = AchievementType.BOARD_CLEARED,
             requiredCount = 1,
-            reward = 15,
+            reward = 30,
         ),
         Achievement(
             id = "board_clear_5",
@@ -144,7 +144,7 @@ object AchievementsCatalog {
             descriptionId = R.string.clear_whole_board_5_times,
             type = AchievementType.BOARD_CLEARED,
             requiredCount = 5,
-            reward = 25,
+            reward = 50,
             additionalRewards = listOf(
                 AchievementReward(
                     bonusType = BonusType.FREEZE,
@@ -160,7 +160,7 @@ object AchievementsCatalog {
             descriptionId = R.string.place_block_6x6,
             type = AchievementType.BIG_BLOCK,
             requiredCount = 36,
-            reward = 10,
+            reward = 20,
         ),
 
         // Очки за партию
@@ -170,7 +170,7 @@ object AchievementsCatalog {
             descriptionId = R.string.score_1000_description,
             type = AchievementType.GAME_SCORE,
             requiredCount = 1000,
-            reward = 10,
+            reward = 20,
         ),
         Achievement(
             id = "score_5000",
@@ -178,7 +178,7 @@ object AchievementsCatalog {
             descriptionId = R.string.score_5000_description,
             type = AchievementType.GAME_SCORE,
             requiredCount = 5000,
-            reward = 20,
+            reward = 40,
             additionalRewards = listOf(
                 AchievementReward(
                     bonusType = BonusType.DRAFT,
@@ -194,7 +194,7 @@ object AchievementsCatalog {
             descriptionId = R.string.play_25_games,
             type = AchievementType.GAMES_PLAYED,
             requiredCount = 25,
-            reward = 10,
+            reward = 20,
         ),
 
         // Использование бонусов
@@ -204,7 +204,7 @@ object AchievementsCatalog {
             descriptionId = R.string.use_rotate_10_times,
             type = AchievementType.USE_ROTATE,
             requiredCount = 10,
-            reward = 10,
+            reward = 20,
         ),
         Achievement(
             id = "use_freeze_10",
@@ -212,7 +212,7 @@ object AchievementsCatalog {
             descriptionId = R.string.use_freeze_10_times,
             type = AchievementType.USE_FREEZE,
             requiredCount = 10,
-            reward = 10,
+            reward = 20,
         ),
         Achievement(
             id = "use_lucky_10",
@@ -220,7 +220,7 @@ object AchievementsCatalog {
             descriptionId = R.string.use_lucky_10_times,
             type = AchievementType.USE_LUCKY,
             requiredCount = 10,
-            reward = 10,
+            reward = 20,
         ),
         Achievement(
             id = "use_draft_10",
@@ -228,7 +228,7 @@ object AchievementsCatalog {
             descriptionId = R.string.use_draft_10_times,
             type = AchievementType.USE_DRAFT,
             requiredCount = 10,
-            reward = 10,
+            reward = 20,
         ),
     )
 }

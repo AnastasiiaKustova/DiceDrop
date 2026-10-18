@@ -8,9 +8,7 @@ import com.arkivanov.mvikotlin.extensions.coroutines.CoroutineExecutor
 import com.example.dicedrop.core.DailyRewardReceived
 import com.example.dicedrop.core.NotEnoughCoinsException
 import com.example.dicedrop.domain.entity.BonusItem
-import com.example.dicedrop.domain.entity.CoinPack
 import com.example.dicedrop.domain.entity.ShopItem
-import com.example.dicedrop.domain.useCases.DateHelper
 import com.example.dicedrop.domain.useCases.game.ObserveGameUseCase
 import com.example.dicedrop.domain.useCases.shop.BuyBonusUseCase
 import com.example.dicedrop.domain.useCases.shop.GetDailyRewardIsReceivedStateUseCase
@@ -35,13 +33,11 @@ interface ShopStore : Store<Intent, State, Label> {
         data object RandomBonusConfirmClick : Intent
 
         data class ClickBuyItem(val shopItem: ShopItem) : Intent
-
-        data class ClickBuyCoinPack(val coinPack: CoinPack) : Intent
     }
 
     data class State(
         val isDailyRewardReceived: Boolean,
-        // Сколько дней подряд забран подарок; приходит отдельно от данных магазина
+        // Сколько дней подряд забран подарок (с учётом сброса после пропуска); приходит отдельно от данных магазина
         val dayStreak: Int = 0,
         val shopState: ShopState
     ) {
@@ -52,7 +48,8 @@ interface ShopStore : Store<Intent, State, Label> {
 
             data object Error : ShopState
 
-            data class GetRandomBonus(val bonus: BonusItem, val prevState: Loaded) : ShopState
+            // Окно «Вы получили»: купленный бонус или ежедневный подарок (монеты и, в 7-й день, бонус)
+            data class GetRandomBonus(val bonuses: List<BonusItem>, val prevState: Loaded) : ShopState
 
             data class Loaded(
                 val money: Int,
@@ -74,8 +71,6 @@ interface ShopStore : Store<Intent, State, Label> {
         data object NotEnoughCoins : Label
 
         data class ClickBuyItem(val shopItem: ShopItem) : Label
-
-        data class ClickBuyCoinPack(val coinPack: CoinPack) : Label
     }
 }
 
@@ -116,8 +111,6 @@ class ShopStoreFactory @Inject constructor(
             val dayStreak: Int
         ) : Action
 
-        data class GetRandomBonus(val bonus: BonusItem) : Action
-
         data object ShopStartLoading : Action
 
         data object ShopLoadingError : Action
@@ -132,7 +125,7 @@ class ShopStoreFactory @Inject constructor(
             val dailyRewardClaimed: Boolean
         ) : Msg
 
-        data class GetRandomBonus(val bonus: BonusItem) : Msg
+        data class GetRandomBonus(val bonuses: List<BonusItem>) : Msg
 
         data class ObserveDailyReward(
             val isDailyRewardReceived: Boolean,
@@ -181,11 +174,10 @@ class ShopStoreFactory @Inject constructor(
                     observeDailyRewardUseCase()
                         .distinctUntilChanged()
                         .collect { dailyReward ->
-                            val isDailyRewardReceived = dailyReward.lastDate == DateHelper.getCurrentDate()
                             dispatch(
                                 Action.ObserveDailyReward(
-                                    isDailyRewardReceived = isDailyRewardReceived,
-                                    dayStreak = dailyReward.dayStreak
+                                    isDailyRewardReceived = dailyReward.isClaimedToday,
+                                    dayStreak = dailyReward.currentStreak
                                 )
                             )
                         }
@@ -200,25 +192,24 @@ class ShopStoreFactory @Inject constructor(
         override fun executeIntent(intent: Intent, getState: () -> State) {
             when (intent) {
                 Intent.ClickBack -> publish(Label.ClickBack)
-                is Intent.ClickBuyCoinPack -> publish(Label.ClickBuyCoinPack(intent.coinPack))
                 is Intent.ClickBuyItem -> {
                     scope.launch {
                         try {
 
-                            if (intent.shopItem.bonusType == null) {
-                                if (intent.shopItem.id == "daily_bonus") {
-                                    val isDailyRewardReceived =
-                                        getDailyRewardIsReceivedStateUseCase()
-                                    if (isDailyRewardReceived) throw DailyRewardReceived("Daily reward already received")
-                                    else getDailyRewardUseCase()
+                            if (intent.shopItem.id == "daily_bonus") {
+                                if (getDailyRewardIsReceivedStateUseCase()) {
+                                    throw DailyRewardReceived("Daily reward already received")
                                 }
-
+                                dispatch(Msg.GetRandomBonus(getDailyRewardUseCase()))
+                                publish(Label.DailyRewardSuccess)
+                            } else if (intent.shopItem.bonusType == null) {
                                 val randomBonus = getRandomBonusUseCase()
                                 buyBonusUseCase(
                                     bonusType = randomBonus.type,
                                     price = intent.shopItem.price
                                 )
-                                dispatch(Msg.GetRandomBonus(randomBonus))
+                                dispatch(Msg.GetRandomBonus(listOf(randomBonus)))
+                                publish(Label.ClickBuyItem(intent.shopItem))
                             } else {
                                 buyBonusUseCase(
                                     bonusType = intent.shopItem.bonusType,
@@ -226,12 +217,15 @@ class ShopStoreFactory @Inject constructor(
                                 )
                                 dispatch(
                                     Msg.GetRandomBonus(
-                                        BonusItem(
-                                            type = intent.shopItem.bonusType,
-                                            count = 1
+                                        listOf(
+                                            BonusItem(
+                                                type = intent.shopItem.bonusType,
+                                                count = 1
+                                            )
                                         )
                                     )
                                 )
+                                publish(Label.ClickBuyItem(intent.shopItem))
                             }
                         } catch (e: NotEnoughCoinsException) {
                             publish(Label.NotEnoughCoins)
@@ -267,7 +261,6 @@ class ShopStoreFactory @Inject constructor(
 
                 Action.ShopLoadingError -> dispatch(Msg.ShopLoadingError)
                 Action.ShopStartLoading -> dispatch(Msg.ShopStartLoading)
-                is Action.GetRandomBonus -> dispatch(Msg.GetRandomBonus(action.bonus))
             }
         }
     }
@@ -296,7 +289,7 @@ class ShopStoreFactory @Inject constructor(
 
                     copy(
                         shopState = State.ShopState.GetRandomBonus(
-                            bonus = msg.bonus,
+                            bonuses = msg.bonuses,
                             prevState = loaded
                         )
                     )

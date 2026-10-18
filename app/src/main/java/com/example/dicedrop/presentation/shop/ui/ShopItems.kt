@@ -3,6 +3,7 @@ package com.example.dicedrop.presentation.shop.ui
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -18,6 +19,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.res.painterResource
+import com.example.dicedrop.domain.catalog.EconomyCatalog
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.res.stringResource
@@ -153,7 +156,7 @@ private fun DailyRewardCard(
         }
 
         Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            for (day in 1..7) {
+            for (day in 1..EconomyCatalog.WEEK_DAYS) {
                 val done = day <= doneDays
                 val today = !claimed && day == doneDays + 1
                 Box(
@@ -178,12 +181,23 @@ private fun DailyRewardCard(
                             modifier = Modifier.size(18.dp)
                         )
                     } else {
-                        Text(
-                            text = day.toString(),
-                            color = if (today) ButtonText else White,
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Black
-                        )
+                        // Сколько монет даёт день; в последний день недели ещё и бонус - на нём подарок
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Image(
+                                painter = painterResource(
+                                    if (day == EconomyCatalog.WEEK_DAYS) R.drawable.ic_gift_box else R.drawable.coin_star
+                                ),
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Text(
+                                text = EconomyCatalog.DAILY_COINS[day - 1].toString(),
+                                color = if (today) ButtonText else White,
+                                fontSize = 14.sp,
+                                lineHeight = 16.sp,
+                                fontWeight = FontWeight.Black
+                            )
+                        }
                     }
                 }
             }

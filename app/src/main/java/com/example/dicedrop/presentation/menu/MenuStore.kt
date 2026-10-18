@@ -7,15 +7,14 @@ import com.arkivanov.mvikotlin.extensions.coroutines.CoroutineBootstrapper
 import com.arkivanov.mvikotlin.extensions.coroutines.CoroutineExecutor
 import com.example.dicedrop.domain.entity.BonusItem
 import com.example.dicedrop.domain.entity.DailyReward
-import com.example.dicedrop.domain.useCases.shop.BuyBonusUseCase
 import com.example.dicedrop.domain.useCases.shop.GetDailyRewardIsReceivedStateUseCase
 import com.example.dicedrop.domain.useCases.shop.GetDailyRewardUseCase
-import com.example.dicedrop.domain.useCases.shop.GetRandomBonusUseCase
-import com.example.dicedrop.domain.useCases.DateHelper
 import com.example.dicedrop.domain.useCases.achievements.GetAchievementsUseCase
 import com.example.dicedrop.domain.useCases.achievements.ObserveAchievementStateUseCase
 import com.example.dicedrop.domain.useCases.game.ObserveGameUseCase
 import com.example.dicedrop.domain.useCases.shop.ObserveDailyRewardUseCase
+import com.example.dicedrop.domain.useCases.settings.GetSettingsUseCase
+import com.example.dicedrop.domain.useCases.settings.MarkTutorialShownUseCase
 import com.example.dicedrop.presentation.menu.MenuStore.Intent
 import com.example.dicedrop.presentation.menu.MenuStore.Label
 import com.example.dicedrop.presentation.menu.MenuStore.State
@@ -42,6 +41,8 @@ interface MenuStore : Store<Intent, State, Label> {
 
         data object GiftConfirm : Intent
 
+        data object TutorialClose : Intent
+
     }
 
     data class State(
@@ -51,7 +52,10 @@ interface MenuStore : Store<Intent, State, Label> {
         val giftReady: Boolean = false,
         val streakDay: Int = 1,
         // Полученный подарок, пока открыто окно "Вы получили"
-        val receivedGift: BonusItem? = null
+        // Что выдал подарок: монеты и, в 7-й день серии, бонус
+        val receivedGift: List<BonusItem>? = null,
+        // Обучение при первом запуске
+        val showTutorial: Boolean = false
     )
 
     sealed interface Label {
@@ -76,8 +80,8 @@ class MenuStoreFactory @Inject constructor(
     private val getAchievementsUseCase: GetAchievementsUseCase,
     private val getDailyRewardIsReceivedStateUseCase: GetDailyRewardIsReceivedStateUseCase,
     private val getDailyRewardUseCase: GetDailyRewardUseCase,
-    private val getRandomBonusUseCase: GetRandomBonusUseCase,
-    private val buyBonusUseCase: BuyBonusUseCase,
+    private val getSettingsUseCase: GetSettingsUseCase,
+    private val markTutorialShownUseCase: MarkTutorialShownUseCase,
 ) {
 
     fun create(): MenuStore =
@@ -96,6 +100,8 @@ class MenuStoreFactory @Inject constructor(
         data class DailyRewardChanged(val reward: DailyReward) : Action
 
         data class RewardsChanged(val count: Int) : Action
+
+        data object ShowTutorial : Action
     }
 
     private sealed interface Msg {
@@ -106,7 +112,9 @@ class MenuStoreFactory @Inject constructor(
 
         data class RewardsChanged(val count: Int) : Msg
 
-        data class GiftReceived(val gift: BonusItem?) : Msg
+        data class GiftReceived(val gift: List<BonusItem>?) : Msg
+
+        data class TutorialVisible(val visible: Boolean) : Msg
     }
 
     private inner class BootstrapperImpl : CoroutineBootstrapper<Action>() {
@@ -128,6 +136,9 @@ class MenuStoreFactory @Inject constructor(
                     dispatch(Action.RewardsChanged(countRewardsToClaim()))
                 }
             }
+            scope.launch {
+                if (!getSettingsUseCase().isTutorialShown) dispatch(Action.ShowTutorial)
+            }
         }
     }
 
@@ -143,7 +154,7 @@ class MenuStoreFactory @Inject constructor(
 
         override fun executeIntent(intent: Intent, getState: () -> State) {
             when (intent) {
-                // Ежедневный подарок выдаётся прямо в меню, так же как в магазине: случайный бонус бесплатно
+                // Ежедневный подарок выдаётся прямо в меню, так же как в магазине: монеты по дню серии, в 7-й день ещё бонус
                 Intent.ClickGift -> {
                     if (claimingGift) return
                     claimingGift = true
@@ -152,10 +163,7 @@ class MenuStoreFactory @Inject constructor(
                             if (getDailyRewardIsReceivedStateUseCase()) {
                                 publish(Label.GiftAlreadyReceived)
                             } else {
-                                getDailyRewardUseCase()
-                                val gift = getRandomBonusUseCase()
-                                buyBonusUseCase(bonusType = gift.type, price = 0, amount = gift.count)
-                                dispatch(Msg.GiftReceived(gift))
+                                dispatch(Msg.GiftReceived(getDailyRewardUseCase()))
                             }
                         } finally {
                             claimingGift = false
@@ -163,6 +171,11 @@ class MenuStoreFactory @Inject constructor(
                     }
                 }
                 Intent.GiftConfirm -> dispatch(Msg.GiftReceived(null))
+                // Закрытое обучение (пропуском или до конца) больше само не открывается
+                Intent.TutorialClose -> {
+                    dispatch(Msg.TutorialVisible(false))
+                    scope.launch { markTutorialShownUseCase() }
+                }
                 Intent.ClickNavigateToAchievements -> publish(Label.ClickNavigateToAchievements)
                 Intent.ClickNavigateToGame -> publish(Label.ClickNavigateToGame)
                 Intent.ClickNavigateToShop -> publish(Label.ClickNavigateToShop)
@@ -180,9 +193,10 @@ class MenuStoreFactory @Inject constructor(
             when (action) {
                 is Action.GameChanged -> dispatch(Msg.GameChanged(action.coins, action.bestScore))
                 is Action.RewardsChanged -> dispatch(Msg.RewardsChanged(action.count))
+                Action.ShowTutorial -> dispatch(Msg.TutorialVisible(true))
                 is Action.DailyRewardChanged -> {
-                    val claimedToday = action.reward.lastDate == DateHelper.getCurrentDate()
-                    val claimedInWeek = action.reward.dayStreak.claimedInWeek(claimedToday)
+                    val claimedToday = action.reward.isClaimedToday
+                    val claimedInWeek = action.reward.currentStreak.claimedInWeek(claimedToday)
                     dispatch(
                         Msg.DailyRewardChanged(
                             giftReady = !claimedToday,
@@ -200,6 +214,7 @@ class MenuStoreFactory @Inject constructor(
             is Msg.DailyRewardChanged -> copy(giftReady = msg.giftReady, streakDay = msg.streakDay)
             is Msg.RewardsChanged -> copy(rewardsToClaim = msg.count)
             is Msg.GiftReceived -> copy(receivedGift = msg.gift)
+            is Msg.TutorialVisible -> copy(showTutorial = msg.visible)
         }
     }
 }

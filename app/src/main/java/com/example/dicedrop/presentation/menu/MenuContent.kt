@@ -45,12 +45,15 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.dicedrop.R
+import com.example.dicedrop.domain.feedback.GameFeedback
+import com.example.dicedrop.presentation.common.LocalGameFeedback
 import com.example.dicedrop.presentation.common.CoinChip
 import com.example.dicedrop.presentation.common.DieFace
 import com.example.dicedrop.presentation.common.GameButton
 import com.example.dicedrop.presentation.common.GameIcons
 import com.example.dicedrop.presentation.common.IconCircle
 import com.example.dicedrop.presentation.common.RoundImageButton
+import com.example.dicedrop.presentation.common.TutorialDialog
 import com.example.dicedrop.presentation.common.spaced
 import com.example.dicedrop.presentation.ui.theme.DarkBlue
 import com.example.dicedrop.presentation.ui.theme.Green
@@ -102,9 +105,22 @@ fun MenuContent(component: MenuComponent) {
         }
 
         state.receivedGift?.let { gift ->
+            val feedback = LocalGameFeedback.current
+            LaunchedEffect(gift) { feedback.play(GameFeedback.Sound.DAILY_GIFT) }
             RandomBonusDialog(
-                bonus = gift,
+                bonuses = gift,
                 confirmClick = { component.onGiftConfirm() }
+            )
+        }
+
+        // При первом запуске; «Играть!» на последнем шаге сразу начинает игру
+        if (state.showTutorial) {
+            TutorialDialog(
+                onClose = { component.onTutorialClose() },
+                onFinish = {
+                    component.onTutorialClose()
+                    component.onStartGameClick()
+                }
             )
         }
     }
@@ -306,13 +322,17 @@ private fun MenuTile(
     onClick: () -> Unit,
     badge: @Composable androidx.compose.foundation.layout.BoxScope.() -> Unit = {}
 ) {
+    val feedback = LocalGameFeedback.current
     Box(modifier = modifier.height(116.dp)) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .clip(RoundedCornerShape(22.dp))
                 .background(MidBlue)
-                .clickable(onClick = onClick)
+                .clickable {
+                    feedback.play(GameFeedback.Sound.BUTTON_CLICK)
+                    onClick()
+                }
                 .padding(top = 10.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterVertically)

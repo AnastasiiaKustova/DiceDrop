@@ -1,5 +1,6 @@
 package com.example.dicedrop.domain.useCases.game
 
+import com.example.dicedrop.domain.catalog.EconomyCatalog
 import com.example.dicedrop.domain.engine.BoardEngine.checkFullRows
 import com.example.dicedrop.domain.engine.BoardEngine.clearFullRows
 import com.example.dicedrop.domain.entity.ClearLinesResult
@@ -24,10 +25,15 @@ class CheckAndClearFullRowsUseCase @Inject constructor(
         val count = (rows.size + cols.size)
         val combo = game.combo + count
         val delta = count * 100 * combo
+        val boardCleared = clearedBoard.board.all { row -> row.none { it } }
+        val coins = count * EconomyCatalog.COINS_PER_LINE +
+                if (boardCleared) EconomyCatalog.BOARD_CLEAR_COINS else 0
 
         val updated = game.copy(
             boardItem = clearedBoard,
             combo = combo,
+            coins = game.coins + coins,
+            coinsEarned = game.coinsEarned + coins,
             totalScore = game.totalScore + delta,
             bestScore = if (game.isRecordAchieved) game.totalScore + delta else game.bestScore,
             isNewRecord = game.totalScore + delta > game.bestScore && game.bestScore > 0 && !game.isRecordAchieved
@@ -41,6 +47,7 @@ class CheckAndClearFullRowsUseCase @Inject constructor(
             clearedRows = rows,
             clearedCols = cols,
             combo = combo,
-            points = delta)
+            points = delta,
+            coins = coins)
     }
 }
