@@ -41,6 +41,7 @@ fun GameOverDialog(
     modifier: Modifier = Modifier,
     gameScore: Int,
     rescueChance: Int,
+    canUndo: Boolean,
     isLandscape: Boolean,
     onRestartClick: () -> Unit,
     onWatchAdsClick: () -> Unit
@@ -101,7 +102,13 @@ fun GameOverDialog(
 
                 if (isLandscape) Spacer(modifier = Modifier.height(20.dp)) else Spacer(modifier = Modifier.height(40.dp))
 
-                RerollLabel( isLandscape = isLandscape, chanceText = stringResource(R.string.rescue_chance, rescueChance), onClick = {onWatchAdsClick()})
+                RerollLabel(
+                    isLandscape = isLandscape,
+                    text = if (canUndo) stringResource(R.string.watch_an_ad_to_undo_move)
+                        else stringResource(R.string.watch_an_ad_to_reroll_the_dice),
+                    chanceText = if (canUndo) null else stringResource(R.string.rescue_chance, rescueChance),
+                    onClick = {onWatchAdsClick()}
+                )
 
                 Spacer(modifier = spaceHeightModifier)
 
@@ -119,7 +126,8 @@ fun GameOverDialog(
 private fun RerollLabel(
     modifier: Modifier = Modifier,
     isLandscape: Boolean,
-    chanceText: String,
+    text: String,
+    chanceText: String?,
     onClick: () -> Unit
 ){
     val boxHeight = if (isLandscape) 40.dp else 80.dp
@@ -152,15 +160,17 @@ private fun RerollLabel(
                 fontWeight = FontWeight.Normal,
                 fontSize = 12.sp,
                 lineHeight = 1.5.em,
-                text = stringResource(R.string.watch_an_ad_to_reroll_the_dice),
+                text = text,
                 color = Color.Black
             )
-            Text(
-                fontWeight = FontWeight.Normal,
-                fontSize = 12.sp,
-                text = chanceText,
-                color = Color.Black
-            )
+            if (chanceText != null) {
+                Text(
+                    fontWeight = FontWeight.Normal,
+                    fontSize = 12.sp,
+                    text = chanceText,
+                    color = Color.Black
+                )
+            }
         }
         Box(
             modifier = Modifier

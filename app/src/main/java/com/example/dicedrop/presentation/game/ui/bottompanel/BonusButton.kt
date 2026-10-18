@@ -38,7 +38,6 @@ import com.example.dicedrop.presentation.ui.theme.White
 @Composable
 fun BonusButton(
     modifier: Modifier = Modifier,
-    dragModifier: Modifier = Modifier,
     @DrawableRes iconResId: Int,
     count: Int,
     isLandscape: Boolean,
@@ -69,7 +68,7 @@ fun BonusButton(
         Image(
             painter = painterResource(id = iconResId),
             contentDescription = null,
-            modifier = dragModifier.fillMaxSize().padding(8.dp).alpha(if (enabled) 1f else 0.4f)
+            modifier = Modifier.fillMaxSize().padding(8.dp).alpha(if (enabled) 1f else 0.4f)
         )
     }
 }

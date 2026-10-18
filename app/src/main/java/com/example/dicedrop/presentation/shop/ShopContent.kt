@@ -5,44 +5,68 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import com.example.dicedrop.domain.entity.BonusItem
-import com.example.dicedrop.presentation.game.GameStore
-import com.example.dicedrop.presentation.game.ui.popups.NewRecordDialog
+import androidx.compose.ui.platform.LocalContext
+import com.example.dicedrop.R
+import com.example.dicedrop.presentation.game.ui.GameSnackbarHost
 import com.example.dicedrop.presentation.shop.ui.RandomBonusDialog
 import com.example.dicedrop.presentation.shop.ui.ShopItems
 import com.example.dicedrop.presentation.shop.ui.ShopTopBar
 import com.example.dicedrop.presentation.ui.theme.LightBlue
+import kotlinx.coroutines.launch
 
 @Composable
 fun ShopContent(component: ShopComponent) {
     val state by component.model.collectAsState()
 
-    val coins = remember { mutableStateOf(0) }
+    val context = LocalContext.current
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    val coins = when (val shopState = state.shopState) {
+        is ShopStore.State.ShopState.Loaded -> shopState.money
+        is ShopStore.State.ShopState.GetRandomBonus -> shopState.prevState.money
+        else -> 0
+    }
 
     LaunchedEffect(Unit) {
         component.uiEvents.collect { event ->
-            when (event) {
-                is ShopComponent.UiEvent.ShowError -> {}
-                is ShopComponent.UiEvent.ShowMessage -> {}
+            val messageRes = when (event) {
+                is ShopComponent.UiEvent.ShowError -> when (event.error) {
+                    ShopComponent.UiEvent.ErrorType.NotEnoughCoins -> R.string.not_enough_coins
+                    ShopComponent.UiEvent.ErrorType.DailyBonusFailed -> R.string.daily_gift_already_received
+                    else -> null
+                }
+                is ShopComponent.UiEvent.ShowMessage -> null
+            }
+            if (messageRes != null) {
+                // Снэкбар висит несколько секунд, не блокируем им следующие события
+                launch {
+                    snackbarHostState.currentSnackbarData?.dismiss()
+                    snackbarHostState.showSnackbar(
+                        message = context.getString(messageRes),
+                        duration = SnackbarDuration.Short
+                    )
+                }
             }
         }
     }
     Scaffold(
         topBar = {
             ShopTopBar(
-                coinsValue = coins.value,
+                coinsValue = coins,
                 onBackClick = component::onBackClick
             )
         },
+        snackbarHost = { GameSnackbarHost(snackbarHostState) },
         modifier = Modifier.fillMaxSize(),
         containerColor = LightBlue
     ) { padding ->
@@ -65,8 +89,6 @@ fun ShopContent(component: ShopComponent) {
                         dailyRewardClaimed = shopState.dailyRewardClaimed,
                         onCardClick = { component.onBuyItemClick(it) }
                     )
-
-                    coins.value = shopState.money
                 }
             }
         }

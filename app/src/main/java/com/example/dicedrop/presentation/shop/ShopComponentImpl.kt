@@ -26,7 +26,7 @@ class ShopComponentImpl @AssistedInject constructor(
     private val store = instanceKeeper.getStore { storeFactory.create() }
     private val scope = componentScope()
 
-    private val _uiEvents = MutableSharedFlow<UiEvent>()
+    private val _uiEvents = MutableSharedFlow<UiEvent>(extraBufferCapacity = 8)
     override val uiEvents: SharedFlow<UiEvent> = _uiEvents
 
     init {
@@ -38,7 +38,7 @@ class ShopComponentImpl @AssistedInject constructor(
                     is ShopStore.Label.ClickBuyItem -> _uiEvents.emit(UiEvent.ShowMessage(UiEvent.MessageType.PurchaseSuccess))
                     ShopStore.Label.DailyRewardError -> _uiEvents.emit(UiEvent.ShowError(UiEvent.ErrorType.DailyBonusFailed))
                     ShopStore.Label.DailyRewardSuccess -> _uiEvents.emit(UiEvent.ShowMessage(UiEvent.MessageType.DailyBonusClaimed))
-                    is ShopStore.Label.Error -> _uiEvents.emit(UiEvent.ShowError(error = UiEvent.ErrorType.BuyBonusFailed, message = it.message))
+                    ShopStore.Label.NotEnoughCoins -> _uiEvents.emit(UiEvent.ShowError(UiEvent.ErrorType.NotEnoughCoins))
                 }
             }
         }

@@ -12,14 +12,22 @@ class CheckAndClearFullRowsUseCase @Inject constructor(
 ) {
     suspend operator fun invoke(game: GameStatisticItem): ClearLinesResult {
         val (rows, cols) = game.boardItem.checkFullRows()
-        if (rows.isEmpty() && cols.isEmpty()) return ClearLinesResult(game)
+        // Ход без очистки сбрасывает комбо
+        if (rows.isEmpty() && cols.isEmpty()) {
+            if (game.combo == 0) return ClearLinesResult(game)
+            val reset = game.copy(combo = 0)
+            repository.updateGameState(reset)
+            return ClearLinesResult(reset)
+        }
 
         val clearedBoard = game.boardItem.clearFullRows(rows, cols)
         val count = (rows.size + cols.size)
-        val delta = count * 100
+        val combo = game.combo + count
+        val delta = count * 100 * combo
 
         val updated = game.copy(
             boardItem = clearedBoard,
+            combo = combo,
             totalScore = game.totalScore + delta,
             bestScore = if (game.isRecordAchieved) game.totalScore + delta else game.bestScore,
             isNewRecord = game.totalScore + delta > game.bestScore && game.bestScore > 0 && !game.isRecordAchieved
@@ -31,6 +39,8 @@ class CheckAndClearFullRowsUseCase @Inject constructor(
             updatedGame = updated,
             clearedLinesCount = count,
             clearedRows = rows,
-            clearedCols = cols)
+            clearedCols = cols,
+            combo = combo,
+            points = delta)
     }
 }

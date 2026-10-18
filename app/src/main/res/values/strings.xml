@@ -2,18 +2,18 @@
     <string name="app_name" translatable="false">DiceDrop</string>
     <string name="app_name_DICE_DROP" translatable="false">DICE DROP</string>
     <string name="app_name_DROP" translatable="false">DROP</string>
-    <string name="rolling_dice">Rolling dices...</string>
+    <string name="rolling_dice">Rolling dice...</string>
     <string name="startGame">Start game</string>
     <string name="best_score_short">"BEST: "</string>
+    <string name="total_score_short">"TOTAL: "</string>
     <string name="settings_title">Settings</string>
     <string name="pause_title">Pause</string>
     <string name="back">Back</string>
     <string name="music_volume">Music volume</string>
-    <string name="auto_skip">Auto skip</string>
-    <string name="restart_game">Restart game</string>
+    <string name="restart_game">Start over</string>
     <string name="exit">Exit</string>
     <string name="not_enough_coins">Not enough coins</string>
-    <string name="not_enough_bonus">Not enough bonus</string>
+    <string name="not_enough_bonus">Not enough bonuses</string>
     <string name="go_to_shop">Go to shop</string>
     <string name="loading_ad">Loading ad...</string>
     <string name="watching_ad">Watching ad</string>
@@ -25,32 +25,79 @@
     <string name="game_over">GAME OVER</string>
     <string name="restart">RESTART</string>
     <string name="watch_an_ad_to_reroll_the_dice">Watch an ad to reroll the dice</string>
+    <string name="watch_an_ad_to_undo_move">Watch an ad to undo the last move</string>
     <string name="try_again">Try again</string>
-    <string name="score_with_count">Score %1$s</string>
+    <string name="rescue_chance">Rescue chance: %1$d%%</string>
+    <string name="score_with_count">Score: %1$s</string>
     <string name="score">Score</string>
     <string name="rewards">Rewards</string>
     <string name="tap_to_continue">Tap to continue</string>
+    <string name="you_got">You got</string>
+
+    <!-- Shop -->
     <string name="daily_gift">Daily gift</string>
-    <string name="rotate">Rotate</string>
-    <string name="draft">Докинуть третий</string>
-    <string name="freeze">Заморозка</string>
-    <string name="lucky">Счастливый</string>
+    <string name="daily_gift_already_received">Today\'s gift has already been claimed</string>
     <string name="random">Random</string>
+    <string name="free">Free</string>
+    <string name="claimed">Claimed</string>
+    <string name="coins">Coins</string>
+
+    <!-- Bonuses -->
+    <string name="rotate">Rotate</string>
+    <string name="freeze">Freeze</string>
+    <string name="lucky">Lucky face</string>
+    <string name="draft">Extra die</string>
+    <string name="face_hint">Choose a die</string>
+    <string name="discard_hint">Discard the extra die</string>
+    <string name="lucky_dialog_title">Pick a face</string>
+    <string name="lucky_dialog_hint">The face is set instantly — tap a die</string>
+
+    <!-- Achievements -->
+    <string name="claim">Claim</string>
+    <string name="achievement_unlocked">Achievement unlocked: %1$s</string>
     <string name="just_the_beginning">Just the Beginning</string>
-    <string name="roll_the_dice_50_times">Roll the dice 50 times</string>
-    <string name="getting_the_hang_of_it" translatable="false">Getting the Hang of It</string>
-    <string name="roll_the_dice_100_times">Roll the dice 100 times</string>
-    <string name="on_a_roll" translatable="false">On a Roll</string>
-    <string name="roll_the_dice_500_times">Roll the dice 500 times</string>
+    <string name="getting_the_hang_of_it">Getting the Hang of It</string>
+    <string name="on_a_roll">On a Roll</string>
     <string name="dice_legend">Dice Legend</string>
+    <string name="roll_the_dice_50_times">Roll the dice 50 times</string>
+    <string name="roll_the_dice_100_times">Roll the dice 100 times</string>
+    <string name="roll_the_dice_500_times">Roll the dice 500 times</string>
     <string name="roll_the_dice_1000_times">Roll the dice 1000 times</string>
-    <string name="clear_the_rows_50_times">Clear the rows 50 times</string>
-    <string name="discard_hint">Убери лишний кубик</string>
-    <string name="face_hint">Выбери кубик</string>
-    <string name="last_chance_title">Ходов нет</string>
-    <string name="last_chance_text">Обычный блок не встает — используй бонус или сдавайся</string>
-    <string name="last_chance_lucky">Заказать грань (%1$d)</string>
-    <string name="last_chance_draft">Докинуть третий (%1$d)</string>
-    <string name="give_up">Сдаться</string>
-    <string name="rescue_chance">Шанс спастись: %1$d%%</string>
+    <string name="clear_the_rows_50_times">Clear 50 lines</string>
+    <string name="first_sweep">First Sweep</string>
+    <string name="clear_10_lines">Clear 10 lines</string>
+    <string name="cleaner">Cleaner</string>
+    <string name="cleanup_master">Cleanup Master</string>
+    <string name="clear_250_lines">Clear 250 lines</string>
+    <string name="double_clear">Double</string>
+    <string name="clear_2_lines_at_once">Clear 2 lines in one move</string>
+    <string name="hat_trick">Hat Trick</string>
+    <string name="clear_3_lines_at_once">Clear 3 lines in one move</string>
+    <string name="clean_slate">Clean Slate</string>
+    <string name="clear_whole_board">Clear the whole board</string>
+    <string name="spring_cleaning">Spring Cleaning</string>
+    <string name="clear_whole_board_5_times">Clear the whole board 5 times</string>
+    <string name="giant">Giant</string>
+    <string name="place_block_6x6">Place a 6×6 block</string>
+    <string name="score_1000_title">Grand</string>
+    <string name="score_1000_description">Score 1,000 points in one game</string>
+    <string name="score_5000_title">Record Breaker</string>
+    <string name="score_5000_description">Score 5,000 points in one game</string>
+    <string name="regular">Regular</string>
+    <string name="play_25_games">Play 25 games</string>
+    <string name="acrobat">Acrobat</string>
+    <string name="use_rotate_10_times">Use Rotate 10 times</string>
+    <string name="frost_master">Frost Master</string>
+    <string name="use_freeze_10_times">Use Freeze 10 times</string>
+    <string name="lucky_one">Lucky One</string>
+    <string name="use_lucky_10_times">Use Lucky face 10 times</string>
+    <string name="third_wheel">Third Wheel</string>
+    <string name="use_draft_10_times">Use Extra die 10 times</string>
+    <string name="combo_5_title">Chain Reaction</string>
+    <string name="combo_5_description">Reach a x5 combo</string>
+    <string name="combo_10_title">Unstoppable</string>
+    <string name="combo_10_description">Reach a x10 combo</string>
+
+    <!-- Combo -->
+    <string name="combo_popup">COMBO x%1$d!</string>
 </resources>

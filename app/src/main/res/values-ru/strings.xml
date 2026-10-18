@@ -2,13 +2,13 @@
 <resources>
     <string name="rolling_dice">Бросок кубиков...</string>
     <string name="startGame">Начать игру</string>
-    <string name="best_score_short">ЛУЧШЕЕ:</string>
+    <string name="best_score_short">"ЛУЧШЕЕ: "</string>
+    <string name="total_score_short">"СЧЁТ: "</string>
     <string name="settings_title">Настройки</string>
     <string name="pause_title">Пауза</string>
     <string name="back">Назад</string>
     <string name="music_volume">Громкость музыки</string>
-    <string name="auto_skip">Авто бросок</string>
-    <string name="restart_game">Перезапустить игру</string>
+    <string name="restart_game">Начать заново</string>
     <string name="exit">Выход</string>
     <string name="not_enough_coins">Недостаточно монет</string>
     <string name="not_enough_bonus">Недостаточно бонусов</string>
@@ -23,30 +23,79 @@
     <string name="game_over">ИГРА ОКОНЧЕНА</string>
     <string name="restart">ПОПРОБОВАТЬ ЕЩЁ РАЗ</string>
     <string name="watch_an_ad_to_reroll_the_dice">Посмотреть рекламу для переброса кубиков</string>
-    <string name="try_again">Еще одна попытка</string>
-    <string name="score_with_count">Счет %1$s</string>
-    <string name="score">Счет</string>
+    <string name="watch_an_ad_to_undo_move">Посмотреть рекламу и отменить последний ход</string>
+    <string name="try_again">Ещё одна попытка</string>
+    <string name="rescue_chance">Шанс спастись: %1$d%%</string>
+    <string name="score_with_count">Счёт: %1$s</string>
+    <string name="score">Счёт</string>
     <string name="rewards">Награды</string>
-    <string name="tap_to_continue">Нажмите для продолжения</string>
+    <string name="tap_to_continue">Нажмите, чтобы продолжить</string>
+    <string name="you_got">Вы получили</string>
+
+    <!-- Магазин -->
     <string name="daily_gift">Ежедневная награда</string>
+    <string name="daily_gift_already_received">Подарок на сегодня уже получен</string>
+    <string name="random">Случайный</string>
+    <string name="free">Бесплатно</string>
+    <string name="claimed">Получено</string>
+    <string name="coins">Монеты</string>
+
+    <!-- Бонусы -->
     <string name="rotate">Перевернуть</string>
+    <string name="freeze">Заморозка</string>
     <string name="lucky">Счастливый</string>
-    <string name="random">Случайное</string>
+    <string name="draft">Докинуть третий</string>
+    <string name="face_hint">Выбери кубик</string>
+    <string name="discard_hint">Убери лишний кубик</string>
+    <string name="lucky_dialog_title">Закажи грань</string>
+    <string name="lucky_dialog_hint">Грань встанет сразу — нажми на кубик</string>
+
+    <!-- Достижения -->
+    <string name="claim">Забрать</string>
+    <string name="achievement_unlocked">Достижение выполнено: %1$s</string>
     <string name="just_the_beginning">Только начало</string>
+    <string name="getting_the_hang_of_it">Входим во вкус</string>
+    <string name="on_a_roll">В ударе</string>
+    <string name="dice_legend">Легенда кубиков</string>
     <string name="roll_the_dice_50_times">Бросить кубики 50 раз</string>
     <string name="roll_the_dice_100_times">Бросить кубики 100 раз</string>
     <string name="roll_the_dice_500_times">Бросить кубики 500 раз</string>
-    <string name="dice_legend">Легенда</string>
     <string name="roll_the_dice_1000_times">Бросить кубики 1000 раз</string>
-    <string name="clear_the_rows_50_times">Очистить ряды 50 раз</string>
-    <string name="draft">Докинуть третий</string>
-    <string name="freeze">Заморозка</string>
-    <string name="face_hint">Выбери кубик</string>
-    <string name="discard_hint">Убери лишний кубик</string>
-    <string name="last_chance_title">Ходов нет</string>
-    <string name="last_chance_text">Обычный блок не встает — используй бонус или сдавайся</string>
-    <string name="last_chance_lucky">Заказать грань (%1$d)</string>
-    <string name="last_chance_draft">Докинуть третий (%1$d)</string>
-    <string name="give_up">Сдаться</string>
-    <string name="rescue_chance">Шанс спастись: %1$d%%</string>
+    <string name="clear_the_rows_50_times">Очистить 50 линий</string>
+    <string name="first_sweep">Первая чистка</string>
+    <string name="clear_10_lines">Очистить 10 линий</string>
+    <string name="cleaner">Чистильщик</string>
+    <string name="cleanup_master">Мастер уборки</string>
+    <string name="clear_250_lines">Очистить 250 линий</string>
+    <string name="double_clear">Дуплет</string>
+    <string name="clear_2_lines_at_once">Очистить 2 линии одним ходом</string>
+    <string name="hat_trick">Хет-трик</string>
+    <string name="clear_3_lines_at_once">Очистить 3 линии одним ходом</string>
+    <string name="clean_slate">Чистый лист</string>
+    <string name="clear_whole_board">Полностью очистить поле</string>
+    <string name="spring_cleaning">Генеральная уборка</string>
+    <string name="clear_whole_board_5_times">Полностью очистить поле 5 раз</string>
+    <string name="giant">Великан</string>
+    <string name="place_block_6x6">Поставить блок 6×6</string>
+    <string name="score_1000_title">Тысячник</string>
+    <string name="score_1000_description">Набрать 1 000 очков за партию</string>
+    <string name="score_5000_title">Рекордсмен</string>
+    <string name="score_5000_description">Набрать 5 000 очков за партию</string>
+    <string name="regular">Завсегдатай</string>
+    <string name="play_25_games">Сыграть 25 партий</string>
+    <string name="acrobat">Акробат</string>
+    <string name="use_rotate_10_times">Использовать «Перевернуть» 10 раз</string>
+    <string name="frost_master">Морозильщик</string>
+    <string name="use_freeze_10_times">Использовать «Заморозку» 10 раз</string>
+    <string name="lucky_one">Везунчик</string>
+    <string name="use_lucky_10_times">Использовать «Счастливый» 10 раз</string>
+    <string name="third_wheel">Третий не лишний</string>
+    <string name="use_draft_10_times">Использовать «Докинуть третий» 10 раз</string>
+    <string name="combo_5_title">Цепная реакция</string>
+    <string name="combo_5_description">Набрать комбо x5</string>
+    <string name="combo_10_title">Неудержимый</string>
+    <string name="combo_10_description">Набрать комбо x10</string>
+
+    <!-- Комбо -->
+    <string name="combo_popup">КОМБО x%1$d!</string>
 </resources>

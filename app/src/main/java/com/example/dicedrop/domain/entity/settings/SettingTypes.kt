@@ -1,10 +1,6 @@
 package com.example.dicedrop.domain.entity.settings
 
 sealed interface SettingTypes{
-    data class UseAutoRoll(
-        val checked: Boolean
-    ): SettingTypes
-
     data class MusicVolume(
         val value: Float
     ): SettingTypes

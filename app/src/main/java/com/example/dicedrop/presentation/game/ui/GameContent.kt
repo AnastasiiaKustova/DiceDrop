@@ -33,7 +33,9 @@ import androidx.compose.ui.unit.sp
 import com.example.dicedrop.R
 import com.example.dicedrop.domain.ads.RewardedAdManager
 import com.example.dicedrop.presentation.game.GameComponent
+import com.example.dicedrop.presentation.game.ui.board.ComboPopup
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 @Composable
 fun GameContent(component: GameComponent) {
@@ -46,6 +48,7 @@ fun GameContent(component: GameComponent) {
 
     var clearedRows by remember { mutableStateOf<List<Int>>(emptyList()) }
     var clearedCols by remember { mutableStateOf<List<Int>>(emptyList()) }
+    var comboPopup by remember { mutableStateOf<ComboPopup?>(null) }
 
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -56,23 +59,31 @@ fun GameContent(component: GameComponent) {
 
     LaunchedEffect(Unit) {
         component.uiEvents.collect { event ->
-            handleUiEvent(
-                event = event,
-                context = context,
-                rewardedAdManager = rewardedAdManager,
-                snackbarHostState = snackbarHostState,
-                onClearLine = { rows, cols ->
-                    clearedRows = rows
-                    clearedCols = cols
-                },
-                onClearFinished = {
-                    clearedRows = emptyList()
-                    clearedCols = emptyList()
-                },
-                onAdRewarded = {
-                    component.AdRewardReceive()
-                }
-            )
+            // Снэкбар висит несколько секунд, поэтому каждое событие обрабатывается отдельно,
+            // чтобы не блокировать поток событий (навигацию, рекламу)
+            launch {
+                handleUiEvent(
+                    event = event,
+                    context = context,
+                    rewardedAdManager = rewardedAdManager,
+                    snackbarHostState = snackbarHostState,
+                    onClearLine = { clearEvent ->
+                        clearedRows = clearEvent.clearedRows
+                        clearedCols = clearEvent.clearedCols
+                        comboPopup = ComboPopup(
+                            combo = clearEvent.combo,
+                            points = clearEvent.points
+                        )
+                    },
+                    onClearFinished = {
+                        clearedRows = emptyList()
+                        clearedCols = emptyList()
+                    },
+                    onAdRewarded = {
+                        component.AdRewardReceive()
+                    }
+                )
+            }
         }
     }
 
@@ -92,6 +103,7 @@ fun GameContent(component: GameComponent) {
                 state = state.gameState,
                 clearedRows = clearedRows,
                 clearedCols = clearedCols,
+                comboPopup = comboPopup,
                 component = component
             )
 
@@ -136,14 +148,14 @@ private suspend fun handleUiEvent(
     context: Context,
     rewardedAdManager: RewardedAdManager,
     snackbarHostState: SnackbarHostState,
-    onClearLine: (List<Int>, List<Int>) -> Unit,
+    onClearLine: (GameComponent.UiEvent.ClearLine) -> Unit,
     onClearFinished: () -> Unit,
     onAdRewarded: () -> Unit
 ) {
 
     when (event) {
         is GameComponent.UiEvent.ClearLine -> {
-            onClearLine(event.clearedRows, event.clearedCols)
+            onClearLine(event)
             delay(400)
             onClearFinished()
         }
@@ -152,6 +164,16 @@ private suspend fun handleUiEvent(
             snackbarHostState.showSnackbar(
                 message = context.getString(event.msg.stringRes),
                 actionLabel = context.getString(R.string.go_to_shop),
+                duration = SnackbarDuration.Short
+            )
+        }
+
+        is GameComponent.UiEvent.AchievementUnlocked -> {
+            snackbarHostState.showSnackbar(
+                message = context.getString(
+                    R.string.achievement_unlocked,
+                    context.getString(event.titleId)
+                ),
                 duration = SnackbarDuration.Short
             )
         }

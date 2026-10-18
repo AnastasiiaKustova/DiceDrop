@@ -9,7 +9,6 @@ enum class DiscardTarget { A, B, SPARE }
 data class TrayDie(
     val value: Int? = null,
     val frozen: Boolean = false,
-    val thawing: Boolean = false,
 ) : Parcelable
 
 enum class Slot { A, B }

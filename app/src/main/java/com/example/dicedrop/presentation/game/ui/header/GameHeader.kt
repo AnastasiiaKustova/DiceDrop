@@ -1,5 +1,12 @@
 package com.example.dicedrop.presentation.game.ui.header
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -16,24 +23,33 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.PlatformTextStyle
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.LineHeightStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.dicedrop.R
+import com.example.dicedrop.presentation.game.ui.board.comboColor
 import com.example.dicedrop.presentation.ui.theme.BlueGradientDark
 import com.example.dicedrop.presentation.ui.theme.BlueGradientLight
 import com.example.dicedrop.presentation.ui.theme.White
@@ -44,7 +60,9 @@ fun GameHeader(
     totalScore: Int,
     bestScore: Int,
     coins: Int,
+    combo: Int,
     isLandscape: Boolean,
+    onPauseClick: () -> Unit,
     onShopClick: () -> Unit
 ) {
 
@@ -69,9 +87,11 @@ fun GameHeader(
         Score(
             totalScore = totalScore,
             bestScore = bestScore,
+            combo = combo,
             isLandscape = isLandscape,
         )
         Shop(
+            onPauseClick = onPauseClick,
             onClick = onShopClick
         )
     }
@@ -109,6 +129,7 @@ private fun RowScope.Score(
     modifier: Modifier = Modifier,
     totalScore: Int,
     bestScore: Int,
+    combo: Int,
     isLandscape: Boolean,
 ){
 
@@ -117,6 +138,7 @@ private fun RowScope.Score(
             modifier = modifier
                 .weight(2f).padding(bottom = 5.dp),
             horizontalArrangement = Arrangement.SpaceAround,
+            verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
                 color = White,
@@ -126,9 +148,11 @@ private fun RowScope.Score(
 
             Text(
                 color = White,
-                text = "TOTAL: " + totalScore,
+                text = stringResource(R.string.total_score_short) + totalScore,
                 fontSize = 16.sp
             )
+
+            ComboBadge(combo = combo)
         }
         
     }
@@ -146,10 +170,11 @@ private fun RowScope.Score(
                 fontSize = 12.sp
             )
 
-            Box(
+            Row(
                 modifier = Modifier
                     .height(38.dp),
-                contentAlignment = Alignment.Center
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 Text(
                     text = "$totalScore",
@@ -163,23 +188,79 @@ private fun RowScope.Score(
                         )
                     )
                 )
+
+                ComboBadge(combo = combo)
             }
-        } 
+        }
     }
-    
-    
+
+
+}
+
+// Плашка текущего комбо, видна от x2; при росте пульсирует, при сбросе плавно исчезает
+@Composable
+private fun ComboBadge(combo: Int) {
+    // Последнее показанное значение, чтобы при исчезновении не мелькало "x0"
+    var shownCombo by remember { mutableIntStateOf(combo) }
+    val pulse = remember { Animatable(1f) }
+
+    LaunchedEffect(combo) {
+        if (combo >= 2) {
+            shownCombo = combo
+            pulse.snapTo(1.3f)
+            pulse.animateTo(1f, spring(dampingRatio = 0.4f))
+        }
+    }
+
+    AnimatedVisibility(
+        visible = combo >= 2,
+        enter = fadeIn() + scaleIn(),
+        exit = fadeOut() + scaleOut()
+    ) {
+        Text(
+            modifier = Modifier
+                .graphicsLayer {
+                    scaleX = pulse.value
+                    scaleY = pulse.value
+                }
+                .background(comboColor(shownCombo), RoundedCornerShape(8.dp))
+                .padding(horizontal = 6.dp, vertical = 2.dp),
+            text = "x$shownCombo",
+            color = White,
+            fontSize = 16.sp,
+            fontWeight = FontWeight.Bold,
+            maxLines = 1
+        )
+    }
 }
 
 @Composable
 private fun RowScope.Shop(
     modifier: Modifier = Modifier,
+    onPauseClick: () -> Unit,
     onClick: () -> Unit
 ){
-    Box(
+    Row(
         modifier = modifier
             .weight(1f),
-        contentAlignment = Alignment.BottomEnd
+        verticalAlignment = Alignment.Bottom,
+        horizontalArrangement = Arrangement.spacedBy(4.dp, Alignment.End)
     ) {
+        Button(
+            modifier = Modifier.size(40.dp),
+            onClick = { onPauseClick() },
+            colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
+            contentPadding = PaddingValues(0.dp),
+            shape = RectangleShape
+        ) {
+            Image(
+                modifier = Modifier
+                    .width(27.dp),
+                painter = painterResource(id = R.drawable.pause),
+                contentDescription = stringResource(R.string.pause_title),
+            )
+        }
+
         Button(
             modifier = Modifier.size(40.dp),
             onClick = { onClick() },

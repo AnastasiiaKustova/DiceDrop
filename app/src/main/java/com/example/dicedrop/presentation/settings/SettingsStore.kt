@@ -9,7 +9,6 @@ import com.example.dicedrop.domain.entity.settings.GameSettings
 import com.example.dicedrop.domain.entity.settings.SettingTypes
 import com.example.dicedrop.domain.useCases.game.RestartGameUseCase
 import com.example.dicedrop.domain.useCases.settings.ChangeLanguageUseCase
-import com.example.dicedrop.domain.useCases.settings.ChangeUseAutoRollUseCase
 import com.example.dicedrop.domain.useCases.settings.GetSettingsUseCase
 import com.example.dicedrop.presentation.settings.SettingsStore.Intent
 import com.example.dicedrop.presentation.settings.SettingsStore.Label
@@ -70,7 +69,6 @@ class SettingsStoreFactory @Inject constructor(
     private val storeFactory: StoreFactory,
     private val getSettingsUseCase: GetSettingsUseCase,
     private val changeLanguageUseCase: ChangeLanguageUseCase,
-    private val changeUseAutoRollUseCase: ChangeUseAutoRollUseCase,
     private val restartGameUseCase: RestartGameUseCase,
 ) {
 
@@ -98,8 +96,6 @@ class SettingsStoreFactory @Inject constructor(
     private sealed interface Msg {
 
         data class LanguageChanged(val language: String): Msg
-
-        data class UseAutoRollChanged(val useAutoRoll: Boolean): Msg
 
         data class AdsTurnedOff(val isAdsOff: Boolean): Msg
 
@@ -162,10 +158,6 @@ class SettingsStoreFactory @Inject constructor(
                             is SettingTypes.MusicVolume -> {
 
                             }
-                            is SettingTypes.UseAutoRoll -> {
-                                changeUseAutoRollUseCase(intent.newSetting.checked)
-                                dispatch(Msg.UseAutoRollChanged(intent.newSetting.checked))
-                            }
                         }
                     }
                 }
@@ -184,7 +176,6 @@ class SettingsStoreFactory @Inject constructor(
     private object ReducerImpl : Reducer<State, Msg> {
         override fun State.reduce(msg: Msg): State = when (msg) {
             is Msg.LanguageChanged -> updateSettings { it.copy(language = msg.language) }
-            is Msg.UseAutoRollChanged -> updateSettings { it.copy(useAutoRoll = msg.useAutoRoll) }
             is Msg.AdsTurnedOff -> updateSettings { it.copy(isAdsOff = msg.isAdsOff) }
             Msg.SettingsLoadingError -> copy(settingsState = State.SettingsState.Error)
             Msg.SettingsStartLoading ->  copy(settingsState = State.SettingsState.Loading)

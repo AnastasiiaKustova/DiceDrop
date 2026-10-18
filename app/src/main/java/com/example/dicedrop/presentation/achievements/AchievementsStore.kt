@@ -114,11 +114,13 @@ class AchievementsStoreFactory @Inject constructor(
                 is Intent.ClickGetReward -> {
                     scope.launch {
                         try {
-                            getAchievementRewardUseCase(intent.achievementId)
+                            val isRewarded = getAchievementRewardUseCase(intent.achievementId)
 
-                            publish(
-                                Label.AchievementRewardClaimed(intent.achievementId)
-                            )
+                            if (isRewarded) {
+                                publish(
+                                    Label.AchievementRewardClaimed(intent.achievementId)
+                                )
+                            }
                         } catch (e: IllegalException){
                             publish(Label.Error(e.message))
                         }

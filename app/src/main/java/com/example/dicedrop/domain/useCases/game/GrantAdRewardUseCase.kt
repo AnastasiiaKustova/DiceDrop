@@ -10,12 +10,28 @@ class GrantAdRewardUseCase @Inject constructor(
 ) {
     suspend operator fun invoke() {
         val gameStatistic = repository.getCurrentGame()
-        repository.updateGameState(
+        val snapshot = gameStatistic.reviveSnapshot
+
+        // Есть снимок - откатываем последний ход, нет - просто перебрасываем кубики
+        val revived = if (snapshot != null) {
+            gameStatistic.copy(
+                boardItem = snapshot.boardItem,
+                dice = snapshot.dice,
+                tray = snapshot.tray,
+                totalScore = snapshot.totalScore,
+                combo = snapshot.combo,
+                lastPlaced = emptyList(),
+                reviveSnapshot = null,
+                isGameOver = false
+            )
+        } else {
             gameStatistic.copy(
                 dice = DiceItem.empty(),
                 tray = TrayState(),
                 isGameOver = false
             )
-        )
+        }
+
+        repository.saveGame(revived)
     }
 }

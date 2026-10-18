@@ -15,8 +15,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -30,14 +31,16 @@ class ShopRepositoryImpl @Inject constructor(
     }
 
     private val _rewardFlow = MutableStateFlow(DailyReward.default())
-    override val rewardFlow: Flow<DailyReward> = _rewardFlow.asStateFlow()
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
-    init {
-        scope.launch {
-            _rewardFlow.value = load()
-        }
+    private val loadJob = scope.launch {
+        _rewardFlow.value = load()
+    }
+
+    override val rewardFlow: Flow<DailyReward> = flow {
+        loadJob.join()
+        emitAll(_rewardFlow)
     }
 
     private suspend fun save(data: DailyReward) {
@@ -53,10 +56,12 @@ class ShopRepositoryImpl @Inject constructor(
     }
 
     override suspend fun isDailyRewardReceived(date: String): Boolean {
+        loadJob.join()
         return _rewardFlow.value.lastDate == date
     }
 
     override suspend fun getDailyReward() {
+        loadJob.join()
         val data = _rewardFlow.value
 
         save(

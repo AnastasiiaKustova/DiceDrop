@@ -1,23 +1,17 @@
 package com.example.dicedrop.domain.entity
 
 import android.os.Parcelable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.unit.dp
 import kotlinx.android.parcel.Parcelize
 
+// Значения по умолчанию у всех полей нужны Gson для старых сохранений (см. GameSettings)
 @Parcelize
 data class BoardItem(
-    val row: Int,
-    val col: Int,
+    val row: Int = 11,
+    val col: Int = 11,
     val board: List<BooleanArray> =  List(row) { BooleanArray(col) }
 ): Parcelable {
 
     companion object {
-        fun default(): BoardItem = BoardItem(
-            row = 11,
-            col = 11
-        )
+        fun default(): BoardItem = BoardItem()
     }
 }

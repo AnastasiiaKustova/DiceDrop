@@ -15,11 +15,6 @@ object DragController {
         gameState.dragging = true
     }
 
-    fun onDragStartWithOffset(gameState: GameUiState) {
-        gameState.dragging = true
-        gameState.dragOffsetY -= 100.dp
-    }
-
     fun onDragEnd(
         gameState: GameUiState,
         boardItem: BoardItem,

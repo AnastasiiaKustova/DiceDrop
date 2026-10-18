@@ -15,18 +15,26 @@ class CheckGameOverUseCase @Inject constructor(
         val h = game.dice.dice1
         val w = game.dice.dice2
         fun count(t: BonusType) = game.bonuses.firstOrNull { it.type == t }?.count ?: 0
-        val fitsDirect = game.boardItem.isCanPlaceNewBlock(h, w)
-        val fitsSwapped = count(BonusType.ROTATE) > 0 && game.boardItem.isCanPlaceNewBlock(w, h)
-        val canPlace = fitsDirect || fitsSwapped
+        val canRotate = count(BonusType.ROTATE) > 0
 
-        val hasRoom = game.boardItem.board.any { row -> row.any { !it } }
-        val canSurvive = hasRoom && (count(BonusType.DRAFT) > 0 || count(BonusType.LUCKY) > 0)
+        fun fits(h: Int, w: Int): Boolean =
+            game.boardItem.isCanPlaceNewBlock(h, w) || (canRotate && game.boardItem.isCanPlaceNewBlock(w, h))
 
-        val updated = if (canPlace) {
-            game.copy(isGameOver = false)
-        } else {
-            game.copy(isGameOver = !canSurvive)
+        // Третий кубик еще не сброшен: сброс A дает блок h=spare × w=B, сброс B - h=spare × w=A
+        val spare = game.tray.spare?.value
+        val canPlace = fits(h, w) || (spare != null && (fits(spare, h) || fits(spare, w)))
+
+        // Каждый Lucky или Draft позволяет заменить один кубик. Для Draft берем лучший исход,
+        // а грань 1 проверять достаточно: если не влезает 1, не влезет и больше
+        val replaceCount = count(BonusType.LUCKY) + count(BonusType.DRAFT)
+        val canSurvive = when {
+            replaceCount >= 2 -> fits(1, 1)
+            count(BonusType.LUCKY) > 0 -> fits(h, 1) || fits(1, w)
+            count(BonusType.DRAFT) > 0 -> fits(1, h) || fits(1, w)
+            else -> false
         }
+
+        val updated = game.copy(isGameOver = !canPlace && !canSurvive)
 
         repository.saveGame(updated)
         return updated

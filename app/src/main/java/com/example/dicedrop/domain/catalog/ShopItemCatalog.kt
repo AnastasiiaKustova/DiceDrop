@@ -3,7 +3,6 @@ package com.example.dicedrop.domain.catalog
 import com.example.dicedrop.R
 import com.example.dicedrop.domain.entity.BonusType
 import com.example.dicedrop.domain.entity.ShopItem
-import com.example.dicedrop.presentation.game.ui.bottompanel.getIconResId
 
 
 object ShopItemCatalog {
@@ -18,28 +17,28 @@ object ShopItemCatalog {
         ShopItem(
             id = "basic_bonus_rotate",
             titleId = R.string.rotate,
-            iconResId = BonusType.ROTATE.getIconResId(),
+            iconResId = R.drawable.bonus_swap_c_flat,
             price = 1,
             bonusType = BonusType.ROTATE
         ),
         ShopItem(
             id = "basic_bonus_draft",
             titleId = R.string.draft,
-            iconResId = BonusType.DRAFT.getIconResId(),
+            iconResId = R.drawable.bonus_roll3_a_flat,
             price = 2,
             bonusType = BonusType.DRAFT
         ),
         ShopItem(
             id = "basic_bonus_freeze",
             titleId = R.string.freeze,
-            iconResId = BonusType.FREEZE.getIconResId(),
+            iconResId = R.drawable.bonus_freeze_a_flat,
             price = 2,
             bonusType = BonusType.FREEZE
         ),
         ShopItem(
             id = "basic_bonus_lucky",
             titleId = R.string.lucky,
-            iconResId = BonusType.LUCKY.getIconResId(),
+            iconResId = R.drawable.bonus_lucky_b_flat,
             price = 3,
             bonusType = BonusType.LUCKY
         ),

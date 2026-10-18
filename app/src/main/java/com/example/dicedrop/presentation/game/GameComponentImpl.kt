@@ -33,7 +33,7 @@ class GameComponentImpl @AssistedInject constructor(
     @Assisted("componentContext") componentContext: ComponentContext,
 ) : GameComponent, ComponentContext by componentContext {
 
-    private val _uiEvents = MutableSharedFlow<UiEvent>()
+    private val _uiEvents = MutableSharedFlow<UiEvent>(extraBufferCapacity = 8)
     override val uiEvents: SharedFlow<UiEvent> = _uiEvents
 
     private val store: GameStore = instanceKeeper.getStore {
@@ -55,12 +55,15 @@ class GameComponentImpl @AssistedInject constructor(
                     GameStore.Label.ClickNavigateBack -> navigateBackClicked()
                     GameStore.Label.ClickNavigateToAchievements -> navigateToAchievementsClicked()
                     GameStore.Label.ClickNavigateToShop -> navigateToShopClicked()
+                    is GameStore.Label.AchievementUnlocked -> _uiEvents.emit(UiEvent.AchievementUnlocked(it.titleId))
                     GameStore.Label.WatchAd -> _uiEvents.emit(UiEvent.WatchAd)
                     GameStore.Label.NotEnoughCoins -> _uiEvents.emit(UiEvent.Error(GameComponent.UiEvent.ErrorType.NotEnoughCoins))
                     GameStore.Label.NotEnoughBonus -> _uiEvents.emit(UiEvent.Error(GameComponent.UiEvent.ErrorType.NotEnoughBonus))
                     is GameStore.Label.PlayLineClearAnimation -> _uiEvents.emit(UiEvent.ClearLine(
                         clearedRows = it.clearedRows,
-                        clearedCols = it.clearedCols))
+                        clearedCols = it.clearedCols,
+                        combo = it.combo,
+                        points = it.points))
                 }
             }
         }
@@ -109,17 +112,12 @@ class GameComponentImpl @AssistedInject constructor(
     override fun onShopClick() {
         store.accept(GameStore.Intent.ClickNavigateToShop)
     }
-
     override fun onRollEnd(result: DiceItem) {
         store.accept(GameStore.Intent.RollDice(result))
     }
 
     override fun onBonusClick(bonusType: BonusType) {
         store.accept(GameStore.Intent.UseBonus(bonusType))
-    }
-
-    override fun onPlaceBonus(r: Int, c: Int, bonusType: BonusType) {
-        store.accept(GameStore.Intent.PlaceBonus(r, c, bonusType))
     }
 
     override fun onBuyBonusClick(bonusType: BonusType) {

@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
@@ -25,13 +24,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.dicedrop.R
-import com.example.dicedrop.domain.entity.settings.GameSettings
-import com.example.dicedrop.domain.entity.settings.SettingTypes
 import com.example.dicedrop.presentation.ui.theme.DarkBlue
 import com.example.dicedrop.presentation.ui.theme.TranslucentBlack
 import com.example.dicedrop.presentation.ui.theme.White
@@ -40,16 +38,15 @@ import com.example.dicedrop.presentation.ui.theme.WhiteBlue
 @Composable
 fun DrawPause(
     modifier: Modifier = Modifier,
-    settings: GameSettings,
     onBackClick: () -> Unit,
-    onExitClick: () -> Unit,
-    onRestartClick: () -> Unit,
-    onSettingsChange: (settingType: SettingTypes) -> Unit
+    onRestartClick: () -> Unit
 ) {
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(TranslucentBlack)
+            // Пауза лежит поверх игры: не пропускаем касания к полю под ней
+            .pointerInput(Unit) {}
             .wrapContentSize(Alignment.Center)
             .padding(20.dp)
     ) {
@@ -100,26 +97,6 @@ fun DrawPause(
                     }
                 }
 
-                Spacer(
-                    Modifier.height(20.dp)
-                )
-
-                SettingsItem(
-                    icon = Icons.Filled.Check,
-                    title = stringResource(R.string.music_volume),
-                    type = SettingTypes.MusicVolume(settings.musicVolume),
-                    onSettingsChange = onSettingsChange
-                )
-
-                SettingsItem(
-                    icon = Icons.Filled.Check,
-                    title = stringResource(R.string.auto_skip),
-                    type = SettingTypes.UseAutoRoll(settings.useAutoRoll),
-                    onSettingsChange = onSettingsChange
-                )
-
-
-
                 Spacer(modifier = Modifier.height(20.dp))
 
                 OutlinedButton(onClick = {
@@ -135,22 +112,6 @@ fun DrawPause(
                 ) {
                     Text(
                         text = stringResource(R.string.restart_game)
-                    )
-                }
-
-                OutlinedButton(onClick = {
-                    onExitClick()
-                },
-                    modifier = Modifier
-                        .fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        contentColor = DarkBlue,
-                        containerColor = White
-                    )
-                ) {
-                    Text(
-                        text = stringResource(R.string.exit)
                     )
                 }
             }

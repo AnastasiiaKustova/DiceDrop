@@ -33,13 +33,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.dicedrop.R
 import com.example.dicedrop.domain.entity.BonusItem
 import com.example.dicedrop.domain.entity.BonusType
 import com.example.dicedrop.presentation.common.OutlinedText
 import com.example.dicedrop.presentation.game.ui.bottompanel.getIconResId
+import com.example.dicedrop.presentation.game.ui.bottompanel.getTitleResId
 import com.example.dicedrop.presentation.ui.theme.DarkBlue
 import com.example.dicedrop.presentation.ui.theme.White
 
@@ -92,11 +95,11 @@ fun RandomBonusDialog(
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     Text(
-                        text = "You got",
+                        text = stringResource(R.string.you_got),
                         color = DarkBlue,
                         fontSize = 20.sp)
                     OutlinedText(
-                        text = bonus.type.toString(),
+                        text = stringResource(bonus.type.getTitleResId()),
                         fillColor = DarkBlue,
                         outlineColor = DarkBlue,
                         fontSize = 28.sp
@@ -108,7 +111,7 @@ fun RandomBonusDialog(
                         contentDescription = null,
                     )
                 }
-                Text("Tap to continue", color = Color.White)
+                Text(stringResource(R.string.tap_to_continue), color = Color.White)
             }
         }
     }
