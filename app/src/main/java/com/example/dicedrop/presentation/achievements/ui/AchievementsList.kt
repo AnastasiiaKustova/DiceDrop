@@ -10,8 +10,13 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items as gridItems
 import androidx.compose.foundation.lazy.items
+import com.example.dicedrop.presentation.common.isLandscape
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.shape.CircleShape
@@ -66,6 +71,47 @@ fun AchievementsList(
         AchievementTab.CLAIM -> achievements.filter { it.canClaim }
         AchievementTab.PROGRESS -> achievements.filter { !it.isCompleted }
         AchievementTab.DONE -> achievements.filter { it.isRewardClaimed }
+    }
+
+    if (isLandscape()) {
+        // Планшет: слева прогресс и вкладки столбиком, справа карточки в две колонки
+        Row(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(start = 40.dp, end = 40.dp, top = 18.dp),
+            horizontalArrangement = Arrangement.spacedBy(28.dp)
+        ) {
+            Column(
+                modifier = Modifier.width(320.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                SideSummary(completed = completed, total = achievements.size, waiting = waiting)
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    SideTab(stringResource(R.string.tab_all), tab == AchievementTab.ALL) { tab = AchievementTab.ALL }
+                    SideTab(stringResource(R.string.tab_claim, waiting), tab == AchievementTab.CLAIM) { tab = AchievementTab.CLAIM }
+                    SideTab(stringResource(R.string.tab_progress), tab == AchievementTab.PROGRESS) { tab = AchievementTab.PROGRESS }
+                    SideTab(stringResource(R.string.tab_done), tab == AchievementTab.DONE) { tab = AchievementTab.DONE }
+                }
+            }
+            LazyVerticalGrid(
+                modifier = Modifier.weight(1f),
+                columns = GridCells.Fixed(2),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                contentPadding = PaddingValues(bottom = 20.dp)
+            ) {
+                gridItems(
+                    items = shown,
+                    key = { it.id }
+                ) {
+                    AchievementBox(
+                        achievement = it,
+                        onGetRewardClick = onGetRewardClick
+                    )
+                }
+            }
+        }
+        return
     }
 
     LazyColumn(
@@ -138,6 +184,57 @@ private fun Summary(completed: Int, total: Int, waiting: Int) {
             )
         }
     }
+}
+
+// Планшет: кубок сверху, под ним счётчик, полоса и сколько наград ждёт
+@Composable
+private fun SideSummary(completed: Int, total: Int, waiting: Int) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(MidBlue, RoundedCornerShape(24.dp))
+            .padding(18.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        IconCircle(iconRes = R.drawable.ic_trophy, size = 76.dp, iconSize = 56.dp)
+        Text(
+            text = stringResource(R.string.achievements_done) + " $completed / $total",
+            color = White,
+            fontSize = 18.sp,
+            fontWeight = FontWeight.Black
+        )
+        ProgressBar(
+            fraction = completed.toFloat() / total.coerceAtLeast(1),
+            color = Yellow
+        )
+        if (waiting > 0) {
+            Text(
+                modifier = Modifier.alpha(0.85f),
+                text = pluralStringResource(R.plurals.rewards_waiting, waiting, waiting),
+                color = White,
+                fontSize = 13.sp
+            )
+        }
+    }
+}
+
+@Composable
+private fun SideTab(label: String, selected: Boolean, onClick: () -> Unit) {
+    Text(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(46.dp)
+            .clip(RoundedCornerShape(16.dp))
+            .background(if (selected) Yellow else DeepBlue)
+            .clickable(onClick = onClick)
+            .padding(horizontal = 18.dp, vertical = 12.dp),
+        text = label,
+        color = if (selected) ButtonText else White,
+        fontSize = 16.sp,
+        fontWeight = FontWeight.ExtraBold,
+        maxLines = 1
+    )
 }
 
 @Composable

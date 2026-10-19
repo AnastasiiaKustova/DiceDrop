@@ -13,6 +13,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.dicedrop.R
 import com.example.dicedrop.presentation.common.RoundImageButton
+import com.example.dicedrop.presentation.common.isLandscape
 import com.example.dicedrop.presentation.ui.theme.White
 
 @Composable
@@ -23,7 +24,9 @@ fun AchievementTopBar(
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .padding(start = 20.dp, end = 20.dp, top = 20.dp)
+            // На планшете поля шире, как у содержимого
+            .padding(horizontal = if (isLandscape()) 40.dp else 20.dp)
+            .padding(top = 20.dp)
     ) {
         RoundImageButton(
             modifier = Modifier.align(Alignment.CenterStart),

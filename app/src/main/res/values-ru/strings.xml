@@ -126,6 +126,8 @@
     <string name="use_lucky_10_times">Использовать «Счастливый» 10 раз</string>
     <string name="third_wheel">Третий не лишний</string>
     <string name="use_draft_10_times">Использовать «Третий кубик» 10 раз</string>
+    <string name="draft_triple_title">Не судьба</string>
+    <string name="draft_triple_desc">Докинуть третий кубик к дублю и выбросить то же число</string>
     <string name="combo_5_title">Цепная реакция</string>
     <string name="combo_5_description">Набрать комбо x5</string>
     <string name="combo_10_title">Неудержимый</string>
@@ -136,6 +138,9 @@
     <string name="coins_earned">Заработано за партию</string>
     <string name="double_coins_hint">Посмотри рекламу — монеты удвоятся, и начнётся новая игра</string>
     <string name="double_and_restart">×2 и новая игра</string>
+    <string name="double_coins_title">Удвоить монеты</string>
+    <string name="coins_caps">МОНЕТЫ</string>
+    <string name="restart_short">Заново</string>
     <!-- Обучение -->
     <string name="how_to_play">Как играть</string>
     <string name="tutorial_skip">Пропустить</string>

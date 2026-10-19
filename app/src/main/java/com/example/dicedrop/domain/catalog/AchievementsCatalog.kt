@@ -230,5 +230,20 @@ object AchievementsCatalog {
             requiredCount = 10,
             reward = 20,
         ),
+        // Утешение: третий кубик ничего не изменил - возвращаем бонус и даём монеты
+        Achievement(
+            id = "draft_triple",
+            titleId = R.string.draft_triple_title,
+            descriptionId = R.string.draft_triple_desc,
+            type = AchievementType.DRAFT_TRIPLE,
+            requiredCount = 1,
+            reward = 30,
+            additionalRewards = listOf(
+                AchievementReward(
+                    bonusType = BonusType.DRAFT,
+                    amount = 1
+                )
+            )
+        ),
     )
 }

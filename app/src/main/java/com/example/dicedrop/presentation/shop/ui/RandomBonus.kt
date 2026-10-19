@@ -33,7 +33,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.dicedrop.R
 import com.example.dicedrop.domain.entity.BonusItem
-import com.example.dicedrop.presentation.common.ConfettiBit
 import com.example.dicedrop.presentation.common.ConfettiBurst
 import com.example.dicedrop.presentation.common.DialogScrim
 import com.example.dicedrop.presentation.common.GameButton
@@ -81,11 +80,6 @@ fun RandomBonusDialog(
                 .background(DarkBlue, RoundedCornerShape(30.dp))
                 .consumeClicks()
         ) {
-            ConfettiBit(x = 30.dp, y = 74.dp, size = 14.dp, color = Orange, rotation = 20f)
-            ConfettiBit(x = 50.dp, y = 170.dp, size = 9.dp, color = Green, rotation = -15f)
-            ConfettiBit(x = 34.dp, y = 84.dp, size = 12.dp, color = Yellow, rotation = 35f, alignRight = true)
-            ConfettiBit(x = 48.dp, y = 186.dp, size = 8.dp, color = LightBlue, round = true, alignRight = true)
-
             Column(
                 modifier = Modifier
                     .fillMaxWidth()

@@ -2,19 +2,23 @@ package com.example.dicedrop.presentation.game.ui.bottompanel
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.example.dicedrop.domain.entity.BonusItem
 import com.example.dicedrop.domain.entity.BonusType
 import com.example.dicedrop.presentation.ui.theme.DeepBlue
+import com.example.dicedrop.presentation.ui.theme.White
 
 // Порядок бонусов в панели, как в магазине
 private val panelOrder = listOf(BonusType.ROTATE, BonusType.FREEZE, BonusType.LUCKY, BonusType.DRAFT)
@@ -32,12 +36,23 @@ fun GameBottomPanel(
 ) {
     val bonuses = panelOrder.mapNotNull { type -> bonusStatistic.firstOrNull { it.type == type } }
 
-    // itemModifier приходит из Row/Column, чтобы кнопки делили место поровну
-    val content = @Composable { itemModifier: Modifier ->
+    Row(
+        modifier = modifier
+            .background(DeepBlue)
+            .fillMaxWidth()
+            .then(
+                if (isLandscape) Modifier.padding(start = 8.dp, end = 8.dp, top = 22.dp, bottom = 24.dp)
+                else Modifier.padding(horizontal = 12.dp)
+            ),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceAround
+    ) {
         bonuses.forEach { bonus ->
-            Box(
-                modifier = itemModifier,
-                contentAlignment = Alignment.Center
+            // Кнопки делят ширину поровну
+            Column(
+                modifier = Modifier.weight(1f),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 BonusButton(
                     iconResId = bonus.type.getIconResId(),
@@ -52,30 +67,18 @@ fun GameBottomPanel(
                     onBonusClick = { onBonusClick(bonus.type) },
                     onBuyClick = { onBuyClick(bonus.type) }
                 )
+                // На планшете места хватает, поэтому под кнопками подписаны названия бонусов
+                if (isLandscape) {
+                    Text(
+                        modifier = Modifier.alpha(0.85f),
+                        text = stringResource(bonus.type.getTitleResId()),
+                        color = White,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        maxLines = 1
+                    )
+                }
             }
-        }
-    }
-
-    if (isLandscape) {
-        Column(
-            modifier = modifier
-                .background(DeepBlue)
-                .fillMaxHeight()
-                .padding(8.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            content(Modifier.weight(1f))
-        }
-    } else {
-        Row(
-            modifier = modifier
-                .background(DeepBlue)
-                .fillMaxWidth()
-                .padding(horizontal = 12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceAround
-        ) {
-            content(Modifier.weight(1f))
         }
     }
 }

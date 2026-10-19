@@ -1,5 +1,6 @@
 package com.example.dicedrop.presentation.common
 
+import android.content.res.Configuration
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
@@ -17,6 +18,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
@@ -40,6 +42,7 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.addPathNodes
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
@@ -347,12 +350,19 @@ fun ProgressBar(
     }
 }
 
-// Затемнение под окном; касания к экрану под ним не проходят
+// Альбомная ориентация бывает только на планшетах: телефоны закреплены в портретной
+@Composable
+fun isLandscape(): Boolean =
+    LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
+
+// Затемнение под окном; касания к экрану под ним не проходят.
+// maxWidth не даёт окнам растянуться на всю ширину планшета
 @Composable
 fun DialogScrim(
     modifier: Modifier = Modifier,
     color: Color = Scrim,
     contentAlignment: Alignment = Alignment.Center,
+    maxWidth: Dp = 460.dp,
     onDismiss: (() -> Unit)? = null,
     content: @Composable BoxScope.() -> Unit
 ) {
@@ -368,34 +378,18 @@ fun DialogScrim(
                     onClick = onDismiss
                 ) else Modifier.pointerInput(Unit) {}
             ),
-        contentAlignment = contentAlignment,
-        content = content
-    )
+        contentAlignment = contentAlignment
+    ) {
+        Box(
+            modifier = Modifier.widthIn(max = maxWidth),
+            contentAlignment = contentAlignment,
+            content = content
+        )
+    }
 }
 
 // Карточка окна не должна закрывать окно касанием по себе
 fun Modifier.consumeClicks(): Modifier = this.pointerInput(Unit) {}
-
-// Декоративный кусочек конфетти
-@Composable
-fun BoxScope.ConfettiBit(
-    x: Dp,
-    y: Dp,
-    size: Dp,
-    color: Color,
-    rotation: Float = 0f,
-    round: Boolean = false,
-    alignRight: Boolean = false
-) {
-    Box(
-        modifier = Modifier
-            .align(if (alignRight) Alignment.TopEnd else Alignment.TopStart)
-            .offset(x = if (alignRight) -x else x, y = y)
-            .size(size)
-            .rotate(rotation)
-            .background(color, if (round) CircleShape else RoundedCornerShape(size * 0.25f))
-    )
-}
 
 // Иконки из макета (сетка 24x24), красятся через tint
 object GameIcons {
@@ -477,18 +471,6 @@ object GameIcons {
                 "M4.5 8.5v7",
                 "M19.5 8.5v7"
             ),
-            width = 2.4f
-        )
-    }
-
-    // Сумка магазина с "дырочками" (чётно-нечётная заливка)
-    val Bag: ImageVector by lazy {
-        icon(
-            "bag",
-            stroke = listOf("M8.5 10V7.5a3.5 3.5 0 0 1 7 0V10"),
-            evenOdd = "M7.5,9h9a2.5,2.5 0 0 1 2.5,2.5v6.5a2.5,2.5 0 0 1 -2.5,2.5h-9a2.5,2.5 0 0 1 -2.5,-2.5v-6.5a2.5,2.5 0 0 1 2.5,-2.5z" +
-                    "M7.4,12a1.1,1.1 0 1,0 2.2,0a1.1,1.1 0 1,0 -2.2,0z" +
-                    "M14.4,12a1.1,1.1 0 1,0 2.2,0a1.1,1.1 0 1,0 -2.2,0z",
             width = 2.4f
         )
     }

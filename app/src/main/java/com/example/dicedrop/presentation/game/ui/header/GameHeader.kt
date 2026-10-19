@@ -9,6 +9,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -44,6 +45,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -54,7 +56,12 @@ import com.example.dicedrop.presentation.common.GameIcons
 import com.example.dicedrop.presentation.common.RoundImageButton
 import com.example.dicedrop.presentation.common.spaced
 import com.example.dicedrop.presentation.game.ui.board.comboColor
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.TextUnit
 import com.example.dicedrop.presentation.ui.theme.DarkBlue
+import com.example.dicedrop.presentation.ui.theme.DeepBlue
+import com.example.dicedrop.presentation.ui.theme.MidBlue
 import com.example.dicedrop.presentation.ui.theme.White
 import com.example.dicedrop.presentation.ui.theme.Yellow
 
@@ -90,15 +97,15 @@ fun GameHeader(
                     .height(20.dp)
                     .background(White.copy(alpha = 0.3f))
             )
-            Icon(
+            // Та же витрина, что на кнопке магазина в меню: сумка в белом контуре читалась как замок
+            Image(
                 modifier = Modifier
-                    .size(28.dp)
+                    .size(30.dp)
                     .clip(CircleShape)
                     .clickable(onClick = onShopClick)
-                    .padding(4.dp),
-                imageVector = GameIcons.Bag,
-                contentDescription = stringResource(R.string.store),
-                tint = White
+                    .padding(2.dp),
+                painter = painterResource(R.drawable.ic_shop_bag),
+                contentDescription = stringResource(R.string.store)
             )
         }
 
@@ -113,11 +120,117 @@ fun GameHeader(
 
         Spacer(modifier = Modifier.weight(1f))
 
-        Buttons(
+        HeaderButtons(
             trophyHighlighted = trophyHighlighted,
             rewardsToClaim = rewardsToClaim,
             onPauseClick = onPauseClick,
             onAchievementsClick = onAchievementsClick
+        )
+    }
+}
+
+// Альбомная ориентация: монеты на всю ширину левой панели, витрина магазина по центру своей части
+@Composable
+fun SideCoins(
+    coins: Int,
+    onShopClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(52.dp)
+            .background(DeepBlue, CircleShape)
+            .padding(start = 5.dp, end = 6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(6.dp)
+    ) {
+        Image(
+            painter = painterResource(R.drawable.coin_star),
+            contentDescription = null,
+            modifier = Modifier.size(38.dp)
+        )
+        Text(
+            text = coins.spaced(),
+            color = White,
+            fontSize = 18.sp,
+            fontWeight = FontWeight.ExtraBold,
+            maxLines = 1
+        )
+        Box(
+            modifier = Modifier
+                .padding(start = 6.dp)
+                .width(1.dp)
+                .height(30.dp)
+                .background(White.copy(alpha = 0.3f))
+        )
+        Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
+            Image(
+                modifier = Modifier
+                    .size(44.dp)
+                    .clip(CircleShape)
+                    .clickable(onClick = onShopClick)
+                    .padding(3.dp),
+                painter = painterResource(R.drawable.ic_shop_bag),
+                contentDescription = stringResource(R.string.store)
+            )
+        }
+    }
+}
+
+// Альбомная ориентация: счёт, комбо и рекорд одной карточкой
+@Composable
+fun SideScore(
+    totalScore: Int,
+    bestScore: Int,
+    combo: Int,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .background(MidBlue, RoundedCornerShape(24.dp))
+            .padding(start = 18.dp, end = 18.dp, top = 16.dp, bottom = 18.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            modifier = Modifier.alpha(0.8f),
+            text = stringResource(R.string.score_caps),
+            color = White,
+            fontSize = 13.sp,
+            fontWeight = FontWeight.ExtraBold,
+            letterSpacing = 1.sp
+        )
+        Text(
+            text = totalScore.spaced(),
+            color = White,
+            fontSize = 50.sp,
+            lineHeight = 54.sp,
+            fontWeight = FontWeight.Black,
+            maxLines = 1
+        )
+        ComboBadge(combo = combo, fontSize = 14.sp, height = 22.dp)
+        Box(
+            modifier = Modifier
+                .padding(top = 14.dp, bottom = 10.dp)
+                .fillMaxWidth()
+                .height(1.dp)
+                .background(White.copy(alpha = 0.2f))
+        )
+        Text(
+            modifier = Modifier.alpha(0.8f),
+            text = stringResource(R.string.record_caps),
+            color = White,
+            fontSize = 13.sp,
+            fontWeight = FontWeight.ExtraBold,
+            letterSpacing = 1.sp
+        )
+        Text(
+            text = maxOf(bestScore, totalScore).spaced(),
+            color = White,
+            fontSize = 24.sp,
+            fontWeight = FontWeight.Black,
+            maxLines = 1
         )
     }
 }
@@ -152,7 +265,7 @@ private fun Score(
 
 // Плашка текущего комбо, видна от x2; при росте пульсирует, при сбросе плавно исчезает
 @Composable
-private fun ComboBadge(combo: Int) {
+private fun ComboBadge(combo: Int, fontSize: TextUnit = 11.sp, height: Dp = 16.dp) {
     // Последнее показанное значение, чтобы при исчезновении не мелькало "x0"
     var shownCombo by remember { mutableIntStateOf(combo) }
     val pulse = remember { Animatable(1f) }
@@ -169,7 +282,7 @@ private fun ComboBadge(combo: Int) {
     Box(
         modifier = Modifier
             .padding(top = 1.dp)
-            .height(16.dp),
+            .height(height),
         contentAlignment = Alignment.Center
     ) {
         AnimatedVisibility(
@@ -187,8 +300,8 @@ private fun ComboBadge(combo: Int) {
                     .padding(horizontal = 7.dp),
                 text = stringResource(R.string.combo_badge, shownCombo),
                 color = androidx.compose.ui.graphics.Color.White,
-                fontSize = 11.sp,
-                lineHeight = 16.sp,
+                fontSize = fontSize,
+                lineHeight = with(LocalDensity.current) { height.toSp() },
                 fontWeight = FontWeight.Black,
                 maxLines = 1
             )
@@ -197,11 +310,12 @@ private fun ComboBadge(combo: Int) {
 }
 
 @Composable
-private fun Buttons(
+fun HeaderButtons(
     trophyHighlighted: Boolean,
     rewardsToClaim: Int,
     onPauseClick: () -> Unit,
-    onAchievementsClick: () -> Unit
+    onAchievementsClick: () -> Unit,
+    buttonSize: Dp = 38.dp
 ) {
     // Пока висит баннер достижения, кубок светится в полную силу - подсказка, куда идти за наградой
     val bannerGlow by animateFloatAsState(
@@ -226,7 +340,7 @@ private fun Buttons(
                 },
                 iconRes = R.drawable.btn_trophy,
                 contentDescription = stringResource(R.string.achievements),
-                size = 38.dp,
+                size = buttonSize,
                 onClick = onAchievementsClick
             )
             if (rewardsToClaim > 0) {
@@ -250,7 +364,7 @@ private fun Buttons(
         RoundImageButton(
             iconRes = R.drawable.btn_pause,
             contentDescription = stringResource(R.string.pause_title),
-            size = 38.dp,
+            size = buttonSize,
             onClick = onPauseClick
         )
     }

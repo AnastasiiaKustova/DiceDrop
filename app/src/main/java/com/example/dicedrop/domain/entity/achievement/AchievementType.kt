@@ -14,7 +14,8 @@ enum class AchievementType {
     USE_FREEZE,
     USE_LUCKY,
     USE_DRAFT,
-    COMBO
+    COMBO,
+    DRAFT_TRIPLE
 }
 
 // По какому счетчику статистики проверяется достижение
@@ -31,4 +32,5 @@ fun AchievementType.toStat(): PlayerStat = when (this) {
     AchievementType.USE_LUCKY -> PlayerStat.LUCKY_USED
     AchievementType.USE_DRAFT -> PlayerStat.DRAFT_USED
     AchievementType.COMBO -> PlayerStat.MAX_COMBO
+    AchievementType.DRAFT_TRIPLE -> PlayerStat.DRAFT_TRIPLE
 }

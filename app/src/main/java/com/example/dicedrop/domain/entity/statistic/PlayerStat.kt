@@ -10,6 +10,8 @@ enum class PlayerStat {
     FREEZE_USED,
     LUCKY_USED,
     DRAFT_USED,
+    // Третий кубик к дублю выпал тем же числом
+    DRAFT_TRIPLE,
 
     // Рекорды: хранится максимальное значение, а не сумма
     MAX_LINES_AT_ONCE,

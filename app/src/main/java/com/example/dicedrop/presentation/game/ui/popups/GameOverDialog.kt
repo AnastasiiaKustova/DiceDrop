@@ -6,8 +6,10 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -37,6 +39,7 @@ import com.example.dicedrop.presentation.common.GameButton
 import com.example.dicedrop.presentation.common.GameIcons
 import com.example.dicedrop.presentation.common.consumeClicks
 import com.example.dicedrop.presentation.common.drawDie
+import com.example.dicedrop.presentation.common.isLandscape
 import com.example.dicedrop.presentation.common.spaced
 import com.example.dicedrop.presentation.ui.theme.ButtonText
 import com.example.dicedrop.presentation.ui.theme.DarkBlue
@@ -55,6 +58,19 @@ fun GameOverDialog(
     onRestartClick: () -> Unit,
     onWatchAdsClick: () -> Unit
 ) {
+    if (isLandscape()) {
+        GameOverLandscape(
+            gameScore = gameScore,
+            bestScore = bestScore,
+            canUndo = canUndo,
+            coinsEarned = coinsEarned,
+            onDoubleCoinsClick = onDoubleCoinsClick,
+            onRestartClick = onRestartClick,
+            onWatchAdsClick = onWatchAdsClick
+        )
+        return
+    }
+
     DialogScrim {
         Box(
             modifier = Modifier
@@ -179,11 +195,196 @@ fun GameOverDialog(
     }
 }
 
+// Планшет: сверху итоги партии в ряд, ниже предложения за рекламу рядом, внизу - начать заново
+@Composable
+private fun GameOverLandscape(
+    gameScore: Int,
+    bestScore: Int,
+    canUndo: Boolean,
+    coinsEarned: Int,
+    onDoubleCoinsClick: () -> Unit,
+    onRestartClick: () -> Unit,
+    onWatchAdsClick: () -> Unit
+) {
+    DialogScrim(maxWidth = 780.dp) {
+        Box(
+            modifier = Modifier
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 16.dp, vertical = 16.dp)
+                .fillMaxWidth()
+        ) {
+            Column(
+                modifier = Modifier
+                    .padding(top = 50.dp)
+                    .fillMaxWidth()
+                    .background(DarkBlue, RoundedCornerShape(32.dp))
+                    .consumeClicks()
+                    .padding(start = 26.dp, end = 26.dp, top = 62.dp, bottom = 24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = stringResource(R.string.game_over),
+                    color = White,
+                    fontSize = 32.sp,
+                    fontWeight = FontWeight.Black,
+                    letterSpacing = 1.sp
+                )
+                Text(
+                    modifier = Modifier.alpha(0.8f),
+                    text = stringResource(R.string.game_over_subtitle),
+                    color = White,
+                    fontSize = 15.sp
+                )
+
+                Spacer(modifier = Modifier.height(18.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    ScorePanel(
+                        modifier = Modifier.weight(1f),
+                        title = stringResource(R.string.score_caps),
+                        value = gameScore
+                    )
+                    ScorePanel(
+                        modifier = Modifier.weight(1f),
+                        title = stringResource(R.string.record_caps),
+                        value = maxOf(bestScore, gameScore)
+                    )
+                    ScorePanel(
+                        modifier = Modifier.weight(1f),
+                        title = stringResource(R.string.coins_caps),
+                        value = coinsEarned,
+                        coins = true
+                    )
+                }
+
+                if (canUndo || coinsEarned > 0) {
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(IntrinsicSize.Min),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        if (canUndo) {
+                            ChoiceCard(
+                                modifier = Modifier.weight(1f),
+                                icon = {
+                                    Icon(
+                                        imageVector = GameIcons.Undo,
+                                        contentDescription = null,
+                                        tint = ButtonText,
+                                        modifier = Modifier.size(30.dp)
+                                    )
+                                },
+                                title = stringResource(R.string.try_again),
+                                description = stringResource(R.string.undo_for_ad),
+                                button = stringResource(R.string.watch_ad),
+                                onClick = onWatchAdsClick
+                            )
+                        }
+                        if (coinsEarned > 0) {
+                            ChoiceCard(
+                                modifier = Modifier.weight(1f),
+                                icon = {
+                                    Image(
+                                        painter = painterResource(R.drawable.coin_star),
+                                        contentDescription = null,
+                                        modifier = Modifier.size(38.dp)
+                                    )
+                                },
+                                title = stringResource(R.string.double_coins_title),
+                                description = stringResource(R.string.double_coins_hint),
+                                button = stringResource(R.string.double_and_restart),
+                                onClick = onDoubleCoinsClick
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                GameButton(
+                    modifier = Modifier.fillMaxWidth(),
+                    text = stringResource(R.string.restart_game),
+                    onClick = onRestartClick,
+                    color = MidBlue,
+                    contentColor = White,
+                    height = 54.dp,
+                    icon = GameIcons.Restart
+                )
+            }
+
+            SadDie(modifier = Modifier.align(Alignment.TopCenter))
+        }
+    }
+}
+
+// Предложение за рекламу: значок, заголовок, пояснение и кнопка внизу карточки
+@Composable
+private fun ChoiceCard(
+    modifier: Modifier = Modifier,
+    icon: @Composable () -> Unit,
+    title: String,
+    description: String,
+    button: String,
+    onClick: () -> Unit
+) {
+    Column(
+        modifier = modifier
+            .fillMaxHeight()
+            .background(DeepBlue, RoundedCornerShape(22.dp))
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(54.dp)
+                    .background(White, CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                icon()
+            }
+            Column {
+                Text(
+                    text = title,
+                    color = White,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Black
+                )
+                Text(
+                    modifier = Modifier.alpha(0.85f),
+                    text = description,
+                    color = White,
+                    fontSize = 13.sp,
+                    lineHeight = 16.sp
+                )
+            }
+        }
+        Spacer(modifier = Modifier.weight(1f))
+        GameButton(
+            modifier = Modifier.fillMaxWidth(),
+            text = button,
+            onClick = onClick,
+            height = 50.dp,
+            corner = 16.dp,
+            fontSize = 18.sp
+        )
+    }
+}
+
 @Composable
 private fun ScorePanel(
     modifier: Modifier = Modifier,
     title: String,
-    value: Int
+    value: Int,
+    coins: Boolean = false
 ) {
     Column(
         modifier = modifier
@@ -199,14 +400,26 @@ private fun ScorePanel(
             fontWeight = FontWeight.Black,
             letterSpacing = 1.5.sp
         )
-        Text(
-            text = value.spaced(),
-            color = White,
-            fontSize = 30.sp,
-            lineHeight = 33.sp,
-            fontWeight = FontWeight.Black,
-            maxLines = 1
-        )
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            if (coins) {
+                Image(
+                    painter = painterResource(R.drawable.coin_star),
+                    contentDescription = null,
+                    modifier = Modifier.size(30.dp)
+                )
+            }
+            Text(
+                text = if (coins) "+$value" else value.spaced(),
+                color = White,
+                fontSize = 30.sp,
+                lineHeight = 33.sp,
+                fontWeight = FontWeight.Black,
+                maxLines = 1
+            )
+        }
     }
 }
 

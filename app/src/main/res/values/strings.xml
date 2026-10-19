@@ -122,6 +122,8 @@
     <string name="use_lucky_10_times">Use Lucky face 10 times</string>
     <string name="third_wheel">Third Wheel</string>
     <string name="use_draft_10_times">Use Extra die 10 times</string>
+    <string name="draft_triple_title">Not Meant to Be</string>
+    <string name="draft_triple_desc">Roll an Extra die onto a double and get the same number again</string>
     <string name="combo_5_title">Chain Reaction</string>
     <string name="combo_5_description">Reach a x5 combo</string>
     <string name="combo_10_title">Unstoppable</string>
@@ -132,6 +134,9 @@
     <string name="coins_earned">Earned this game</string>
     <string name="double_coins_hint">Watch an ad to double your coins and start a new game</string>
     <string name="double_and_restart">×2 and new game</string>
+    <string name="double_coins_title">Double coins</string>
+    <string name="coins_caps">COINS</string>
+    <string name="restart_short">Restart</string>
     <!-- Tutorial -->
     <string name="how_to_play">How to play</string>
     <string name="tutorial_skip">Skip</string>

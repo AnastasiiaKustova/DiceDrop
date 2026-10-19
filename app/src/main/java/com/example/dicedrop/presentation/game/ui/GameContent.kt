@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.SnackbarDuration
@@ -47,10 +48,10 @@ import com.example.dicedrop.domain.ads.RewardedAdManager
 import com.example.dicedrop.domain.entity.AdReward
 import com.example.dicedrop.domain.feedback.GameFeedback
 import com.example.dicedrop.domain.feedback.GameFeedback.Companion.lineCleared
-import com.example.dicedrop.presentation.common.ConfettiBit
 import com.example.dicedrop.presentation.common.ConfettiBurst
 import com.example.dicedrop.presentation.common.DialogScrim
 import com.example.dicedrop.presentation.common.LocalGameFeedback
+import com.example.dicedrop.presentation.common.isLandscape
 import com.example.dicedrop.presentation.game.GameComponent
 import com.example.dicedrop.presentation.game.ui.board.ComboPopup
 import com.example.dicedrop.presentation.game.ui.bottompanel.getPrice
@@ -164,7 +165,9 @@ fun GameContent(component: GameComponent) {
         AnimatedVisibility(
             modifier = Modifier
                 .align(Alignment.TopCenter)
-                .padding(top = 96.dp),
+                // На планшете шапки над полем нет, баннер встаёт у верхнего края
+                .padding(top = if (isLandscape()) 24.dp else 96.dp)
+                .widthIn(max = 560.dp),
             visible = bannerVisible,
             enter = slideInVertically { -it } + fadeIn(),
             exit = slideOutVertically { -it } + fadeOut()
@@ -248,10 +251,6 @@ private fun AchievementBannerCard(banner: AchievementBanner) {
             count = 40,
             power = 0.9f
         )
-        ConfettiBit(x = 24.dp, y = (-7).dp, size = 12.dp, color = Orange, rotation = 20f)
-        ConfettiBit(x = 120.dp, y = (-5).dp, size = 9.dp, color = LightBlue, rotation = -15f)
-        ConfettiBit(x = 20.dp, y = (-6).dp, size = 8.dp, color = Green, round = true, alignRight = true)
-        ConfettiBit(x = 70.dp, y = 76.dp, size = 11.dp, color = Yellow, rotation = 35f, alignRight = true)
     }
 }
 

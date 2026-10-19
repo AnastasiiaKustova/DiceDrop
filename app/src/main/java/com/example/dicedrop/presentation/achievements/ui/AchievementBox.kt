@@ -62,7 +62,9 @@ fun AchievementType.getIconResId(): Int = when (this) {
     AchievementType.USE_ROTATE -> BonusType.ROTATE.getIconResId()
     AchievementType.USE_FREEZE -> BonusType.FREEZE.getIconResId()
     AchievementType.USE_LUCKY -> BonusType.LUCKY.getIconResId()
-    AchievementType.USE_DRAFT -> BonusType.DRAFT.getIconResId()
+    // Временная иконка: свою нарисуем вместе с новыми иконками достижений
+    AchievementType.USE_DRAFT,
+    AchievementType.DRAFT_TRIPLE -> BonusType.DRAFT.getIconResId()
     AchievementType.COMBO -> R.drawable.ic_combo
 }
 

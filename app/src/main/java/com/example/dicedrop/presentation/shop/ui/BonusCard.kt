@@ -1,5 +1,6 @@
 package com.example.dicedrop.presentation.shop.ui
 
+import androidx.annotation.DrawableRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -17,7 +18,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -40,58 +44,130 @@ fun BonusCard(
     price: Int,
     owned: Int,
     modifier: Modifier = Modifier,
+    large: Boolean = false,
+    onBuyClick: () -> Unit
+) {
+    ShopCard(
+        iconRes = bonusType.getIconResId(),
+        title = stringResource(bonusType.getTitleResId()),
+        owned = owned,
+        description = bonusType.getDescriptionResId()?.let { stringResource(it) },
+        price = price,
+        modifier = modifier,
+        large = large,
+        onBuyClick = onBuyClick
+    )
+}
+
+// Случайный бонус карточкой - для планшета, где он стоит в одном ряду с остальными бонусами
+@Composable
+fun RandomBonusCard(
+    price: Int,
+    modifier: Modifier = Modifier,
+    onBuyClick: () -> Unit
+) {
+    ShopCard(
+        iconRes = R.drawable.ic_random_die,
+        title = stringResource(R.string.random),
+        owned = null,
+        description = stringResource(R.string.random_bonus_desc),
+        price = price,
+        modifier = modifier,
+        large = true,
+        onBuyClick = onBuyClick
+    )
+}
+
+// large - крупная карточка для планшета: больше иконка и шрифты, количество рядом с названием
+@Composable
+private fun ShopCard(
+    @DrawableRes iconRes: Int,
+    title: String,
+    owned: Int?,
+    description: String?,
+    price: Int,
+    modifier: Modifier,
+    large: Boolean,
     onBuyClick: () -> Unit
 ) {
     Column(
         modifier = modifier
-            .background(MidBlue, RoundedCornerShape(22.dp))
-            .padding(start = 12.dp, end = 12.dp, top = 10.dp, bottom = 12.dp),
+            .background(MidBlue, RoundedCornerShape(if (large) 26.dp else 22.dp))
+            .padding(
+                start = if (large) 16.dp else 12.dp,
+                end = if (large) 16.dp else 12.dp,
+                top = if (large) 14.dp else 10.dp,
+                bottom = if (large) 16.dp else 12.dp
+            ),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-            PriceTag(price = price)
+            if (large) PriceTag(price = price, height = 30.dp, fontSize = 15.sp) else PriceTag(price = price)
         }
         Spacer(modifier = Modifier.height(6.dp))
-        IconCircle(iconRes = bonusType.getIconResId(), size = 58.dp, iconSize = 43.dp)
-        Spacer(modifier = Modifier.height(8.dp))
-        Text(
-            text = stringResource(bonusType.getTitleResId()),
-            color = White,
-            fontSize = 16.sp,
-            lineHeight = 18.sp,
-            fontWeight = FontWeight.Black,
-            textAlign = TextAlign.Center,
-            maxLines = 1
-        )
-        Text(
-            modifier = Modifier.alpha(0.75f),
-            text = "($owned)",
-            color = White,
-            fontSize = 14.sp,
-            fontWeight = FontWeight.ExtraBold
-        )
-        bonusType.getDescriptionResId()?.let {
+        if (large) {
+            IconCircle(iconRes = iconRes, size = 104.dp, iconSize = 76.dp)
+        } else {
+            IconCircle(iconRes = iconRes, size = 58.dp, iconSize = 43.dp)
+        }
+        Spacer(modifier = Modifier.height(if (large) 12.dp else 8.dp))
+        if (large) {
+            Text(
+                text = buildAnnotatedString {
+                    append(title)
+                    if (owned != null) {
+                        withStyle(SpanStyle(color = White.copy(alpha = 0.75f))) { append(" ($owned)") }
+                    }
+                },
+                color = White,
+                fontSize = 19.sp,
+                lineHeight = 22.sp,
+                fontWeight = FontWeight.Black,
+                textAlign = TextAlign.Center,
+                maxLines = 1
+            )
+        } else {
+            Text(
+                text = title,
+                color = White,
+                fontSize = 16.sp,
+                lineHeight = 18.sp,
+                fontWeight = FontWeight.Black,
+                textAlign = TextAlign.Center,
+                maxLines = 1
+            )
+            if (owned != null) {
+                Text(
+                    modifier = Modifier.alpha(0.75f),
+                    text = "($owned)",
+                    color = White,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.ExtraBold
+                )
+            }
+        }
+        description?.let {
             Text(
                 modifier = Modifier
-                    .padding(top = 4.dp)
+                    .padding(top = if (large) 8.dp else 4.dp)
                     .alpha(0.85f),
-                text = stringResource(it),
+                text = it,
                 color = White,
-                fontSize = 12.sp,
-                lineHeight = 15.sp,
+                fontSize = if (large) 14.sp else 12.sp,
+                lineHeight = if (large) 18.sp else 15.sp,
                 textAlign = TextAlign.Center
             )
         }
         Spacer(modifier = Modifier.weight(1f).height(10.dp))
         GameButton(
             modifier = Modifier
-                .padding(top = 10.dp)
+                .padding(top = if (large) 16.dp else 10.dp)
                 .fillMaxWidth(),
             text = stringResource(R.string.buy),
             onClick = onBuyClick,
-            height = 36.dp,
-            corner = 12.dp,
-            fontSize = 16.sp
+            height = if (large) 46.dp else 36.dp,
+            corner = if (large) 16.dp else 12.dp,
+            fontSize = if (large) 18.sp else 16.sp
         )
     }
 }
