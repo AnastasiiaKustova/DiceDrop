@@ -75,6 +75,20 @@ class ShopRepositoryImpl @Inject constructor(
         return streak
     }
 
+    override suspend fun registerAdBonus(): Boolean {
+        loadJob.join()
+        val data = _rewardFlow.value
+        if (data.adBonusesLeft <= 0) return false
+        val today = DateHelper.getCurrentDate()
+        save(
+            data.copy(
+                adBonusDate = today,
+                adBonusCount = if (data.adBonusDate == today) data.adBonusCount + 1 else 1
+            )
+        )
+        return true
+    }
+
     override suspend fun getShopItems(): List<ShopItem> {
         return emptyList()
     }

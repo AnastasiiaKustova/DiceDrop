@@ -28,11 +28,17 @@ class PlaceBlockUseCase @Inject constructor(
         val cells = buildList {
             for (r in row until row + h) for (c in col until col + w) add(r * current.boardItem.col + c)
         }
+        // «Второй шанс»: третий ход после отмены за рекламу засчитывается один раз
+        val movesAfterRevive = current.movesAfterRevive?.plus(1)
+        val revivalSurvived = movesAfterRevive != null && movesAfterRevive >= REVIVE_MOVES_TO_SURVIVE
+
         // Кубики очищаем сразу, чтобы блок не возвращался в лоток после установки
         val updated = current.copy(
             boardItem = placedBoard,
             dice = DiceItem.empty(),
             lastPlaced = cells,
+            moves = current.moves + 1,
+            movesAfterRevive = if (revivalSurvived) null else movesAfterRevive,
             reviveSnapshot = ReviveSnapshot(
                 boardItem = current.boardItem,
                 dice = current.dice,
@@ -42,6 +48,13 @@ class PlaceBlockUseCase @Inject constructor(
             ))
         repository.updateGameState(updated)
         achievementTracker.updateMax(PlayerStat.MAX_BLOCK_AREA, (h * w).toLong())
+        if (h * w == 1) achievementTracker.increment(PlayerStat.TINY_BLOCKS_PLACED)
+        achievementTracker.updateMax(PlayerStat.MAX_MOVES_IN_GAME, updated.moves.toLong())
+        if (revivalSurvived) achievementTracker.increment(PlayerStat.REVIVES_SURVIVED)
         return updated
+    }
+
+    private companion object {
+        const val REVIVE_MOVES_TO_SURVIVE = 3
     }
 }

@@ -8,6 +8,7 @@ import com.example.dicedrop.domain.entity.GameStatisticItem
 import com.example.dicedrop.domain.entity.Slot
 import com.example.dicedrop.domain.entity.TrayDie
 import com.example.dicedrop.domain.entity.withTray
+import com.example.dicedrop.domain.entity.statistic.PlayerStat
 import com.example.dicedrop.domain.repository.GameRepository
 import javax.inject.Inject
 
@@ -29,7 +30,7 @@ class UseBonusUseCase @Inject constructor(
                 it.copy(count = it.count - 1)
             } else it
         }
-        val updatedGame = gameStatistic.copy(bonuses = bonuses).run {
+        val updatedGame = gameStatistic.copy(bonuses = bonuses).withUsedBonus(bonusType).run {
             when (bonusType) {
                 BonusType.ROTATE -> useBonusRotate()
                 BonusType.FREEZE -> freezeAll()
@@ -40,6 +41,7 @@ class UseBonusUseCase @Inject constructor(
 
         repository.updateGameState(updatedGame)
         achievementTracker.onBonusUsed(bonusType)
+        trackAllBonuses(gameStatistic, updatedGame)
     }
 
     suspend fun setFace(value: Int, slot: Slot) {
@@ -56,10 +58,26 @@ class UseBonusUseCase @Inject constructor(
         }
         val newTray = if (slot == Slot.A) tray.copy(slotA = target.copy(value = value))
         else tray.copy(slotB = target.copy(value = value))
-        repository.updateGameState(game.copy(bonuses = bonuses).withTray(newTray))
+        val updatedGame = game.copy(bonuses = bonuses).withUsedBonus(BonusType.LUCKY).withTray(newTray)
+        repository.updateGameState(updatedGame)
         achievementTracker.onBonusUsed(BonusType.LUCKY)
+        trackAllBonuses(game, updatedGame)
+    }
+
+    // «Волшебник»: засчитывается в момент, когда в партии впервые набрались все четыре бонуса
+    private suspend fun trackAllBonuses(before: GameStatisticItem, after: GameStatisticItem) {
+        if (before.usedBonuses.size < ALL_BONUSES && after.usedBonuses.size >= ALL_BONUSES) {
+            achievementTracker.increment(PlayerStat.ALL_BONUSES_GAMES)
+        }
+    }
+
+    private companion object {
+        const val ALL_BONUSES = 4
     }
 }
+
+private fun GameStatisticItem.withUsedBonus(type: BonusType): GameStatisticItem =
+    if (type in usedBonuses) this else copy(usedBonuses = usedBonuses + type)
 
 private fun canFreezeAll(game: GameStatisticItem): Boolean {
     val a = game.tray.slotA

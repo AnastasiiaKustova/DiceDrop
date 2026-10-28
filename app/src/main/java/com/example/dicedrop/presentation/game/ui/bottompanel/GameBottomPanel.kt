@@ -31,6 +31,7 @@ fun GameBottomPanel(
     freezeEnabled: Boolean,
     spareActive: Boolean,
     luckyEnabled: Boolean,
+    highlighted: List<BonusType> = emptyList(),
     onBuyClick: (BonusType) -> Unit,
     onBonusClick: (BonusType) -> Unit,
 ) {
@@ -64,6 +65,7 @@ fun GameBottomPanel(
                         BonusType.LUCKY -> !spareActive && luckyEnabled
                         else -> true
                     },
+                    highlighted = bonus.type in highlighted,
                     onBonusClick = { onBonusClick(bonus.type) },
                     onBuyClick = { onBuyClick(bonus.type) }
                 )

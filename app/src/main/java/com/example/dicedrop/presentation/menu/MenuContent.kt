@@ -61,6 +61,7 @@ import com.example.dicedrop.presentation.common.RoundImageButton
 import com.example.dicedrop.presentation.common.TutorialDialog
 import com.example.dicedrop.presentation.common.spaced
 import com.example.dicedrop.presentation.ui.theme.DarkBlue
+import com.example.dicedrop.presentation.ui.theme.DeepBlue
 import com.example.dicedrop.presentation.ui.theme.Green
 import com.example.dicedrop.presentation.ui.theme.GreenText
 import com.example.dicedrop.presentation.ui.theme.MidBlue
@@ -123,7 +124,7 @@ fun MenuContent(component: MenuComponent) {
             TutorialDialog(
                 onClose = { component.onTutorialClose() },
                 onFinish = {
-                    component.onTutorialClose()
+                    component.onTutorialFinish()
                     component.onStartGameClick()
                 }
             )
@@ -358,25 +359,25 @@ private fun MenuTiles(
         }
         MenuTile(
             modifier = Modifier.weight(1f),
-            iconRes = R.drawable.ic_gift_box,
+            // Подарок за сегодня уже получен - коробка открыта, следующий завтра
+            iconRes = if (state.giftReady) R.drawable.ic_gift_box else R.drawable.ic_gift_box_open,
             title = stringResource(R.string.gift),
             horizontal = horizontal,
             onClick = onGiftClick
         ) {
-            if (state.giftReady) {
-                Text(
-                    modifier = Modifier
-                        .align(Alignment.TopCenter)
-                        .offset(y = (-11).dp)
-                        .background(Green, RoundedCornerShape(10.dp))
-                        .padding(horizontal = 10.dp, vertical = 2.dp),
-                    text = stringResource(R.string.gift_ready),
-                    color = GreenText,
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Black,
-                    maxLines = 1
-                )
-            }
+            Text(
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .offset(y = (-11).dp)
+                    .alpha(if (state.giftReady) 1f else 0.9f)
+                    .background(if (state.giftReady) Green else DeepBlue, RoundedCornerShape(10.dp))
+                    .padding(horizontal = 10.dp, vertical = 2.dp),
+                text = stringResource(if (state.giftReady) R.string.gift_ready else R.string.gift_tomorrow),
+                color = if (state.giftReady) GreenText else White,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Black,
+                maxLines = 1
+            )
         }
     }
 }

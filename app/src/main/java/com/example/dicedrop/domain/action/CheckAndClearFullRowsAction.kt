@@ -25,6 +25,13 @@ class CheckAndClearFullRowsAction @Inject constructor(
 
             val isBoardEmpty = updatedGame.boardItem.board.all { row -> row.none { it } }
             if (isBoardEmpty) achievementTracker.increment(PlayerStat.BOARD_CLEARED)
+            achievementTracker.updateMax(PlayerStat.MAX_BOARD_CLEARS_IN_GAME, updatedGame.boardClears.toLong())
+
+            // Линию закрыл блок 1×1: он занимает ровно одну клетку
+            if (game.lastPlaced.size == 1) achievementTracker.increment(PlayerStat.LINES_BY_TINY_BLOCK)
+            if (updatedGame.usedBonuses.isEmpty()) {
+                achievementTracker.updateMax(PlayerStat.BEST_SCORE_NO_BONUS, updatedGame.totalScore.toLong())
+            }
         }
 
         return clearedResult

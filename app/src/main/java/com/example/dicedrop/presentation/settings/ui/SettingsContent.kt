@@ -29,7 +29,8 @@ fun SettingsContent(component: SettingsComponent) {
                             onSettingsChange = { component.onSettingsChangeClick(it) },
                             onBackClick = { component.onBackClick() },
                             onRestartClick = { component.onRestartGameClick() },
-                            onMenuClick = { component.onBackClick() }
+                            onMenuClick = { component.onBackClick() },
+                            onTutorialFinished = { component.onTutorialFinished() }
                         )
                     }
                     OpenReason.RegularSettings -> {
@@ -38,7 +39,8 @@ fun SettingsContent(component: SettingsComponent) {
                             onBackClick = { component.onBackClick() },
                             onRestartClick = { component.onRestartGameClick() },
                             onSettingsChange = { component.onSettingsChangeClick(it) },
-                            onExitClick = { component.onExitClick() }
+                            onExitClick = { component.onExitClick() },
+                            onTutorialFinished = { component.onTutorialFinished() }
                         )
                     }
                 }

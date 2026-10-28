@@ -9,6 +9,8 @@ import com.arkivanov.decompose.router.stack.pop
 import com.arkivanov.decompose.router.stack.push
 import com.arkivanov.decompose.router.stack.replaceCurrent
 import com.arkivanov.decompose.value.Value
+import com.example.dicedrop.core.componentScope
+import com.example.dicedrop.domain.engine.AchievementTracker
 import com.example.dicedrop.presentation.achievements.AchievementsComponentImpl
 import com.example.dicedrop.presentation.game.GameComponentImpl
 import com.example.dicedrop.presentation.menu.MenuComponentImpl
@@ -19,6 +21,7 @@ import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import kotlinx.android.parcel.Parcelize
+import kotlinx.coroutines.launch
 
 class RootComponentImpl @AssistedInject constructor(
     private val gameComponentImplFactory: GameComponentImpl.Factory,
@@ -26,11 +29,14 @@ class RootComponentImpl @AssistedInject constructor(
     private val achievementsComponentImplFactory: AchievementsComponentImpl.Factory,
     private val shopComponentImplFactory: ShopComponentImpl.Factory,
     private val settingsComponentImplFactory: SettingsComponentImpl.Factory,
+    private val achievementTracker: AchievementTracker,
     @Assisted("onExitApp") private val onExitApp: () -> Unit,
     @Assisted("componentContext") componentContext: ComponentContext
 ) : RootComponent, ComponentContext by componentContext {
 
     private val navigation = StackNavigation<Config>()
+
+    private val scope = componentScope()
 
     override val stack: Value<ChildStack<*, RootComponent.Child>> = childStack(
         source = navigation,
@@ -80,6 +86,7 @@ class RootComponentImpl @AssistedInject constructor(
             }
 
             is Config.Settings -> {
+                if (config.openReason == OpenReason.RegularSettings) visited(AchievementTracker.Section.SETTINGS)
                 val component = settingsComponentImplFactory.create(
                     openReason = config.openReason,
                     onExitClicked = {
@@ -100,6 +107,7 @@ class RootComponentImpl @AssistedInject constructor(
             }
 
             Config.Achievements -> {
+                visited(AchievementTracker.Section.ACHIEVEMENTS)
                 val component = achievementsComponentImplFactory.create(
                     onBackClicked = {
                         navigation.pop()
@@ -110,6 +118,7 @@ class RootComponentImpl @AssistedInject constructor(
             }
 
             Config.Shop -> {
+                visited(AchievementTracker.Section.SHOP)
                 val component = shopComponentImplFactory.create(
                     onBackClicked = {
                         navigation.pop()
@@ -119,6 +128,11 @@ class RootComponentImpl @AssistedInject constructor(
                 RootComponent.Child.Shop(component)
             }
         }
+    }
+
+    // «Следопыт»: открыты магазин, достижения и настройки
+    private fun visited(section: AchievementTracker.Section) {
+        scope.launch { achievementTracker.onSectionVisited(section) }
     }
 
     private sealed interface Config : Parcelable {

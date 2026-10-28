@@ -40,6 +40,7 @@ import com.example.dicedrop.domain.useCases.game.UseBonusUseCase
 import com.example.dicedrop.domain.useCases.settings.ChangeMusicUseCase
 import com.example.dicedrop.domain.useCases.settings.ChangeSoundUseCase
 import com.example.dicedrop.domain.useCases.settings.ChangeVibrationUseCase
+import com.example.dicedrop.domain.useCases.settings.MarkStuckDialogShownUseCase
 import com.example.dicedrop.domain.useCases.settings.ObserveSettingsUseCase
 import com.example.dicedrop.domain.useCases.shop.BuyBonusUseCase
 import com.example.dicedrop.presentation.game.GameStore.Intent
@@ -90,6 +91,9 @@ interface GameStore : Store<Intent, State, Label> {
 
         // Переключатели звуков, музыки и вибрации в окне паузы
         data class ChangeSetting(val setting: SettingTypes) : Intent
+
+        // Игрок закрыл окно «Ходов нет»
+        data object StuckDialogClosed : Intent
     }
 
     data class State(
@@ -183,7 +187,8 @@ class GameStoreFactory @Inject constructor(
     private val observeSettingsUseCase: ObserveSettingsUseCase,
     private val changeSoundUseCase: ChangeSoundUseCase,
     private val changeMusicUseCase: ChangeMusicUseCase,
-    private val changeVibrationUseCase: ChangeVibrationUseCase
+    private val changeVibrationUseCase: ChangeVibrationUseCase,
+    private val markStuckDialogShownUseCase: MarkStuckDialogShownUseCase
 ) {
 
     fun create(): GameStore =
@@ -312,7 +317,8 @@ class GameStoreFactory @Inject constructor(
                 game.isNewRecord -> dispatch(
                     Msg.NewRecord(
                         game = game,
-                        rewardsList = getRecordRewardsUseCase()
+                        // bestScore ещё прежний: он обновится, когда игрок заберёт награду
+                        rewardsList = getRecordRewardsUseCase(previousBest = game.bestScore)
                     )
                 )
 
@@ -469,6 +475,10 @@ class GameStoreFactory @Inject constructor(
                     }
                 }
 
+                Intent.StuckDialogClosed -> {
+                    scope.launch { markStuckDialogShownUseCase() }
+                }
+
                 is Intent.AdRewardReceive -> {
                     scope.launch {
                         when (intent.reward) {
@@ -479,6 +489,8 @@ class GameStoreFactory @Inject constructor(
                                 restartGameUseCase()
                                 showGame(checkGameOverUseCase())
                             }
+                            // Выдаётся в магазине
+                            AdReward.RANDOM_BONUS -> Unit
                         }
                     }
                 }

@@ -54,9 +54,14 @@ import com.example.dicedrop.presentation.game.ui.header.GameHeader
 import com.example.dicedrop.presentation.game.ui.popups.GameOverDialog
 import com.example.dicedrop.presentation.game.ui.popups.LuckyChoiceDialog
 import com.example.dicedrop.presentation.game.ui.popups.NewRecordDialog
+import com.example.dicedrop.presentation.game.ui.popups.StuckDialog
+import com.example.dicedrop.presentation.game.ui.popups.StuckHint
 import com.example.dicedrop.presentation.settings.ui.DrawPause
 import com.example.dicedrop.presentation.ui.theme.DarkBlue
 import com.example.dicedrop.presentation.ui.theme.White
+
+// Сколько раз показывать окно «Ходов нет», прежде чем перейти на подсказку
+private const val STUCK_DIALOG_LIMIT = 3
 
 @Composable
 fun GameStateContent(
@@ -113,6 +118,19 @@ fun GameStateContent(
 
         if (gameState != null) {
             val game = gameState.gameStatistic
+
+            // Блок никуда не встаёт, но бонус спасёт: первые разы - окно, потом только подсказка.
+            // Закрытое окно больше не открывается, пока не сменится ход или кубики
+            val rescueBonuses = if (state is GameStore.State.GameState.Loaded) game.rescueBonuses else emptyList()
+            var stuckDialogClosed by rememberSaveable(game.moves, game.dice) { mutableStateOf(false) }
+            val showStuckDialog = rescueBonuses.isNotEmpty() && !stuckDialogClosed &&
+                    settings.stuckDialogsShown < STUCK_DIALOG_LIMIT &&
+                    !showPause && !showLuckySheet && luckyFace == null
+            fun closeStuckDialog() {
+                stuckDialogClosed = true
+                component.onStuckDialogClosed()
+            }
+
             GameScreen(
                 gameStatistic = game,
                 clearedRows = clearedRows,
@@ -122,6 +140,8 @@ fun GameStateContent(
                 trophyHighlighted = trophyHighlighted,
                 rewardsToClaim = rewardsToClaim,
                 luckyFace = luckyFace,
+                rescueBonuses = rescueBonuses,
+                showStuckHint = rescueBonuses.isNotEmpty() && !showStuckDialog,
                 onShopClick = component::onShopClick,
                 onAchievementsClick = component::onAchievementClick,
                 onPauseClick = { showPause = true },
@@ -170,6 +190,18 @@ fun GameStateContent(
                         showLuckySheet = false
                     },
                     onCancel = { cancelLucky() }
+                )
+            }
+
+            if (showStuckDialog) {
+                BackHandler { closeStuckDialog() }
+                StuckDialog(
+                    rescueBonuses = rescueBonuses,
+                    onUseBonusClick = { closeStuckDialog() },
+                    onRestartClick = {
+                        closeStuckDialog()
+                        component.restartGame()
+                    }
                 )
             }
         } else if (state == GameStore.State.GameState.Loading) {
@@ -244,6 +276,8 @@ private fun GameScreen(
     trophyHighlighted: Boolean,
     rewardsToClaim: Int,
     luckyFace: Int?,
+    rescueBonuses: List<BonusType>,
+    showStuckHint: Boolean,
     onShopClick: () -> Unit,
     onAchievementsClick: () -> Unit,
     onPauseClick: () -> Unit,
@@ -278,28 +312,38 @@ private fun GameScreen(
             )
         }
 
+    // Подсказка «используй бонус» - поверх лотка сверху, рядом с блоком, который не встаёт
     val trayContent = @Composable { trayModifier: Modifier ->
-            BottomBoard(
-                modifier = trayModifier,
-                uiState = uiStates.getByType(DraggingType.BLOCK)
-                    ?: throw IllegalStateException(),
-                boardItem = gameStatistic.boardItem,
-                boardState = boardState,
-                diceItem = gameStatistic.dice,
-                tray = gameStatistic.tray,
-                pickedFace = luckyFace.takeIf { !spareActive && diceReady },
-                onDieClick = { target ->
-                    if (spareActive && gameStatistic.tray.spare?.value != null) {
-                        onDiscardClick(target)
-                    } else if (luckyFace != null && !spareActive) {
-                        if (target == DiscardTarget.A) onLuckyDieClick(Slot.A)
-                        else if (target == DiscardTarget.B) onLuckyDieClick(Slot.B)
-                    }
-                },
-                onRollEnd = onRollEnd,
-                onPlaceBlock = onPlaceBlock,
-                onSpareRolled = onSpareRolled,
-            )
+            Box(modifier = trayModifier) {
+                BottomBoard(
+                    modifier = Modifier.fillMaxSize(),
+                    uiState = uiStates.getByType(DraggingType.BLOCK)
+                        ?: throw IllegalStateException(),
+                    boardItem = gameStatistic.boardItem,
+                    boardState = boardState,
+                    diceItem = gameStatistic.dice,
+                    tray = gameStatistic.tray,
+                    pickedFace = luckyFace.takeIf { !spareActive && diceReady },
+                    onDieClick = { target ->
+                        if (spareActive && gameStatistic.tray.spare?.value != null) {
+                            onDiscardClick(target)
+                        } else if (luckyFace != null && !spareActive) {
+                            if (target == DiscardTarget.A) onLuckyDieClick(Slot.A)
+                            else if (target == DiscardTarget.B) onLuckyDieClick(Slot.B)
+                        }
+                    },
+                    onRollEnd = onRollEnd,
+                    onPlaceBlock = onPlaceBlock,
+                    onSpareRolled = onSpareRolled,
+                )
+                if (showStuckHint) {
+                    StuckHint(
+                        modifier = Modifier
+                            .align(Alignment.TopCenter)
+                            .padding(top = 8.dp)
+                    )
+                }
+            }
         }
 
     val panel = @Composable { panelModifier: Modifier ->
@@ -320,6 +364,7 @@ private fun GameScreen(
                 },
                 isLandscape = isLandscape,
                 luckyEnabled = !spareActive,
+                highlighted = rescueBonuses,
                 onBuyClick = onBuyBonusClick
             )
         }

@@ -3,6 +3,8 @@ package com.example.dicedrop.presentation.settings
 import com.arkivanov.mvikotlin.core.store.Reducer
 import com.arkivanov.mvikotlin.core.store.Store
 import com.arkivanov.mvikotlin.core.store.StoreFactory
+import com.example.dicedrop.domain.engine.AchievementTracker
+import com.example.dicedrop.domain.entity.statistic.PlayerStat
 import com.arkivanov.mvikotlin.extensions.coroutines.CoroutineBootstrapper
 import com.arkivanov.mvikotlin.extensions.coroutines.CoroutineExecutor
 import com.example.dicedrop.domain.entity.settings.GameSettings
@@ -33,7 +35,7 @@ interface SettingsStore: Store<Intent, State, Label> {
 
         data class ClickSettingsChange(val newSetting: SettingTypes) : Intent
 
-        data object ClickTurnOffAds : Intent
+        data object TutorialFinished : Intent
 
     }
 
@@ -63,8 +65,6 @@ interface SettingsStore: Store<Intent, State, Label> {
         data object ClickNavigateToShop : Label
 
         data class ClickChangeLanguageError(val language: String) : Label
-
-        data class ClickTurnOffAds(val isAdsOff: Boolean) : Label
     }
 }
 
@@ -76,6 +76,7 @@ class SettingsStoreFactory @Inject constructor(
     private val changeVibrationUseCase: ChangeVibrationUseCase,
     private val changeMusicUseCase: ChangeMusicUseCase,
     private val restartGameUseCase: RestartGameUseCase,
+    private val achievementTracker: AchievementTracker,
 ) {
 
     fun create(openReason: OpenReason): SettingsStore =
@@ -102,8 +103,6 @@ class SettingsStoreFactory @Inject constructor(
     private sealed interface Msg {
 
         data class LanguageChanged(val language: String): Msg
-
-        data class AdsTurnedOff(val isAdsOff: Boolean): Msg
 
         data class SoundChanged(val isOn: Boolean): Msg
 
@@ -144,18 +143,8 @@ class SettingsStoreFactory @Inject constructor(
                         publish(Label.ClickRestartGame)
                     }
                 }
-                is Intent.ClickTurnOffAds -> {
-                    scope.launch {
-                        try {
-                            dispatch(Msg.AdsTurnedOff(true))
-                            publish(Label.ClickTurnOffAds(true))
-                        } catch (e: Exception) {
-                            publish(Label.ClickTurnOffAds(false))
-                        }
-                    }
-                }
-
                 Intent.ClickExit -> publish(Label.ClickExit)
+                Intent.TutorialFinished -> scope.launch { achievementTracker.mark(PlayerStat.TUTORIAL_COMPLETED) }
                 is Intent.ClickSettingsChange -> {
                     scope.launch {
                         when(intent.newSetting){
@@ -198,7 +187,6 @@ class SettingsStoreFactory @Inject constructor(
     private object ReducerImpl : Reducer<State, Msg> {
         override fun State.reduce(msg: Msg): State = when (msg) {
             is Msg.LanguageChanged -> updateSettings { it.copy(language = msg.language) }
-            is Msg.AdsTurnedOff -> updateSettings { it.copy(isAdsOff = msg.isAdsOff) }
             is Msg.SoundChanged -> updateSettings { it.copy(isSoundOn = msg.isOn) }
             is Msg.VibrationChanged -> updateSettings { it.copy(isVibrationOn = msg.isOn) }
             is Msg.MusicChanged -> updateSettings { it.copy(isMusicOn = msg.isOn) }

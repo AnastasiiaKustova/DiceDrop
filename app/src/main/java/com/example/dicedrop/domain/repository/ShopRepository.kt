@@ -14,5 +14,8 @@ interface ShopRepository {
     // Отмечает подарок забранным и возвращает новый номер дня серии
     suspend fun getDailyReward(): Int
 
+    // Засчитывает бонус за рекламу; false, если дневной лимит уже исчерпан
+    suspend fun registerAdBonus(): Boolean
+
     suspend fun getShopItems(): List<ShopItem>
 }

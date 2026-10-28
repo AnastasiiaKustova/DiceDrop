@@ -5,7 +5,9 @@ import com.arkivanov.mvikotlin.core.store.Store
 import com.arkivanov.mvikotlin.core.store.StoreFactory
 import com.arkivanov.mvikotlin.extensions.coroutines.CoroutineBootstrapper
 import com.arkivanov.mvikotlin.extensions.coroutines.CoroutineExecutor
+import com.example.dicedrop.domain.engine.AchievementTracker
 import com.example.dicedrop.domain.entity.BonusItem
+import com.example.dicedrop.domain.entity.statistic.PlayerStat
 import com.example.dicedrop.domain.entity.DailyReward
 import com.example.dicedrop.domain.useCases.shop.GetDailyRewardIsReceivedStateUseCase
 import com.example.dicedrop.domain.useCases.shop.GetDailyRewardUseCase
@@ -42,6 +44,8 @@ interface MenuStore : Store<Intent, State, Label> {
         data object GiftConfirm : Intent
 
         data object TutorialClose : Intent
+
+        data object TutorialFinish : Intent
 
     }
 
@@ -82,6 +86,7 @@ class MenuStoreFactory @Inject constructor(
     private val getDailyRewardUseCase: GetDailyRewardUseCase,
     private val getSettingsUseCase: GetSettingsUseCase,
     private val markTutorialShownUseCase: MarkTutorialShownUseCase,
+    private val achievementTracker: AchievementTracker,
 ) {
 
     fun create(): MenuStore =
@@ -175,6 +180,13 @@ class MenuStoreFactory @Inject constructor(
                 Intent.TutorialClose -> {
                     dispatch(Msg.TutorialVisible(false))
                     scope.launch { markTutorialShownUseCase() }
+                }
+                Intent.TutorialFinish -> {
+                    dispatch(Msg.TutorialVisible(false))
+                    scope.launch {
+                        markTutorialShownUseCase()
+                        achievementTracker.mark(PlayerStat.TUTORIAL_COMPLETED)
+                    }
                 }
                 Intent.ClickNavigateToAchievements -> publish(Label.ClickNavigateToAchievements)
                 Intent.ClickNavigateToGame -> publish(Label.ClickNavigateToGame)

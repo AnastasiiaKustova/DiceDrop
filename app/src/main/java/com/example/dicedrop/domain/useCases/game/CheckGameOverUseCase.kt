@@ -1,13 +1,17 @@
 package com.example.dicedrop.domain.useCases.game
 
+import com.example.dicedrop.domain.engine.AchievementTracker
 import com.example.dicedrop.domain.engine.BoardEngine.isCanPlaceNewBlock
 import com.example.dicedrop.domain.entity.BonusType
+import com.example.dicedrop.domain.entity.DiceItem
 import com.example.dicedrop.domain.entity.GameStatisticItem
+import com.example.dicedrop.domain.entity.statistic.PlayerStat
 import com.example.dicedrop.domain.repository.GameRepository
 import javax.inject.Inject
 
 class CheckGameOverUseCase @Inject constructor(
-    private val repository: GameRepository
+    private val repository: GameRepository,
+    private val achievementTracker: AchievementTracker
 ) {
     suspend operator fun invoke(): GameStatisticItem {
         val game = repository.getCurrentGame()
@@ -34,9 +38,26 @@ class CheckGameOverUseCase @Inject constructor(
             else -> false
         }
 
-        val updated = game.copy(isGameOver = !canPlace && !canSurvive)
+        val isGameOver = !canPlace && !canSurvive
+
+        // Блок как есть не встаёт: подсказываем бонусы, которые его спасают.
+        // Пока бросается третий кубик, подсказка не нужна - игрок уже выбрал бонус
+        val stuck = !isGameOver && spare == null && game.dice != DiceItem.empty() &&
+                !game.boardItem.isCanPlaceNewBlock(h, w)
+        val rescueBonuses = if (!stuck) emptyList() else buildList {
+            if (canRotate && game.boardItem.isCanPlaceNewBlock(w, h)) add(BonusType.ROTATE)
+            if (count(BonusType.LUCKY) > 0 && (fits(h, 1) || fits(1, w))) add(BonusType.LUCKY)
+            if (count(BonusType.DRAFT) > 0 && (fits(1, h) || fits(1, w))) add(BonusType.DRAFT)
+        }.ifEmpty {
+            // Спасают только два бонуса замены вместе
+            listOf(BonusType.LUCKY, BonusType.DRAFT).filter { count(it) > 0 }
+        }
+
+        val updated = game.copy(isGameOver = isGameOver, rescueBonuses = rescueBonuses)
 
         repository.saveGame(updated)
+        // Проигрыш считается в момент, когда ходов не осталось; проверка вызывается часто, поэтому только по переходу
+        if (!game.isGameOver && updated.isGameOver) achievementTracker.increment(PlayerStat.GAMES_LOST)
         return updated
     }
 }

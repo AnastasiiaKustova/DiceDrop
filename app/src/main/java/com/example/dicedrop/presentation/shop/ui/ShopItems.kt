@@ -57,7 +57,9 @@ fun ShopItems(
     dailyRewardClaimed: Boolean,
     dayStreak: Int,
     bonuses: List<BonusItem>,
-    onCardClick: (ShopItem) -> Unit
+    adBonusesLeft: Int,
+    onCardClick: (ShopItem) -> Unit,
+    onAdBonusClick: () -> Unit
 ) {
     val shopItems = ShopItemCatalog.all
     val dailyItem = shopItems.first { it.id == "daily_bonus" }
@@ -106,7 +108,9 @@ fun ShopItems(
                         .weight(1f)
                         .fillMaxHeight(),
                     price = randomItem.price,
-                    onBuyClick = { onCardClick(randomItem) }
+                    adBonusesLeft = adBonusesLeft,
+                    onBuyClick = { onCardClick(randomItem) },
+                    onAdClick = onAdBonusClick
                 )
             }
             Text(
@@ -169,7 +173,9 @@ fun ShopItems(
 
         RandomBonusRow(
             price = randomItem.price,
-            onBuyClick = { onCardClick(randomItem) }
+            adBonusesLeft = adBonusesLeft,
+            onBuyClick = { onCardClick(randomItem) },
+            onAdClick = onAdBonusClick
         )
 
         if (dailyRewardClaimed) dailyCard()
@@ -222,7 +228,7 @@ private fun DailyRewardCard(
             }
         }
 
-        DaysRow(doneDays = doneDays, claimed = claimed)
+        DaysRow(dayStreak = dayStreak, doneDays = doneDays, claimed = claimed)
 
         ClaimButton(claimed = claimed, modifier = Modifier.fillMaxWidth(), onClaimClick = onClaimClick)
     }
@@ -267,7 +273,7 @@ private fun DailyRewardRow(
             }
         }
         Box(modifier = Modifier.weight(1.2f)) {
-            DaysRow(doneDays = doneDays, claimed = claimed, height = 50.dp)
+            DaysRow(dayStreak = dayStreak, doneDays = doneDays, claimed = claimed, height = 50.dp)
         }
         ClaimButton(claimed = claimed, modifier = Modifier.width(220.dp), height = 54.dp, onClaimClick = onClaimClick)
     }
@@ -302,9 +308,12 @@ private fun ClaimButton(
     }
 }
 
-// Дни недели: забранные - зелёные с галкой, сегодняшний - жёлтый, остальные - с суммой
+// Дни недели: забранные - зелёные с галкой, сегодняшний - жёлтый, остальные - с суммой.
+// Суммы - для той недели серии, в которой сегодняшний день: со второй недели везде максимум
 @Composable
-private fun DaysRow(doneDays: Int, claimed: Boolean, height: Dp = 42.dp) {
+private fun DaysRow(dayStreak: Int, doneDays: Int, claimed: Boolean, height: Dp = 42.dp) {
+    val todayInStreak = if (claimed) dayStreak else dayStreak + 1
+    val weekStart = (todayInStreak - 1).coerceAtLeast(0) / EconomyCatalog.WEEK_DAYS * EconomyCatalog.WEEK_DAYS
     Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
         for (day in 1..EconomyCatalog.WEEK_DAYS) {
             val done = day <= doneDays
@@ -341,7 +350,7 @@ private fun DaysRow(doneDays: Int, claimed: Boolean, height: Dp = 42.dp) {
                             modifier = Modifier.size(16.dp)
                         )
                         Text(
-                            text = EconomyCatalog.DAILY_COINS[day - 1].toString(),
+                            text = EconomyCatalog.dailyCoins(weekStart + day).toString(),
                             color = if (today) ButtonText else White,
                             fontSize = 14.sp,
                             lineHeight = 16.sp,

@@ -113,6 +113,10 @@ class GameComponentImpl @AssistedInject constructor(
         store.accept(GameStore.Intent.ChangeSetting(setting))
     }
 
+    override fun onStuckDialogClosed() {
+        store.accept(GameStore.Intent.StuckDialogClosed)
+    }
+
     override fun onConfirmNewRecord(rewardsList: List<BonusItem>) {
         store.accept(GameStore.Intent.NewRecordConfirm(rewardsList))
     }

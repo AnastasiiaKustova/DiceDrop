@@ -22,13 +22,16 @@ class GrantAdRewardUseCase @Inject constructor(
                 combo = snapshot.combo,
                 lastPlaced = emptyList(),
                 reviveSnapshot = null,
-                isGameOver = false
+                isGameOver = false,
+                moves = (gameStatistic.moves - 1).coerceAtLeast(0),
+                movesAfterRevive = 0
             )
         } else {
             gameStatistic.copy(
                 dice = DiceItem.empty(),
                 tray = TrayState(),
-                isGameOver = false
+                isGameOver = false,
+                movesAfterRevive = 0
             )
         }
 

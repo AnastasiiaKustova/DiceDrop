@@ -41,12 +41,19 @@ fun DrawPause(
     onSettingsChange: (SettingTypes) -> Unit,
     onBackClick: () -> Unit,
     onRestartClick: () -> Unit,
-    onMenuClick: () -> Unit
+    onMenuClick: () -> Unit,
+    onTutorialFinished: () -> Unit = {}
 ) {
     // Обучение открывается вместо окна паузы и возвращает к нему по закрытии
     var showTutorial by rememberSaveable { mutableStateOf(false) }
     if (showTutorial) {
-        TutorialDialog(onClose = { showTutorial = false })
+        TutorialDialog(
+            onClose = { showTutorial = false },
+            onFinish = {
+                showTutorial = false
+                onTutorialFinished()
+            }
+        )
         return
     }
 

@@ -29,11 +29,11 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.dicedrop.R
 import com.example.dicedrop.domain.entity.achievement.Achievement
-import com.example.dicedrop.domain.entity.achievement.AchievementType
 import com.example.dicedrop.presentation.common.GameButton
 import com.example.dicedrop.presentation.common.GameIcons
 import com.example.dicedrop.presentation.common.IconCircle
@@ -45,28 +45,10 @@ import com.example.dicedrop.presentation.ui.theme.LightBlue
 import com.example.dicedrop.presentation.ui.theme.MidBlue
 import com.example.dicedrop.presentation.ui.theme.White
 import com.example.dicedrop.presentation.ui.theme.Yellow
-import com.example.dicedrop.domain.entity.BonusType
 
 val Achievement.isCompleted: Boolean get() = totalCount >= requiredCount
 
 val Achievement.canClaim: Boolean get() = isCompleted && !isRewardClaimed
-
-fun AchievementType.getIconResId(): Int = when (this) {
-    AchievementType.ROLL_TIMES -> R.drawable.die_roll_123
-    AchievementType.CLEAR_ROWS,
-    AchievementType.LINES_AT_ONCE -> R.drawable.ic_lines
-    AchievementType.BIG_BLOCK,
-    AchievementType.BOARD_CLEARED -> R.drawable.ic_board
-    AchievementType.GAME_SCORE -> R.drawable.ic_score
-    AchievementType.GAMES_PLAYED -> R.drawable.ic_trophy
-    AchievementType.USE_ROTATE -> BonusType.ROTATE.getIconResId()
-    AchievementType.USE_FREEZE -> BonusType.FREEZE.getIconResId()
-    AchievementType.USE_LUCKY -> BonusType.LUCKY.getIconResId()
-    // Временная иконка: свою нарисуем вместе с новыми иконками достижений
-    AchievementType.USE_DRAFT,
-    AchievementType.DRAFT_TRIPLE -> BonusType.DRAFT.getIconResId()
-    AchievementType.COMBO -> R.drawable.ic_combo
-}
 
 @Composable
 fun AchievementBox(
@@ -99,7 +81,7 @@ fun AchievementBox(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            IconCircle(iconRes = achievement.type.getIconResId(), size = 50.dp, iconSize = 38.dp)
+            IconCircle(iconRes = achievement.iconId, size = 50.dp, iconSize = 38.dp)
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = stringResource(achievement.titleId),
@@ -115,81 +97,85 @@ fun AchievementBox(
                     fontSize = 13.sp
                 )
             }
-        }
-
-        ProgressBar(
-            fraction = achievement.totalCount.toFloat() / achievement.requiredCount.coerceAtLeast(1),
-            color = when {
-                claimed -> Green
-                claimable -> Yellow
-                else -> LightBlue
-            }
-        )
-
-        // Нижний ряд: награды слева, кнопка справа, а подпись прогресса - по центру под полосой,
-        // в том же ряду, чтобы не занимать отдельную строку
-        Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+            // Подпись прогресса в правом верхнем углу: здесь её место не зависит от наград и кнопки.
+            // Отступ справа - на глаз, чтобы подпись выглядела вровень со скругленным краем кнопки
             Text(
                 modifier = Modifier
-                    .align(Alignment.Center)
+                    .align(Alignment.Top)
+                    .padding(end = 4.dp)
                     .alpha(0.85f),
                 text = "${achievement.totalCount.coerceAtMost(achievement.requiredCount)} / ${achievement.requiredCount}",
                 color = White,
                 fontSize = 12.sp,
-                fontWeight = FontWeight.ExtraBold
+                fontWeight = FontWeight.ExtraBold,
+                maxLines = 1
             )
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Row(
-                    modifier = Modifier.weight(1f),
+        }
+
+        // У выполненного достижения полоса не нужна: о нём и так говорят рамка, кнопка или «Получено»
+        if (!achievement.isCompleted) {
+            ProgressBar(
+                fraction = achievement.totalCount.toFloat() / achievement.requiredCount.coerceAtLeast(1),
+                color = LightBlue
+            )
+        }
+
+        // Нижний ряд: награды слева, кнопка справа
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                RewardChip(iconRes = R.drawable.coin_star, amount = achievement.reward)
+                achievement.additionalRewards.forEach {
+                    RewardChip(iconRes = it.bonusType.getIconResId(), amount = it.amount, iconStart = 8.dp)
+                }
+            }
+            when {
+                claimable -> GameButton(
+                    modifier = Modifier.onGloballyPositioned {
+                        buttonCenter = it.boundsInRoot().center
+                    },
+                    text = stringResource(R.string.claim),
+                    onClick = { onGetRewardClick(achievement.id, buttonCenter) },
+                    height = 34.dp,
+                    corner = 12.dp,
+                    fontSize = 16.sp
+                )
+
+                claimed -> Row(
+                    // Вровень с подписью прогресса над ним
+                    modifier = Modifier.padding(end = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
-                    RewardChip(iconRes = R.drawable.coin_star, amount = achievement.reward)
-                    achievement.additionalRewards.forEach {
-                        RewardChip(iconRes = it.bonusType.getIconResId(), amount = it.amount)
-                    }
-                }
-                when {
-                    claimable -> GameButton(
-                        modifier = Modifier.onGloballyPositioned {
-                            buttonCenter = it.boundsInRoot().center
-                        },
-                        text = stringResource(R.string.claim),
-                        onClick = { onGetRewardClick(achievement.id, buttonCenter) },
-                        height = 34.dp,
-                        corner = 12.dp,
-                        fontSize = 16.sp
+                    Icon(
+                        imageVector = GameIcons.Check,
+                        contentDescription = null,
+                        tint = Green,
+                        modifier = Modifier.size(18.dp)
                     )
-
-                    claimed -> Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
-                    ) {
-                        Icon(
-                            imageVector = GameIcons.Check,
-                            contentDescription = null,
-                            tint = Green,
-                            modifier = Modifier.size(18.dp)
-                        )
-                        Text(
-                            text = stringResource(R.string.claimed),
-                            color = Green,
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Black
-                        )
-                    }
+                    Text(
+                        text = stringResource(R.string.claimed),
+                        color = Green,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Black
+                    )
                 }
             }
         }
     }
 }
 
+// iconStart: круглая монета вписывается в скругление фишки, а квадратной иконке бонуса нужен отступ побольше
 @Composable
-private fun RewardChip(iconRes: Int, amount: Int) {
+private fun RewardChip(iconRes: Int, amount: Int, iconStart: Dp = 3.dp) {
     Row(
         modifier = Modifier
             .height(30.dp)
             .background(DeepBlue, CircleShape)
-            .padding(start = 3.dp, end = 10.dp),
+            .padding(start = iconStart, end = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(5.dp)
     ) {

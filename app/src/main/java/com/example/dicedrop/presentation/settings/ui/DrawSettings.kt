@@ -47,14 +47,21 @@ fun DrawSettings(
     onBackClick: () -> Unit,
     onExitClick: () -> Unit,
     onRestartClick: () -> Unit,
-    onSettingsChange: (settingType: SettingTypes) -> Unit
+    onSettingsChange: (settingType: SettingTypes) -> Unit,
+    onTutorialFinished: () -> Unit = {}
 ) {
     val feedback = LocalGameFeedback.current
 
     // Обучение открывается вместо окна настроек и возвращает к нему по закрытии
     var showTutorial by rememberSaveable { mutableStateOf(false) }
     if (showTutorial) {
-        TutorialDialog(onClose = { showTutorial = false })
+        TutorialDialog(
+            onClose = { showTutorial = false },
+            onFinish = {
+                showTutorial = false
+                onTutorialFinished()
+            }
+        )
         return
     }
 

@@ -1,7 +1,9 @@
 package com.example.dicedrop.presentation.game.ui
 
 import GameStateContent
+import android.app.Activity
 import android.content.Context
+import android.content.ContextWrapper
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
@@ -125,6 +127,12 @@ fun GameContent(component: GameComponent) {
                     onAdRewarded = { reward ->
                         if (reward == AdReward.DOUBLE_COINS) feedback.play(GameFeedback.Sound.COINS_REWARD)
                         component.AdRewardReceive(reward)
+                    },
+                    onAdUnavailable = {
+                        launch {
+                            snackbarHostState.currentSnackbarData?.dismiss()
+                            snackbarHostState.showSnackbar(context.getString(R.string.ad_unavailable))
+                        }
                     },
                     onAchievement = {
                         banner = it
@@ -287,6 +295,7 @@ private suspend fun handleUiEvent(
     onClearLine: (GameComponent.UiEvent.ClearLine) -> Unit,
     onClearFinished: () -> Unit,
     onAdRewarded: (AdReward) -> Unit,
+    onAdUnavailable: () -> Unit,
     onAchievement: (AchievementBanner) -> Unit,
     onGoToShop: () -> Unit
 ) {
@@ -336,9 +345,20 @@ private suspend fun handleUiEvent(
 
         GameComponent.UiEvent.Animate -> Unit
         is GameComponent.UiEvent.WatchAd -> {
-            rewardedAdManager.showAd {
-                onAdRewarded(event.reward)
-            }
+            val activity = context.findActivity() ?: return
+            rewardedAdManager.showAd(
+                activity = activity,
+                reward = event.reward,
+                onReward = { onAdRewarded(event.reward) },
+                onUnavailable = onAdUnavailable
+            )
         }
     }
+}
+
+// Ролик Яндекса показывается поверх Activity, а LocalContext может быть обёрткой над ней
+tailrec fun Context.findActivity(): Activity? = when (this) {
+    is Activity -> this
+    is ContextWrapper -> baseContext.findActivity()
+    else -> null
 }
