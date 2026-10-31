@@ -576,18 +576,20 @@ object AchievementsCatalog {
             )
         ),
 
-        // Награда 175
+        // Награда 700: финальное достижение, разовая большая награда
         Achievement(
             id = "champion",
             titleId = R.string.ach_champion_title,
             descriptionId = R.string.ach_champion_desc,
             iconId = R.drawable.ach_champion,
-            type = AchievementType.ACHIEVEMENTS_CLAIMED,
+            type = AchievementType.ACHIEVEMENTS_COMPLETED,
             requiredCount = 49,
-            reward = 150,
+            reward = 500,
             additionalRewards = listOf(
-                AchievementReward(bonusType = BonusType.LUCKY, amount = 1),
-                AchievementReward(bonusType = BonusType.DRAFT, amount = 1)
+                AchievementReward(bonusType = BonusType.ROTATE, amount = 5),
+                AchievementReward(bonusType = BonusType.FREEZE, amount = 5),
+                AchievementReward(bonusType = BonusType.DRAFT, amount = 5),
+                AchievementReward(bonusType = BonusType.LUCKY, amount = 5)
             )
         )
     )

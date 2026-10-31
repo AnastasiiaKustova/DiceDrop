@@ -21,6 +21,8 @@ class PlaceBlockUseCase @Inject constructor(
 
         // Пока третий кубик не сброшен, ставить блок нельзя
         if (current.tray.spare != null) return null
+        // Блока нет: пустой блок «встал» бы куда угодно и потратил ход
+        if (h <= 0 || w <= 0) return null
         if (!current.boardItem.canPlaceBlock(row = row, col = col, h = h, w = w)) return null
 
         val placedBoard = current.boardItem.placeBlock(row = row, col = col, h = h, w = w)
@@ -43,6 +45,7 @@ class PlaceBlockUseCase @Inject constructor(
                 boardItem = current.boardItem,
                 dice = current.dice,
                 tray = current.tray,
+                boardClears = current.boardClears,
                 totalScore = current.totalScore,
                 combo = current.combo
             ))

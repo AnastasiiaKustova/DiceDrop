@@ -1,9 +1,6 @@
 package com.example.dicedrop.domain.useCases.achievements
 
 import com.example.dicedrop.core.IllegalException
-import com.example.dicedrop.domain.engine.AchievementTracker
-import com.example.dicedrop.domain.entity.achievement.AchievementType
-import com.example.dicedrop.domain.entity.statistic.PlayerStat
 import com.example.dicedrop.domain.repository.AchievementRepository
 import com.example.dicedrop.domain.repository.GameRepository
 import kotlinx.coroutines.sync.Mutex
@@ -13,8 +10,7 @@ import javax.inject.Inject
 class GetAchievementRewardUseCase@Inject constructor(
     private val repositoryAchievement: AchievementRepository,
     private val repositoryGame: GameRepository,
-    private val getAchievementsUseCase: GetAchievementsUseCase,
-    private val achievementTracker: AchievementTracker
+    private val getAchievementsUseCase: GetAchievementsUseCase
 ) {
     suspend operator fun invoke(achievementId: String): Boolean = mutex.withLock {
         val achievementList = getAchievementsUseCase()
@@ -46,11 +42,6 @@ class GetAchievementRewardUseCase@Inject constructor(
 
         repositoryGame.saveGame(updatedGame)
         repositoryAchievement.achievementRewardReceived(achievement)
-
-        // «Чемпион» считает забранные награды всех остальных достижений
-        val claimed = repositoryAchievement.getAchievements()
-            .count { it.isRewardClaimed && it.type != AchievementType.ACHIEVEMENTS_CLAIMED }
-        achievementTracker.updateMax(PlayerStat.ACHIEVEMENTS_CLAIMED, claimed.toLong())
         true
     }
 

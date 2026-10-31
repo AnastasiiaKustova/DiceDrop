@@ -10,6 +10,7 @@ import com.example.dicedrop.domain.entity.achievement.Achievement
 import com.example.dicedrop.domain.useCases.achievements.GetAchievementRewardUseCase
 import com.example.dicedrop.domain.useCases.achievements.GetAchievementsUseCase
 import com.example.dicedrop.domain.useCases.achievements.ObserveAchievementStateUseCase
+import com.example.dicedrop.domain.useCases.game.ObserveCoinsValueUseCase
 import javax.inject.Inject
 import com.example.dicedrop.presentation.achievements.AchievementsStore.Intent
 import com.example.dicedrop.presentation.achievements.AchievementsStore.Label
@@ -26,7 +27,8 @@ interface AchievementsStore: Store<Intent, State, Label> {
     }
 
     data class State(
-        val achievementsState: AchievementsState
+        val achievementsState: AchievementsState,
+        val coins: Int? = null
     ){
         sealed interface AchievementsState {
             data object Initial : AchievementsState
@@ -52,7 +54,8 @@ class AchievementsStoreFactory @Inject constructor(
     private val storeFactory: StoreFactory,
     private val getAchievementsUseCase: GetAchievementsUseCase,
     private val getAchievementRewardUseCase: GetAchievementRewardUseCase,
-    private val observeAchievementStateUseCase: ObserveAchievementStateUseCase
+    private val observeAchievementStateUseCase: ObserveAchievementStateUseCase,
+    private val observeCoinsValueUseCase: ObserveCoinsValueUseCase
 ) {
 
     fun create(): AchievementsStore =
@@ -73,6 +76,8 @@ class AchievementsStoreFactory @Inject constructor(
         data object AchievementsStartLoading : Action
 
         data object AchievementsLoadingError : Action
+
+        data class CoinsChanged(val coins: Int) : Action
     }
 
     private sealed interface Msg {
@@ -82,6 +87,8 @@ class AchievementsStoreFactory @Inject constructor(
         data object AchievementsStartLoading : Msg
 
         data object AchievementsLoadingError : Msg
+
+        data class CoinsChanged(val coins: Int) : Msg
     }
 
     private inner class BootstrapperImpl: CoroutineBootstrapper<Action>() {
@@ -100,6 +107,9 @@ class AchievementsStoreFactory @Inject constructor(
                     val achievements = getAchievementsUseCase()
                     dispatch(Action.AchievementsLoaded(achievements))
                 }
+            }
+            scope.launch {
+                observeCoinsValueUseCase().collect { dispatch(Action.CoinsChanged(it)) }
             }
         }
     }
@@ -146,6 +156,10 @@ class AchievementsStoreFactory @Inject constructor(
                     dispatch(Msg.AchievementsStartLoading)
                 }
 
+                is Action.CoinsChanged -> {
+                    dispatch(Msg.CoinsChanged(action.coins))
+                }
+
             }
         }
     }
@@ -163,6 +177,10 @@ class AchievementsStoreFactory @Inject constructor(
 
             Msg.AchievementsStartLoading -> {
                 copy(achievementsState = State.AchievementsState.Loading)
+            }
+
+            is Msg.CoinsChanged -> {
+                copy(coins = msg.coins)
             }
         }
     }

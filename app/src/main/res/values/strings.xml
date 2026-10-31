@@ -23,6 +23,9 @@
     <string name="game_over">GAME OVER</string>
     <string name="try_again">Try again</string>
     <string name="you_got">You got</string>
+    <string name="coins_thousands">%1$sK</string>
+    <string name="coins_millions">%1$sM</string>
+    <string name="decimal_separator">.</string>
 
     <!-- New design -->
     <string name="play">PLAY</string>
@@ -212,7 +215,7 @@
     <string name="tutorial_step">Step %1$d of %2$d</string>
     <string name="tutorial_title_roll">Roll the dice</string>
     <string name="tutorial_title_place">Place the block</string>
-    <string name="tutorial_title_lines">Clear lines</string>
+    <string name="tutorial_title_lines">Clear the board</string>
     <string name="tutorial_title_combo">Make combos</string>
     <string name="tutorial_title_bonuses">Bonuses</string>
     <string name="tutorial_text_roll">The numbers on the dice set the block size</string>

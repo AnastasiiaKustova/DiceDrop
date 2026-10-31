@@ -12,10 +12,8 @@ data class GameStatisticItem (
     val bonuses: List<BonusItem> = BonusItem.default(),
     val boardItem: BoardItem = BoardItem.default(),
     val dice: DiceItem = DiceItem.empty(),
-    val nextDice: DiceItem = DiceItem.empty(),
     val tray: TrayState = TrayState(),
     val lastPlaced: List<Int> = emptyList(),
-    val isRolling: Boolean = false,
     val isGameOver: Boolean = false,
     val isRecordAchieved: Boolean = false,
     val isNewRecord: Boolean = false,
@@ -62,5 +60,8 @@ data class ReviveSnapshot(
     val dice: DiceItem,
     val tray: TrayState,
     val totalScore: Int,
-    val combo: Int = 0
+    val combo: Int = 0,
+    val boardClears: Int = 0,
+    // Сколько монет принёс сам ход: только их и забираем при отмене, остальные (покупки, подарки) не трогаем
+    val moveCoins: Int = 0
 ): Parcelable

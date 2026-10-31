@@ -22,7 +22,8 @@ class UseBonusUseCase @Inject constructor(
         if (gameStatistic.dice == DiceItem.empty()) return
 
         if (bonusType == BonusType.FREEZE && !canFreezeAll(gameStatistic)) return
-        if (bonusType == BonusType.DRAFT && gameStatistic.tray.spare != null) return
+        // Пока есть третий кубик, эти бонусы не сработают: не тратим их впустую
+        if ((bonusType == BonusType.DRAFT || bonusType == BonusType.ROTATE) && gameStatistic.tray.spare != null) return
 
         val bonuses = gameStatistic.bonuses.map {
             if (it.type == bonusType) {
@@ -46,6 +47,8 @@ class UseBonusUseCase @Inject constructor(
 
     suspend fun setFace(value: Int, slot: Slot) {
         val game = repository.getCurrentGame()
+        // В лотке после установки остаются прежние числа, но блока уже нет: иначе он вернулся бы бесплатно
+        if (game.dice == DiceItem.empty()) return
         if (game.tray.spare != null) return
         val tray = game.tray
         val target = if (slot == Slot.A) tray.slotA else tray.slotB
@@ -99,7 +102,8 @@ private fun GameStatisticItem.useBonusRotate(): GameStatisticItem {
     val newTray = tray.copy(slotA = tray.slotB, slotB = tray.slotA)
     val w = newTray.slotA?.value ?: 0
     val h = newTray.slotB?.value ?: 0
-    return copy(tray = newTray, dice = dice.copy(dice1 = h, dice2 = w))
+    // Спасающие бонусы пересчитает проверка после бонуса, как и у других смен блока
+    return copy(tray = newTray, dice = dice.copy(dice1 = h, dice2 = w), rescueBonuses = emptyList())
 }
 
 private fun GameStatisticItem.addSpare(): GameStatisticItem {

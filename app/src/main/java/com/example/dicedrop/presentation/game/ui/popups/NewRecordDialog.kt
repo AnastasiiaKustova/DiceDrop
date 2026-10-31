@@ -50,7 +50,9 @@ fun NewRecordDialog(
     record: Int,
     previousRecord: Int,
     rewardsList: List<BonusItem>,
-    confirmClick: () -> Unit
+    confirmClick: () -> Unit,
+    // Промо-ролик подписывает кнопку по-своему
+    buttonText: String = stringResource(R.string.continue_game)
 ) {
     // Окно "выпрыгивает" с лёгкой пружиной
     val appear = remember { Animatable(0.3f) }
@@ -156,7 +158,7 @@ fun NewRecordDialog(
 
                     GameButton(
                         modifier = Modifier.fillMaxWidth(),
-                        text = stringResource(R.string.continue_game),
+                        text = buttonText,
                         onClick = confirmClick,
                         height = 56.dp,
                         fontSize = 22.sp

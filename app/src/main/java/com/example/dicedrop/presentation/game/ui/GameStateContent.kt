@@ -42,6 +42,7 @@ import com.example.dicedrop.presentation.common.LocalBackgroundMusic
 import com.example.dicedrop.presentation.common.LocalGameFeedback
 import com.example.dicedrop.presentation.game.GameComponent
 import com.example.dicedrop.presentation.game.GameStore
+import com.example.dicedrop.presentation.game.ui.ClearEffects
 import com.example.dicedrop.presentation.game.ui.board.BottomBoard
 import com.example.dicedrop.presentation.game.ui.board.ComboPopup
 import com.example.dicedrop.presentation.game.ui.board.DrawPlayingField
@@ -56,6 +57,7 @@ import com.example.dicedrop.presentation.game.ui.popups.LuckyChoiceDialog
 import com.example.dicedrop.presentation.game.ui.popups.NewRecordDialog
 import com.example.dicedrop.presentation.game.ui.popups.StuckDialog
 import com.example.dicedrop.presentation.game.ui.popups.StuckHint
+import com.example.dicedrop.presentation.game.ui.popups.onTrayEdge
 import com.example.dicedrop.presentation.settings.ui.DrawPause
 import com.example.dicedrop.presentation.ui.theme.DarkBlue
 import com.example.dicedrop.presentation.ui.theme.White
@@ -72,6 +74,7 @@ fun GameStateContent(
     trophyHighlighted: Boolean,
     rewardsToClaim: Int,
     settings: GameSettings,
+    clearEffects: ClearEffects,
     component: GameComponent
 ) {
     // "Счастливый": сначала игрок выбирает в шторке грань, затем кубик, которому её поставить
@@ -142,6 +145,7 @@ fun GameStateContent(
                 luckyFace = luckyFace,
                 rescueBonuses = rescueBonuses,
                 showStuckHint = rescueBonuses.isNotEmpty() && !showStuckDialog,
+                clearEffects = clearEffects,
                 onShopClick = component::onShopClick,
                 onAchievementsClick = component::onAchievementClick,
                 onPauseClick = { showPause = true },
@@ -278,6 +282,7 @@ private fun GameScreen(
     luckyFace: Int?,
     rescueBonuses: List<BonusType>,
     showStuckHint: Boolean,
+    clearEffects: ClearEffects,
     onShopClick: () -> Unit,
     onAchievementsClick: () -> Unit,
     onPauseClick: () -> Unit,
@@ -297,6 +302,14 @@ private fun GameScreen(
     val uiStates = remember { GameUiState.getList() }
     val boardState = remember { BoardUiState() }
 
+    // Эффектам очистки нужно знать, где поле и какого оно размера
+    SideEffect {
+        clearEffects.board = boardState
+        clearEffects.boardRows = gameStatistic.boardItem.row
+        clearEffects.boardCols = gameStatistic.boardItem.col
+    }
+    val coinsTarget = with(clearEffects.coinFlight) { Modifier.coinsTarget() }
+
     // Поле, лоток и бонусы отдельно: в портрете они идут столбиком, на планшете - в разных колонках
     val field = @Composable { fieldModifier: Modifier ->
             DrawPlayingField(
@@ -312,7 +325,7 @@ private fun GameScreen(
             )
         }
 
-    // Подсказка «используй бонус» - поверх лотка сверху, рядом с блоком, который не встаёт
+    // Подсказка «используй бонус» - над лотком, чтобы не закрывать кубики блока
     val trayContent = @Composable { trayModifier: Modifier ->
             Box(modifier = trayModifier) {
                 BottomBoard(
@@ -340,7 +353,7 @@ private fun GameScreen(
                     StuckHint(
                         modifier = Modifier
                             .align(Alignment.TopCenter)
-                            .padding(top = 8.dp)
+                            .onTrayEdge()
                     )
                 }
             }
@@ -394,7 +407,7 @@ private fun GameScreen(
                         .fillMaxHeight()
                         .padding(start = 24.dp, end = 24.dp, top = 28.dp, bottom = 30.dp)
                 ) {
-                    SideCoins(coins = gameStatistic.coins, onShopClick = onShopClick)
+                    SideCoins(coins = gameStatistic.coins, onShopClick = onShopClick, modifier = coinsTarget)
                     Spacer(modifier = Modifier.weight(1f))
                     SideScore(
                         totalScore = gameStatistic.totalScore,
@@ -418,7 +431,8 @@ private fun GameScreen(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(top = 28.dp, end = 28.dp),
+                            // Снизу запас под свечение кубка, иначе его перекрывает лоток
+                            .padding(top = 28.dp, end = 28.dp, bottom = 8.dp),
                         horizontalArrangement = Arrangement.End
                     ) {
                         HeaderButtons(
@@ -446,6 +460,7 @@ private fun GameScreen(
                 totalScore = gameStatistic.totalScore,
                 bestScore = gameStatistic.bestScore,
                 coins = gameStatistic.coins,
+                coinsModifier = coinsTarget,
                 combo = gameStatistic.combo,
                 trophyHighlighted = trophyHighlighted,
                 rewardsToClaim = rewardsToClaim,

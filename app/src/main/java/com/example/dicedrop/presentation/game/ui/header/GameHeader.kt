@@ -14,6 +14,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -32,6 +33,7 @@ import androidx.compose.animation.core.rememberInfiniteTransition
 import com.example.dicedrop.presentation.ui.theme.Navy
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -47,13 +49,18 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.PlatformTextStyle
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.text.style.LineHeightStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.dicedrop.R
 import com.example.dicedrop.presentation.common.CoinChip
 import com.example.dicedrop.presentation.common.GameIcons
 import com.example.dicedrop.presentation.common.RoundImageButton
+import com.example.dicedrop.presentation.common.compactCoins
 import com.example.dicedrop.presentation.common.spaced
 import com.example.dicedrop.presentation.game.ui.board.comboColor
 import androidx.compose.ui.platform.LocalDensity
@@ -76,7 +83,9 @@ fun GameHeader(
     rewardsToClaim: Int,
     onPauseClick: () -> Unit,
     onShopClick: () -> Unit,
-    onAchievementsClick: () -> Unit
+    onAchievementsClick: () -> Unit,
+    // Для счётчика монет: сюда летят монеты при очистке линий
+    coinsModifier: Modifier = Modifier
 ) {
     Row(
         modifier = modifier
@@ -88,6 +97,7 @@ fun GameHeader(
     ) {
         CoinChip(
             coins = coins,
+            modifier = coinsModifier,
             height = 38.dp,
             fontSize = 15.sp
         ) {
@@ -151,7 +161,7 @@ fun SideCoins(
             modifier = Modifier.size(38.dp)
         )
         Text(
-            text = coins.spaced(),
+            text = compactCoins(coins),
             color = White,
             fontSize = 18.sp,
             fontWeight = FontWeight.ExtraBold,
@@ -201,14 +211,7 @@ fun SideScore(
             fontWeight = FontWeight.ExtraBold,
             letterSpacing = 1.sp
         )
-        Text(
-            text = totalScore.spaced(),
-            color = White,
-            fontSize = 50.sp,
-            lineHeight = 54.sp,
-            fontWeight = FontWeight.Black,
-            maxLines = 1
-        )
+        FitNumber(text = totalScore.spaced(), maxFontSize = 50.sp, lineHeight = 54.sp)
         ComboBadge(combo = combo, fontSize = 14.sp, height = 22.dp)
         Box(
             modifier = Modifier
@@ -225,12 +228,26 @@ fun SideScore(
             fontWeight = FontWeight.ExtraBold,
             letterSpacing = 1.sp
         )
+        FitNumber(text = maxOf(bestScore, totalScore).spaced(), maxFontSize = 24.sp, lineHeight = 30.sp)
+    }
+}
+
+// Число в карточке счёта: большое мельчает, чтобы поместиться, а высота строки не меняется и карточка не прыгает
+@Composable
+private fun FitNumber(text: String, maxFontSize: TextUnit, lineHeight: TextUnit) {
+    val measurer = rememberTextMeasurer()
+    val style = LocalTextStyle.current.merge(TextStyle(fontSize = maxFontSize, fontWeight = FontWeight.Black))
+    BoxWithConstraints(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+        val fullWidth = measurer.measure(text, style).size.width
+        val scale = if (fullWidth > constraints.maxWidth) constraints.maxWidth.toFloat() / fullWidth else 1f
         Text(
-            text = maxOf(bestScore, totalScore).spaced(),
+            text = text,
             color = White,
-            fontSize = 24.sp,
+            fontSize = maxFontSize * scale,
+            lineHeight = lineHeight,
             fontWeight = FontWeight.Black,
-            maxLines = 1
+            maxLines = 1,
+            softWrap = false
         )
     }
 }
@@ -303,11 +320,22 @@ private fun ComboBadge(combo: Int, fontSize: TextUnit = 11.sp, height: Dp = 16.d
                 fontSize = fontSize,
                 lineHeight = with(LocalDensity.current) { height.toSp() },
                 fontWeight = FontWeight.Black,
-                maxLines = 1
+                maxLines = 1,
+                style = TightCenteredText
             )
         }
     }
 }
+
+// Текст в маленьких плашках без шрифтовых отступов и строго по центру строки: с ними при крупном
+// шрифте в настройках телефона цифра съезжала вниз, а надпись комбо обрезалась до красной полоски
+private val TightCenteredText = TextStyle(
+    platformStyle = PlatformTextStyle(includeFontPadding = false),
+    lineHeightStyle = LineHeightStyle(
+        alignment = LineHeightStyle.Alignment.Center,
+        trim = LineHeightStyle.Trim.Both
+    )
+)
 
 @Composable
 fun HeaderButtons(
@@ -356,7 +384,9 @@ fun HeaderButtons(
                         text = if (rewardsToClaim > 9) "9+" else rewardsToClaim.toString(),
                         color = Navy,
                         fontSize = 11.sp,
-                        fontWeight = FontWeight.Black
+                        lineHeight = 11.sp,
+                        fontWeight = FontWeight.Black,
+                        style = TightCenteredText
                     )
                 }
             }

@@ -36,7 +36,7 @@ enum class AchievementType {
     NEW_YEAR_GAME,
     TUTORIAL,
     SECTIONS_VISITED,
-    ACHIEVEMENTS_CLAIMED
+    ACHIEVEMENTS_COMPLETED
 }
 
 // По какому счетчику статистики проверяется достижение
@@ -74,5 +74,5 @@ fun AchievementType.toStat(): PlayerStat = when (this) {
     AchievementType.NEW_YEAR_GAME -> PlayerStat.NEW_YEAR_GAME
     AchievementType.TUTORIAL -> PlayerStat.TUTORIAL_COMPLETED
     AchievementType.SECTIONS_VISITED -> PlayerStat.SECTIONS_OPENED
-    AchievementType.ACHIEVEMENTS_CLAIMED -> PlayerStat.ACHIEVEMENTS_CLAIMED
+    AchievementType.ACHIEVEMENTS_COMPLETED -> PlayerStat.ACHIEVEMENTS_COMPLETED
 }

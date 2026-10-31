@@ -3,9 +3,11 @@ package com.example.dicedrop.domain.engine
 import com.example.dicedrop.di.ApplicationScope
 import com.example.dicedrop.domain.entity.BonusType
 import com.example.dicedrop.domain.entity.DiceItem
+import com.example.dicedrop.domain.entity.achievement.AchievementType
 import com.example.dicedrop.domain.entity.achievement.toStat
 import com.example.dicedrop.domain.entity.statistic.AchievementUnlockedEvent
 import com.example.dicedrop.domain.entity.statistic.PlayerStat
+import com.example.dicedrop.domain.entity.statistic.PlayerStats.Companion.get
 import com.example.dicedrop.domain.repository.AchievementRepository
 import com.example.dicedrop.domain.repository.GameRepository
 import com.example.dicedrop.domain.repository.PlayerStatsRepository
@@ -15,6 +17,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.time.LocalDateTime
 import javax.inject.Inject
@@ -52,6 +55,7 @@ class AchievementTracker @Inject constructor(
         statsRepository.increment(stat, amount)
         val value = statsRepository.get(stat)
         notifyCrossed(stat, oldValue = value - amount, newValue = value)
+        updateCompletedCount()
     }
 
     // Рекорд: сохраняется, только если новое значение больше прежнего
@@ -60,6 +64,7 @@ class AchievementTracker @Inject constructor(
         if (value <= oldValue) return
         statsRepository.updateMax(stat, value)
         notifyCrossed(stat, oldValue = oldValue, newValue = value)
+        updateCompletedCount()
     }
 
     suspend fun onBonusUsed(bonusType: BonusType) {
@@ -98,6 +103,18 @@ class AchievementTracker @Inject constructor(
 
     // Разовая отметка: срабатывает только в первый раз
     suspend fun mark(stat: PlayerStat) = updateMax(stat, 1)
+
+    // «Чемпион» считает выполненные достижения, забрана за них награда или нет
+    private suspend fun updateCompletedCount() {
+        val stats = statsRepository.statsFlow.first()
+        val completed = achievementRepository.getAchievements().count {
+            it.type != AchievementType.ACHIEVEMENTS_COMPLETED && stats.get(it.type.toStat()) >= it.requiredCount
+        }.toLong()
+        val oldValue = stats.get(PlayerStat.ACHIEVEMENTS_COMPLETED)
+        if (completed <= oldValue) return
+        statsRepository.updateMax(PlayerStat.ACHIEVEMENTS_COMPLETED, completed)
+        notifyCrossed(PlayerStat.ACHIEVEMENTS_COMPLETED, oldValue = oldValue, newValue = completed)
+    }
 
     // Событие отправляется только в момент пересечения порога, а не на каждом шаге после него
     private suspend fun notifyCrossed(stat: PlayerStat, oldValue: Long, newValue: Long) {

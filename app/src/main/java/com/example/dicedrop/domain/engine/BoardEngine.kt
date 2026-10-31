@@ -82,28 +82,10 @@ object BoardEngine {
         return copy(board = newBoard)
     }
 
-    fun BoardItem.clearBoard(): BoardItem {
-
-        val rows = board.size
-        val cols = board[0].size
-
-        return copy(board = (List(rows) { BooleanArray(cols) }))
-    }
-
     private fun List<BooleanArray>.copy() = map { it.copyOf() }
 
     data class ClearLines(
         val rows: List<Int>,
         val cols: List<Int>
     )
-
-    fun BoardItem.rescueChance(rotateCount: Int): Int {
-        var fits = 0
-        var total = 0
-        for (d1 in 1..6) for (d2 in 1..6) {
-            total++
-            if (isCanPlaceNewBlock(d1, d2) || (rotateCount > 0 && isCanPlaceNewBlock(d2, d1))) fits++
-        }
-        return if (total == 0) 0 else (fits * 100) / total
-    }
 }

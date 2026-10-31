@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Экран промо-ролика только в отладочной сборке: свой значок «DiceDrop ролик» на телефоне -->
+    <application>
+        <activity
+            android:name=".trailer.TrailerActivity"
+            android:exported="true"
+            android:label="DiceDrop ролик"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.DiceDrop">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+
+</manifest>

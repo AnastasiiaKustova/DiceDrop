@@ -35,11 +35,13 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -95,6 +97,11 @@ fun GameContent(component: GameComponent) {
 
     val snackbarHostState = remember { SnackbarHostState() }
 
+    // Осколки и монеты при очистке линий; играют сами по себе, не задерживая события
+    val clearEffects = remember { ClearEffects() }
+    val effectsScope = rememberCoroutineScope()
+    val density = LocalDensity.current.density
+
     val adState by component
         .rewardedAdManager
         .state
@@ -119,6 +126,15 @@ fun GameContent(component: GameComponent) {
                             points = clearEvent.points,
                             coins = clearEvent.coins
                         )
+                        effectsScope.launch {
+                            clearEffects.play(
+                                rows = clearEvent.clearedRows,
+                                cols = clearEvent.clearedCols,
+                                coinsEarned = clearEvent.coins,
+                                density = density,
+                                feedback = feedback
+                            )
+                        }
                     },
                     onClearFinished = {
                         clearedRows = emptyList()
@@ -129,7 +145,9 @@ fun GameContent(component: GameComponent) {
                         component.AdRewardReceive(reward)
                     },
                     onAdUnavailable = {
-                        launch {
+                        // Ответ рекламы приходит позже, когда обработка этого события уже закончилась,
+                        // поэтому не её scope: в завершённом сообщение отменилось бы, не появившись
+                        effectsScope.launch {
                             snackbarHostState.currentSnackbarData?.dismiss()
                             snackbarHostState.showSnackbar(context.getString(R.string.ad_unavailable))
                         }
@@ -167,8 +185,11 @@ fun GameContent(component: GameComponent) {
             trophyHighlighted = bannerVisible,
             rewardsToClaim = state.rewardsToClaim,
             settings = state.settings,
+            clearEffects = clearEffects,
             component = component
         )
+
+        clearEffects.Overlay()
 
         AnimatedVisibility(
             modifier = Modifier
@@ -193,8 +214,9 @@ fun GameContent(component: GameComponent) {
     }
 }
 
+// internal: этот же баннер показывает промо-ролик в отладочной сборке
 @Composable
-private fun AchievementBannerCard(banner: AchievementBanner) {
+internal fun AchievementBannerCard(banner: AchievementBanner) {
     Box(
         modifier = Modifier
             .padding(horizontal = 14.dp)

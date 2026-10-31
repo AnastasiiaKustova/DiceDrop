@@ -17,6 +17,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -112,6 +113,13 @@ fun StuckDialog(
             )
         }
     }
+}
+
+// Подсказка стоит ровно на стыке поля и лотка: середина - по верхнему краю лотка, кубик не закрывает.
+// Под ней низ поля, но ставить туда всё равно нечего - блок не встаёт
+fun Modifier.onTrayEdge() = layout { measurable, constraints ->
+    val placeable = measurable.measure(constraints)
+    layout(placeable.width, placeable.height) { placeable.place(0, -placeable.height / 2) }
 }
 
 // Короткая подсказка вместо окна, когда игрок уже видел окно несколько раз

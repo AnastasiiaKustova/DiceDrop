@@ -56,7 +56,12 @@ interface ShopStore : Store<Intent, State, Label> {
             data object Error : ShopState
 
             // Окно «Вы получили»: купленный бонус или ежедневный подарок (монеты и, в 7-й день, бонус)
-            data class GetRandomBonus(val bonuses: List<BonusItem>, val prevState: Loaded) : ShopState
+            // coinsBefore - монеты до подарка: пока окно открыто, счётчик их и показывает, награда прилетит в него после окна
+            data class GetRandomBonus(
+                val bonuses: List<BonusItem>,
+                val prevState: Loaded,
+                val coinsBefore: Int? = null
+            ) : ShopState
 
             data class Loaded(
                 val money: Int,
@@ -137,7 +142,7 @@ class ShopStoreFactory @Inject constructor(
             val dailyRewardClaimed: Boolean
         ) : Msg
 
-        data class GetRandomBonus(val bonuses: List<BonusItem>) : Msg
+        data class GetRandomBonus(val bonuses: List<BonusItem>, val coinsBefore: Int? = null) : Msg
 
         data class ObserveDailyReward(
             val isDailyRewardReceived: Boolean,
@@ -214,7 +219,8 @@ class ShopStoreFactory @Inject constructor(
                                 if (getDailyRewardIsReceivedStateUseCase()) {
                                     throw DailyRewardReceived("Daily reward already received")
                                 }
-                                dispatch(Msg.GetRandomBonus(getDailyRewardUseCase()))
+                                val coinsBefore = (getState().shopState as? State.ShopState.Loaded)?.money
+                                dispatch(Msg.GetRandomBonus(getDailyRewardUseCase(), coinsBefore))
                                 publish(Label.DailyRewardSuccess)
                             } else if (intent.shopItem.bonusType == null) {
                                 val randomBonus = getRandomBonusUseCase()
@@ -314,7 +320,8 @@ class ShopStoreFactory @Inject constructor(
                     copy(
                         shopState = State.ShopState.GetRandomBonus(
                             bonuses = msg.bonuses,
-                            prevState = loaded
+                            prevState = loaded,
+                            coinsBefore = msg.coinsBefore
                         )
                     )
                 }

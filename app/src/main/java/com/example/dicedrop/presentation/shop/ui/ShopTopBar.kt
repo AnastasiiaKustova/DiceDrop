@@ -21,6 +21,8 @@ import com.example.dicedrop.presentation.ui.theme.White
 fun ShopTopBar(
     coinsValue: Int,
     modifier: Modifier = Modifier,
+    // Для счётчика монет: сюда летят монеты подарка
+    coinsModifier: Modifier = Modifier,
     onBackClick: () -> Unit,
 ) {
     Box(
@@ -45,7 +47,7 @@ fun ShopTopBar(
             fontWeight = FontWeight.Black
         )
         CoinChip(
-            modifier = Modifier.align(Alignment.CenterEnd),
+            modifier = coinsModifier.align(Alignment.CenterEnd),
             coins = coinsValue,
             height = 36.dp,
             fontSize = 15.sp

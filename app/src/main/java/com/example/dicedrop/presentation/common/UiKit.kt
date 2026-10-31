@@ -44,6 +44,7 @@ import androidx.compose.ui.graphics.vector.addPathNodes
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
@@ -68,6 +69,31 @@ import com.example.dicedrop.presentation.ui.theme.Yellow
 fun Int.spaced(): String {
     val digits = kotlin.math.abs(this).toString().reversed().chunked(3).joinToString(" ").reversed()
     return if (this < 0) "-$digits" else digits
+}
+
+private const val COMPACT_COINS_FROM = 100_000
+
+// Сумма для счётчика монет: до 100 000 полностью, дальше сокращённо и только вниз,
+// чтобы счётчик не показывал больше, чем есть: 125400 -> "125 тыс", 1250200 -> "1,25 млн"
+@Composable
+fun compactCoins(coins: Int): String {
+    val separator = stringResource(R.string.decimal_separator)
+    return when {
+        coins < COMPACT_COINS_FROM -> coins.spaced()
+        coins < 1_000_000 -> stringResource(R.string.coins_thousands, (coins / 1_000).toString())
+        else -> {
+            val whole = coins / 1_000_000
+            // Две цифры после запятой до 10 млн, дальше одна, со 100 млн - без дробной части
+            val digits = when {
+                whole < 10 -> 2
+                whole < 100 -> 1
+                else -> 0
+            }
+            val fraction = (coins % 1_000_000).toString().padStart(6, '0').take(digits).trimEnd('0')
+            val number = if (fraction.isEmpty()) "$whole" else "$whole$separator$fraction"
+            stringResource(R.string.coins_millions, number)
+        }
+    }
 }
 
 // Кубик в новом стиле: белая плашка с обводкой, тенью снизу и точками
@@ -181,9 +207,10 @@ fun CoinChip(
             modifier = Modifier.size(height * 0.7f)
         )
         Text(
-            text = coins.spaced(),
+            text = compactCoins(coins),
             color = White,
-            fontSize = fontSize,
+            // Сокращённая сумма с «тыс» и «млн» длиннее обычной, поэтому мельче
+            fontSize = if (coins >= COMPACT_COINS_FROM) fontSize * 0.85f else fontSize,
             fontWeight = FontWeight.ExtraBold,
             maxLines = 1
         )

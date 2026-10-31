@@ -38,8 +38,8 @@ enum class PlayerStat {
     MAX_MOVES_IN_GAME,
     MAX_COINS_HELD,
     MAX_DAILY_STREAK,
-    // Сколько наград за достижения забрано, не считая «Чемпиона»
-    ACHIEVEMENTS_CLAIMED,
+    // Сколько достижений выполнено, не считая «Чемпиона»
+    ACHIEVEMENTS_COMPLETED,
 
     // Отметки: 1 - было, 0 - не было
     NIGHT_GAME,

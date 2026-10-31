@@ -23,6 +23,9 @@
     <string name="game_over">ИГРА ОКОНЧЕНА</string>
     <string name="try_again">Ещё одна попытка</string>
     <string name="you_got">Вы получили</string>
+    <string name="coins_thousands">%1$s тыс</string>
+    <string name="coins_millions">%1$s млн</string>
+    <string name="decimal_separator">,</string>
 
     <!-- Новый дизайн -->
     <string name="play">ИГРАТЬ</string>
@@ -127,7 +130,7 @@
     <string name="ach_lines_at_once_6_title">Большой взрыв</string>
     <string name="ach_lines_at_once_6_desc">Очистить 6 линий одним ходом</string>
     <string name="ach_sniper_title">Снайпер</string>
-    <string name="ach_sniper_desc">Собрать линию блоком 1 × 1</string>
+    <string name="ach_sniper_desc">Очистить линию блоком 1 × 1</string>
     <string name="ach_combo_5_title">Цепная реакция</string>
     <string name="ach_combo_5_desc">Набрать комбо x5</string>
     <string name="ach_combo_10_title">Неудержимый</string>
@@ -216,13 +219,13 @@
     <string name="tutorial_step">Шаг %1$d из %2$d</string>
     <string name="tutorial_title_roll">Брось кубики</string>
     <string name="tutorial_title_place">Поставь блок на поле</string>
-    <string name="tutorial_title_lines">Собирай линии</string>
+    <string name="tutorial_title_lines">Очищай поле</string>
     <string name="tutorial_title_combo">Делай комбо</string>
     <string name="tutorial_title_bonuses">Бонусы</string>
     <string name="tutorial_text_roll">Числа на кубиках задают размер блока</string>
     <string name="tutorial_text_place">Перетащи блок на свободное место. Когда места под блок не останется — игра закончится</string>
     <string name="tutorial_text_lines">Заполни ряд или столбец целиком — он исчезнет, а ты получишь награду</string>
-    <string name="tutorial_text_combo">Собирай линии несколько ходов подряд, и каждая следующая принесёт больше очков</string>
+    <string name="tutorial_text_combo">Очищай линии несколько ходов подряд, и каждая следующая принесёт больше очков</string>
     <string name="tutorial_text_bonuses">Выручают, когда блок не влезает. Покупай их за монеты в магазине или прямо в игре</string>
     <string name="tutorial_text_rotate">Кубики поменяются местами, и блок повернётся на 90°</string>
     <string name="tutorial_text_freeze">Заморозит оба кубика: следующий бросок даст тот же блок</string>

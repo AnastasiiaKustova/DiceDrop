@@ -26,5 +26,7 @@ data class TrayState(
 fun GameStatisticItem.withTray(tray: TrayState): GameStatisticItem {
     val w = tray.slotA?.value ?: 0
     val h = tray.slotB?.value ?: 0
-    return copy(tray = tray, dice = DiceItem(h, w))
+    val newDice = DiceItem(h, w)
+    // Спасающие бонусы считались для прежнего блока: без сброса окно «Блок не помещается» мелькнуло бы до новой проверки
+    return copy(tray = tray, dice = newDice, rescueBonuses = if (newDice == dice) rescueBonuses else emptyList())
 }

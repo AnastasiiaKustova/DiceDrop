@@ -28,6 +28,8 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalContext
 import com.example.dicedrop.presentation.game.ui.GameSnackbarHost
 import com.example.dicedrop.presentation.shop.ui.RandomBonusDialog
@@ -53,6 +55,7 @@ import com.example.dicedrop.R
 import com.example.dicedrop.domain.feedback.GameFeedback
 import com.example.dicedrop.presentation.common.LocalGameFeedback
 import com.example.dicedrop.presentation.common.CoinChip
+import com.example.dicedrop.presentation.common.FlyingCoins
 import com.example.dicedrop.presentation.common.DieFace
 import com.example.dicedrop.presentation.common.GameButton
 import com.example.dicedrop.presentation.common.GameIcons
@@ -76,6 +79,10 @@ fun MenuContent(component: MenuComponent) {
 
     val context = LocalContext.current
     val snackbarHostState = remember { SnackbarHostState() }
+    val feedback = LocalGameFeedback.current
+    val density = LocalDensity.current.density
+    val scope = rememberCoroutineScope()
+    val coinFlight = remember { FlyingCoins() }
 
     LaunchedEffect(Unit) {
         component.uiEvents.collect { event ->
@@ -93,7 +100,8 @@ fun MenuContent(component: MenuComponent) {
 
     Box(modifier = Modifier.fillMaxSize()) {
         Menu(
-            state = state,
+            state = state.copy(coins = coinFlight.coinsToShow(state.coinsBeforeGift ?: state.coins)),
+            coinsModifier = with(coinFlight) { Modifier.coinsTarget() },
             onStartGameClick = { component.onStartGameClick() },
             onAchievementsClick = { component.onAchievementsClick() },
             onShopClick = { component.onShopClick() },
@@ -111,13 +119,18 @@ fun MenuContent(component: MenuComponent) {
         }
 
         state.receivedGift?.let { gift ->
-            val feedback = LocalGameFeedback.current
             LaunchedEffect(gift) { feedback.play(GameFeedback.Sound.DAILY_GIFT) }
             RandomBonusDialog(
                 bonuses = gift,
+                onCoinsFly = { from, amount ->
+                    coinFlight.holdCoins(state.coinsBeforeGift ?: (state.coins - amount))
+                    scope.launch { coinFlight.flyReward(from, amount, density, feedback) }
+                },
                 confirmClick = { component.onGiftConfirm() }
             )
         }
+
+        coinFlight.Layer()
 
         // При первом запуске; «Играть!» на последнем шаге сразу начинает игру
         if (state.showTutorial) {
@@ -135,6 +148,8 @@ fun MenuContent(component: MenuComponent) {
 @Composable
 private fun Menu(
     state: MenuStore.State,
+    // Для счётчика монет: сюда летят монеты подарка
+    coinsModifier: Modifier = Modifier,
     onStartGameClick: () -> Unit,
     onAchievementsClick: () -> Unit,
     onShopClick: () -> Unit,
@@ -151,6 +166,7 @@ private fun Menu(
         if (isLandscape()) {
             MenuLandscape(
                 state = state,
+                coinsModifier = coinsModifier,
                 onStartGameClick = onStartGameClick,
                 onAchievementsClick = onAchievementsClick,
                 onShopClick = onShopClick,
@@ -167,7 +183,7 @@ private fun Menu(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                CoinChip(coins = state.coins)
+                CoinChip(coins = state.coins, modifier = coinsModifier)
                 Spacer(modifier = Modifier.weight(1f))
                 RoundImageButton(
                     iconRes = R.drawable.btn_settings,
@@ -224,6 +240,7 @@ private fun Menu(
 @Composable
 private fun BoxScope.MenuLandscape(
     state: MenuStore.State,
+    coinsModifier: Modifier,
     onStartGameClick: () -> Unit,
     onAchievementsClick: () -> Unit,
     onShopClick: () -> Unit,
@@ -236,7 +253,7 @@ private fun BoxScope.MenuLandscape(
             .padding(horizontal = 40.dp, vertical = 28.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        CoinChip(coins = state.coins)
+        CoinChip(coins = state.coins, modifier = coinsModifier)
         Spacer(modifier = Modifier.weight(1f))
         RoundImageButton(
             iconRes = R.drawable.btn_settings,

@@ -46,7 +46,7 @@ fun BonusButton(
     count: Int,
     price: Int,
     enabled: Boolean = true,
-    // Бонус спасает блок, который никуда не встаёт: кнопка пульсирует с жёлтым кольцом
+    // Бонус спасает блок, который никуда не встаёт: кнопка пульсирует
     highlighted: Boolean = false,
     onBonusClick: () -> Unit,
     onBuyClick: () -> Unit
@@ -76,7 +76,6 @@ fun BonusButton(
                 .size(66.dp)
                 .clip(CircleShape)
                 .background(if (has) White else White.copy(alpha = 0.35f))
-                .then(if (highlighted) Modifier.border(4.dp, Yellow, CircleShape) else Modifier)
                 .clickable(enabled = enabled) { if (has) onBonusClick() else onBuyClick() },
             contentAlignment = Alignment.Center
         ) {
@@ -100,10 +99,13 @@ fun BonusButton(
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = if (count > 99) "99" else count.toString(),
+                    // Больше 99 в кружок не помещается: «99+» мельче обычного числа
+                    text = if (count > 99) "99+" else count.toString(),
                     color = White,
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Black
+                    fontSize = if (count > 99) 10.sp else 13.sp,
+                    fontWeight = FontWeight.Black,
+                    maxLines = 1,
+                    softWrap = false
                 )
             }
         } else {

@@ -15,7 +15,9 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items as gridItems
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import com.example.dicedrop.presentation.common.isLandscape
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.horizontalScroll
@@ -23,15 +25,16 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -39,6 +42,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.dicedrop.R
 import com.example.dicedrop.domain.entity.achievement.Achievement
+import com.example.dicedrop.presentation.achievements.animation.RewardClaim
+import com.example.dicedrop.presentation.achievements.animation.RewardStage
 import com.example.dicedrop.presentation.common.IconCircle
 import com.example.dicedrop.presentation.common.ProgressBar
 import com.example.dicedrop.presentation.ui.theme.ButtonText
@@ -52,28 +57,39 @@ private enum class AchievementTab { ALL, CLAIM, PROGRESS, DONE }
 @Composable
 fun AchievementsList(
     achievements: List<Achievement>,
-    onGetRewardClick: (achievementID: String, Offset) -> Unit,
+    rewardStages: Map<String, RewardStage>,
+    onGetRewardClick: (RewardClaim) -> Unit,
 ) {
     var tab by rememberSaveable { mutableStateOf(AchievementTab.ALL) }
 
-    val completed = achievements.count { it.isCompleted }
-    val waiting = achievements.count { it.canClaim }
+    // Пока монеты в полёте, награда на карточке выглядит ещё не забранной
+    val current = achievements.map {
+        if (rewardStages[it.id] == RewardStage.FLYING) it.copy(isRewardClaimed = false) else it
+    }
+    val completed = current.count { it.isCompleted }
+    val waiting = current.count { it.canClaim }
 
-    // Во вкладке "Все" сначала то, что можно забрать, полученные - в конце
+    // Во вкладке "Все" сначала то, что можно забрать, полученные - в конце.
+    // Карточка с анимацией награды стоит на месте и уезжает, только когда анимация закончится
     val shown = when (tab) {
-        AchievementTab.ALL -> achievements.sortedBy {
+        AchievementTab.ALL -> current.sortedBy {
             when {
-                it.canClaim -> 0
+                it.canClaim || it.id in rewardStages -> 0
                 !it.isRewardClaimed -> 1
                 else -> 2
             }
         }
-        AchievementTab.CLAIM -> achievements.filter { it.canClaim }
-        AchievementTab.PROGRESS -> achievements.filter { !it.isCompleted }
-        AchievementTab.DONE -> achievements.filter { it.isRewardClaimed }
+        AchievementTab.CLAIM -> current.filter { it.canClaim || it.id in rewardStages }
+        AchievementTab.PROGRESS -> current.filter { !it.isCompleted }
+        AchievementTab.DONE -> current.filter { it.isRewardClaimed && it.id !in rewardStages }
     }
+    val order = shown.map { it.id }
 
     if (isLandscape()) {
+        val gridState = rememberLazyGridState()
+        KeepScrollOnReorder(order) {
+            gridState.requestScrollToItem(gridState.firstVisibleItemIndex, gridState.firstVisibleItemScrollOffset)
+        }
         // Планшет: слева прогресс и вкладки столбиком, справа карточки в две колонки
         Row(
             modifier = Modifier
@@ -95,6 +111,7 @@ fun AchievementsList(
             }
             LazyVerticalGrid(
                 modifier = Modifier.weight(1f),
+                state = gridState,
                 columns = GridCells.Fixed(2),
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -105,7 +122,9 @@ fun AchievementsList(
                     key = { it.id }
                 ) {
                     AchievementBox(
+                        modifier = Modifier.animateItem(),
                         achievement = it,
+                        rewardStage = rewardStages[it.id],
                         onGetRewardClick = onGetRewardClick
                     )
                 }
@@ -114,8 +133,14 @@ fun AchievementsList(
         return
     }
 
+    val listState = rememberLazyListState()
+    KeepScrollOnReorder(order) {
+        listState.requestScrollToItem(listState.firstVisibleItemIndex, listState.firstVisibleItemScrollOffset)
+    }
+
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
+        state = listState,
         verticalArrangement = Arrangement.spacedBy(12.dp),
         contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 14.dp, bottom = 20.dp)
     ) {
@@ -140,9 +165,24 @@ fun AchievementsList(
             key = { it.id }
         ) {
             AchievementBox(
+                modifier = Modifier.animateItem(),
                 achievement = it,
+                rewardStage = rewardStages[it.id],
                 onGetRewardClick = onGetRewardClick
             )
+        }
+    }
+}
+
+// Список следует за верхней видимой карточкой, если она меняет место: когда забранная карточка
+// уезжает в конец, экран уехал бы вместе с ней. Просим остаться на той же позиции
+@Composable
+private fun KeepScrollOnReorder(order: List<String>, keepPosition: () -> Unit) {
+    val lastOrder = remember { arrayOf(order) }
+    SideEffect {
+        if (lastOrder[0] != order) {
+            lastOrder[0] = order
+            keepPosition()
         }
     }
 }

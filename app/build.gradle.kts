@@ -41,12 +41,6 @@ android {
             buildConfigField("String", "AD_UNIT_DOUBLE_COINS", "\"demo-rewarded-yandex\"")
             buildConfigField("String", "AD_UNIT_RANDOM_BONUS", "\"demo-rewarded-yandex\"")
         }
-        create("customDebugType") {
-            isDebuggable = true
-            buildConfigField("String", "AD_UNIT_REVIVE", "\"demo-rewarded-yandex\"")
-            buildConfigField("String", "AD_UNIT_DOUBLE_COINS", "\"demo-rewarded-yandex\"")
-            buildConfigField("String", "AD_UNIT_RANDOM_BONUS", "\"demo-rewarded-yandex\"")
-        }
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_1_8

@@ -58,6 +58,8 @@ fun AnimatedDices(
     skipAnimation: Boolean = false,
     frozenValue: Int? = null,
     frozenValue2: Int? = null,
+    // Заранее известный результат вместо случайного - для ролика
+    values: DiceItem? = null,
     onRollEnd: (result: DiceItem) -> Unit
 ) {
 
@@ -81,7 +83,8 @@ fun AnimatedDices(
             rolling = rolling1.value,
             frozenValue = frozenValue,
             skipAnimation = if (frozenValue != null) true else skipAnimation,
-            spin = -1f
+            spin = -1f,
+            pool = values?.let { listOf(it.dice1) } ?: (1..6).toList()
         ) {
             rolling1.value = false
             result.value = result.value.copy(
@@ -92,7 +95,8 @@ fun AnimatedDices(
             rolling = rolling2.value,
             frozenValue = frozenValue2,
             skipAnimation = if (frozenValue2 != null) true else skipAnimation,
-            spin = 1f
+            spin = 1f,
+            pool = values?.let { listOf(it.dice2) } ?: (1..6).toList()
         ) {
             rolling2.value = false
             result.value = result.value.copy(

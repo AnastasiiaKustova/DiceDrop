@@ -2,9 +2,10 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
 
     <!-- Синий фон окна вместо белого: его видно при запуске, пока игра загружается.
-         На Android 12+ у заставки с иконкой свой цвет фона -->
+         На Android 12+ у заставки свой цвет фона и только маскот, без лучей и круга значка -->
     <style name="Theme.DiceDrop" parent="android:Theme.Material.Light.NoActionBar">
         <item name="android:windowBackground">#FF3A5EA7</item>
         <item name="android:windowSplashScreenBackground" tools:targetApi="31">#FF3A5EA7</item>
+        <item name="android:windowSplashScreenAnimatedIcon" tools:targetApi="31">@drawable/ic_launcher_foreground</item>
     </style>
 </resources>
