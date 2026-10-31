@@ -20,15 +20,22 @@ class GrantAdRewardUseCase @Inject constructor(
                 tray = snapshot.tray,
                 totalScore = snapshot.totalScore,
                 combo = snapshot.combo,
+                boardClears = snapshot.boardClears,
+                // Монеты за отменённый ход забираем, иначе тот же ход можно оплачивать снова и снова
+                coins = (gameStatistic.coins - snapshot.moveCoins).coerceAtLeast(0),
+                coinsEarned = (gameStatistic.coinsEarned - snapshot.moveCoins).coerceAtLeast(0),
                 lastPlaced = emptyList(),
                 reviveSnapshot = null,
-                isGameOver = false
+                isGameOver = false,
+                moves = (gameStatistic.moves - 1).coerceAtLeast(0),
+                movesAfterRevive = 0
             )
         } else {
             gameStatistic.copy(
                 dice = DiceItem.empty(),
                 tray = TrayState(),
-                isGameOver = false
+                isGameOver = false,
+                movesAfterRevive = 0
             )
         }
 

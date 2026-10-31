@@ -13,6 +13,8 @@ class DiscardSpareUseCase @Inject constructor(
         val game = repository.getCurrentGame()
         val tray = game.tray
         val spare = tray.spare ?: return
+        // Пока третий кубик катится, у него нет числа: блок собрать не из чего
+        if (spare.value == null) return
         val newTray = when (target) {
             DiscardTarget.SPARE -> tray.copy(spare = null)
             DiscardTarget.A -> tray.copy(slotA = tray.slotB, slotB = spare, spare = null)

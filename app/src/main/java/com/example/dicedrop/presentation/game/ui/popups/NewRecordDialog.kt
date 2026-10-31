@@ -29,7 +29,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.dicedrop.R
 import com.example.dicedrop.domain.entity.BonusItem
-import com.example.dicedrop.presentation.common.ConfettiBit
 import com.example.dicedrop.presentation.common.ConfettiBurst
 import com.example.dicedrop.presentation.common.DialogScrim
 import com.example.dicedrop.presentation.common.GameButton
@@ -51,7 +50,9 @@ fun NewRecordDialog(
     record: Int,
     previousRecord: Int,
     rewardsList: List<BonusItem>,
-    confirmClick: () -> Unit
+    confirmClick: () -> Unit,
+    // Промо-ролик подписывает кнопку по-своему
+    buttonText: String = stringResource(R.string.continue_game)
 ) {
     // Окно "выпрыгивает" с лёгкой пружиной
     val appear = remember { Animatable(0.3f) }
@@ -84,11 +85,6 @@ fun NewRecordDialog(
                     .background(DarkBlue, RoundedCornerShape(30.dp))
                     .consumeClicks()
             ) {
-                ConfettiBit(x = 26.dp, y = 22.dp, size = 14.dp, color = Orange, rotation = 20f)
-                ConfettiBit(x = 66.dp, y = 52.dp, size = 9.dp, color = Green, rotation = -15f)
-                ConfettiBit(x = 30.dp, y = 30.dp, size = 12.dp, color = Yellow, rotation = 35f, alignRight = true)
-                ConfettiBit(x = 70.dp, y = 58.dp, size = 8.dp, color = LightBlue, round = true, alignRight = true)
-
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -162,7 +158,7 @@ fun NewRecordDialog(
 
                     GameButton(
                         modifier = Modifier.fillMaxWidth(),
-                        text = stringResource(R.string.continue_game),
+                        text = buttonText,
                         onClick = confirmClick,
                         height = 56.dp,
                         fontSize = 22.sp

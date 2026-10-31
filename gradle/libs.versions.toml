@@ -15,6 +15,7 @@ decompose = "2.1.2"
 mvikotlin = "3.2.1"
 dagger = "2.48.1"
 ksp = "1.9.22-1.0.16"
+yandexMobileAds = "7.18.8"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -44,6 +45,8 @@ mvikotlin-coroutines = { group = "com.arkivanov.mvikotlin", name = "mvikotlin-ex
 
 dagger = { group = "com.google.dagger", name = "dagger", version.ref = "dagger" }
 dagger-compiler = { group = "com.google.dagger", name = "dagger-compiler", version.ref = "dagger" }
+
+yandex-mobileads = { group = "com.yandex.android", name = "mobileads", version.ref = "yandexMobileAds" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

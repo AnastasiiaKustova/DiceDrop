@@ -1,0 +1,67 @@
+<!-- Открытый подарок: в меню, когда награда за сегодня уже получена.
+     Всё уменьшено к низу по центру, чтобы откинутая крышка помещалась в 64 × 64 -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="64dp"
+    android:height="64dp"
+    android:viewportWidth="64"
+    android:viewportHeight="64">
+    <group
+        android:scaleX="0.8"
+        android:scaleY="0.8"
+        android:translateX="6.4"
+        android:translateY="12.4">
+        <path
+            android:pathData="M14,30H50A4,4 0 0 1 54,34V53A4,4 0 0 1 50,57H14A4,4 0 0 1 10,53V34A4,4 0 0 1 14,30Z"
+            android:fillColor="#F78C6A"/>
+        <path
+            android:pathData="M12,31.5H52V37H12Z"
+            android:fillColor="#C9583A"/>
+        <path
+            android:pathData="M28,31.5H36V57H28Z"
+            android:fillColor="#FFD167"/>
+        <path
+            android:pathData="M28,31.5H36V37H28Z"
+            android:fillColor="#D9A23A"/>
+        <path
+            android:pathData="M14,30H50A4,4 0 0 1 54,34V53A4,4 0 0 1 50,57H14A4,4 0 0 1 10,53V34A4,4 0 0 1 14,30Z"
+            android:strokeColor="#EC7853"
+            android:strokeWidth="3"
+            android:strokeLineJoin="round"/>
+        <path
+            android:pathData="M15 41V49"
+            android:strokeColor="#FFFFFF"
+            android:strokeWidth="3"
+            android:strokeLineCap="round"/>
+        <!-- Крышка с бантом откинута влево -->
+        <group
+            android:rotation="-24"
+            android:pivotX="7"
+            android:pivotY="29"
+            android:translateX="-2"
+            android:translateY="-4">
+            <path
+                android:pathData="M10,18H54A3,3 0 0 1 57,21V26A3,3 0 0 1 54,29H10A3,3 0 0 1 7,26V21A3,3 0 0 1 10,18Z"
+                android:fillColor="#F78C6A"/>
+            <path
+                android:pathData="M28,18H36V29H28Z"
+                android:fillColor="#FFD167"/>
+            <path
+                android:pathData="M10,18H54A3,3 0 0 1 57,21V26A3,3 0 0 1 54,29H10A3,3 0 0 1 7,26V21A3,3 0 0 1 10,18Z"
+                android:strokeColor="#EC7853"
+                android:strokeWidth="3"
+                android:strokeLineJoin="round"/>
+            <path
+                android:pathData="M32,18C26,7 14,9 18,16C20,19 28,18 32,18Z"
+                android:fillColor="#FFD167"
+                android:strokeColor="#E0A93E"
+                android:strokeWidth="2.5"
+                android:strokeLineJoin="round"/>
+            <path
+                android:pathData="M32,18C38,7 50,9 46,16C44,19 36,18 32,18Z"
+                android:fillColor="#FFD167"
+                android:strokeColor="#E0A93E"
+                android:strokeWidth="2.5"
+                android:strokeLineJoin="round"/>
+        </group>
+    </group>
+</vector>

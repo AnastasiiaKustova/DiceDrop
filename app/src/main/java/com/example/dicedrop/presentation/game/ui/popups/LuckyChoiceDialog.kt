@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -21,9 +22,12 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.dicedrop.R
+import com.example.dicedrop.presentation.common.isLandscape
+import com.example.dicedrop.presentation.ui.theme.Scrim
 import com.example.dicedrop.presentation.common.DialogScrim
 import com.example.dicedrop.presentation.common.DieFace
 import com.example.dicedrop.presentation.common.GameButton
@@ -40,26 +44,40 @@ fun LuckyChoiceDialog(
     onPick: (Int) -> Unit,
     onCancel: () -> Unit
 ) {
+    // На планшете шторка выезжает справа поверх панели с лотком, а поле остаётся видно
+    val landscape = isLandscape()
+    val sheetShape = if (landscape) RoundedCornerShape(topStart = 32.dp, bottomStart = 32.dp)
+    else RoundedCornerShape(topStart = 30.dp, topEnd = 30.dp)
+    val faceBox = if (landscape) 100.dp else 76.dp
+
     DialogScrim(
-        contentAlignment = Alignment.BottomCenter,
+        color = if (landscape) Scrim.copy(alpha = Scrim.alpha * 0.5f) else Scrim,
+        contentAlignment = if (landscape) Alignment.CenterEnd else Alignment.BottomCenter,
+        maxWidth = if (landscape) 440.dp else Dp.Infinity,
         onDismiss = onCancel
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .shadow(20.dp, RoundedCornerShape(topStart = 30.dp, topEnd = 30.dp))
-                .background(DarkBlue, RoundedCornerShape(topStart = 30.dp, topEnd = 30.dp))
+                .then(if (landscape) Modifier.fillMaxHeight() else Modifier)
+                .shadow(20.dp, sheetShape)
+                .background(DarkBlue, sheetShape)
                 .consumeClicks()
-                .padding(start = 20.dp, end = 20.dp, top = 12.dp, bottom = 26.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+                .then(
+                    if (landscape) Modifier.padding(start = 40.dp, end = 36.dp)
+                    else Modifier.padding(start = 20.dp, end = 20.dp, top = 12.dp, bottom = 26.dp)
+                ),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
         ) {
-            Box(
-                modifier = Modifier
-                    .size(44.dp, 5.dp)
-                    .background(DeepBlue, RoundedCornerShape(3.dp))
-            )
-
-            Spacer(modifier = Modifier.height(12.dp))
+            if (!landscape) {
+                Box(
+                    modifier = Modifier
+                        .size(44.dp, 5.dp)
+                        .background(DeepBlue, RoundedCornerShape(3.dp))
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+            }
 
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -83,28 +101,28 @@ fun LuckyChoiceDialog(
                 fontSize = 14.sp
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(if (landscape) 26.dp else 16.dp))
 
-            Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(if (landscape) 18.dp else 14.dp)) {
                 listOf(listOf(1, 2, 3), listOf(4, 5, 6)).forEach { row ->
                     Row(horizontalArrangement = Arrangement.spacedBy(22.dp)) {
                         row.forEach { face ->
                             Box(
                                 modifier = Modifier
-                                    .size(76.dp)
-                                    .clip(RoundedCornerShape(18.dp))
+                                    .size(faceBox)
+                                    .clip(RoundedCornerShape(faceBox * 0.22f))
                                     .background(MidBlue)
                                     .clickable { onPick(face) },
                                 contentAlignment = Alignment.Center
                             ) {
-                                DieFace(value = face, size = 56.dp)
+                                DieFace(value = face, size = faceBox * 0.72f)
                             }
                         }
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.height(22.dp))
+            Spacer(modifier = Modifier.height(if (landscape) 30.dp else 22.dp))
 
             GameButton(
                 modifier = Modifier.fillMaxWidth(),
@@ -112,8 +130,8 @@ fun LuckyChoiceDialog(
                 onClick = onCancel,
                 color = MidBlue,
                 contentColor = White,
-                height = 50.dp,
-                fontSize = 18.sp
+                height = if (landscape) 54.dp else 50.dp,
+                fontSize = if (landscape) 19.sp else 18.sp
             )
         }
     }

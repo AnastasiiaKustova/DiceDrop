@@ -8,6 +8,7 @@ import com.example.dicedrop.domain.entity.GameStatisticItem
 import com.example.dicedrop.domain.entity.Slot
 import com.example.dicedrop.domain.entity.TrayDie
 import com.example.dicedrop.domain.entity.withTray
+import com.example.dicedrop.domain.entity.statistic.PlayerStat
 import com.example.dicedrop.domain.repository.GameRepository
 import javax.inject.Inject
 
@@ -21,7 +22,8 @@ class UseBonusUseCase @Inject constructor(
         if (gameStatistic.dice == DiceItem.empty()) return
 
         if (bonusType == BonusType.FREEZE && !canFreezeAll(gameStatistic)) return
-        if (bonusType == BonusType.DRAFT && gameStatistic.tray.spare != null) return
+        // Пока есть третий кубик, эти бонусы не сработают: не тратим их впустую
+        if ((bonusType == BonusType.DRAFT || bonusType == BonusType.ROTATE) && gameStatistic.tray.spare != null) return
 
         val bonuses = gameStatistic.bonuses.map {
             if (it.type == bonusType) {
@@ -29,7 +31,7 @@ class UseBonusUseCase @Inject constructor(
                 it.copy(count = it.count - 1)
             } else it
         }
-        val updatedGame = gameStatistic.copy(bonuses = bonuses).run {
+        val updatedGame = gameStatistic.copy(bonuses = bonuses).withUsedBonus(bonusType).run {
             when (bonusType) {
                 BonusType.ROTATE -> useBonusRotate()
                 BonusType.FREEZE -> freezeAll()
@@ -40,10 +42,13 @@ class UseBonusUseCase @Inject constructor(
 
         repository.updateGameState(updatedGame)
         achievementTracker.onBonusUsed(bonusType)
+        trackAllBonuses(gameStatistic, updatedGame)
     }
 
     suspend fun setFace(value: Int, slot: Slot) {
         val game = repository.getCurrentGame()
+        // В лотке после установки остаются прежние числа, но блока уже нет: иначе он вернулся бы бесплатно
+        if (game.dice == DiceItem.empty()) return
         if (game.tray.spare != null) return
         val tray = game.tray
         val target = if (slot == Slot.A) tray.slotA else tray.slotB
@@ -56,10 +61,26 @@ class UseBonusUseCase @Inject constructor(
         }
         val newTray = if (slot == Slot.A) tray.copy(slotA = target.copy(value = value))
         else tray.copy(slotB = target.copy(value = value))
-        repository.updateGameState(game.copy(bonuses = bonuses).withTray(newTray))
+        val updatedGame = game.copy(bonuses = bonuses).withUsedBonus(BonusType.LUCKY).withTray(newTray)
+        repository.updateGameState(updatedGame)
         achievementTracker.onBonusUsed(BonusType.LUCKY)
+        trackAllBonuses(game, updatedGame)
+    }
+
+    // «Волшебник»: засчитывается в момент, когда в партии впервые набрались все четыре бонуса
+    private suspend fun trackAllBonuses(before: GameStatisticItem, after: GameStatisticItem) {
+        if (before.usedBonuses.size < ALL_BONUSES && after.usedBonuses.size >= ALL_BONUSES) {
+            achievementTracker.increment(PlayerStat.ALL_BONUSES_GAMES)
+        }
+    }
+
+    private companion object {
+        const val ALL_BONUSES = 4
     }
 }
+
+private fun GameStatisticItem.withUsedBonus(type: BonusType): GameStatisticItem =
+    if (type in usedBonuses) this else copy(usedBonuses = usedBonuses + type)
 
 private fun canFreezeAll(game: GameStatisticItem): Boolean {
     val a = game.tray.slotA
@@ -81,7 +102,8 @@ private fun GameStatisticItem.useBonusRotate(): GameStatisticItem {
     val newTray = tray.copy(slotA = tray.slotB, slotB = tray.slotA)
     val w = newTray.slotA?.value ?: 0
     val h = newTray.slotB?.value ?: 0
-    return copy(tray = newTray, dice = dice.copy(dice1 = h, dice2 = w))
+    // Спасающие бонусы пересчитает проверка после бонуса, как и у других смен блока
+    return copy(tray = newTray, dice = dice.copy(dice1 = h, dice2 = w), rescueBonuses = emptyList())
 }
 
 private fun GameStatisticItem.addSpare(): GameStatisticItem {

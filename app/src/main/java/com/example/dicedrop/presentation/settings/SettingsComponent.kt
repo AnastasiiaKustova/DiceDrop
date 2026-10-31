@@ -18,19 +18,14 @@ interface SettingsComponent {
 
     fun onSettingsChangeClick(settingType: SettingTypes)
 
-    fun onTurnOffAds()
+    // Обучение пролистано до конца - для достижения
+    fun onTutorialFinished()
 
     sealed interface UiEvent {
-        data class ShowMessage(val message: MessageType) : UiEvent
         data class ShowError(val error: ErrorType) : UiEvent
 
-        enum class MessageType {
-            AdsOffSuccess
-        }
-
         enum class ErrorType {
-            ChangeLanguageError,
-            AdsOffFailed
+            ChangeLanguageError
         }
     }
 }

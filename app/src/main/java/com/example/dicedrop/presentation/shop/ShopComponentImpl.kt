@@ -5,6 +5,7 @@ import com.arkivanov.mvikotlin.core.instancekeeper.getStore
 import com.arkivanov.mvikotlin.extensions.coroutines.labels
 import com.arkivanov.mvikotlin.extensions.coroutines.stateFlow
 import com.example.dicedrop.core.componentScope
+import com.example.dicedrop.domain.ads.RewardedAdManager
 import com.example.dicedrop.domain.entity.ShopItem
 import com.example.dicedrop.presentation.shop.ShopComponent.UiEvent
 import dagger.assisted.Assisted
@@ -18,6 +19,7 @@ import kotlinx.coroutines.launch
 
 class ShopComponentImpl @AssistedInject constructor(
     private val storeFactory: ShopStoreFactory,
+    override val rewardedAdManager: RewardedAdManager,
     @Assisted("onBackClicked") private val onBackClicked: () -> Unit,
     @Assisted("componentContext") componentContext: ComponentContext,
 ): ShopComponent, ComponentContext by componentContext {
@@ -33,7 +35,8 @@ class ShopComponentImpl @AssistedInject constructor(
             store.labels.collect {
                 when (it) {
                     ShopStore.Label.ClickBack -> onBackClicked()
-                    is ShopStore.Label.ClickBuyItem -> _uiEvents.emit(UiEvent.ShowMessage(UiEvent.MessageType.PurchaseSuccess))
+                    is ShopStore.Label.ClickBuyItem,
+                    ShopStore.Label.AdBonusReceived -> _uiEvents.emit(UiEvent.ShowMessage(UiEvent.MessageType.PurchaseSuccess))
                     ShopStore.Label.DailyRewardError -> _uiEvents.emit(UiEvent.ShowError(UiEvent.ErrorType.DailyBonusFailed))
                     ShopStore.Label.DailyRewardSuccess -> _uiEvents.emit(UiEvent.ShowMessage(UiEvent.MessageType.DailyBonusClaimed))
                     ShopStore.Label.NotEnoughCoins -> _uiEvents.emit(UiEvent.ShowError(UiEvent.ErrorType.NotEnoughCoins))
@@ -55,6 +58,10 @@ class ShopComponentImpl @AssistedInject constructor(
 
     override fun onRandomBonusConfirmClick(){
         store.accept(ShopStore.Intent.RandomBonusConfirmClick)
+    }
+
+    override fun onAdBonusReward() {
+        store.accept(ShopStore.Intent.AdBonusReward)
     }
 
     @AssistedFactory

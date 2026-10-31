@@ -1,6 +1,12 @@
 package com.example.dicedrop.presentation.game.ui.bottompanel
 
 import androidx.annotation.DrawableRes
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.ui.draw.scale
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -40,14 +46,25 @@ fun BonusButton(
     count: Int,
     price: Int,
     enabled: Boolean = true,
+    // Бонус спасает блок, который никуда не встаёт: кнопка пульсирует
+    highlighted: Boolean = false,
     onBonusClick: () -> Unit,
     onBuyClick: () -> Unit
 ) {
     val has = count > 0
+    val pulse = if (highlighted) {
+        rememberInfiniteTransition(label = "rescue").animateFloat(
+            initialValue = 1f,
+            targetValue = 1.1f,
+            animationSpec = infiniteRepeatable(tween(550), RepeatMode.Reverse),
+            label = "rescueScale"
+        ).value
+    } else 1f
 
     Box(
         modifier = modifier
             .size(66.dp)
+            .scale(pulse)
             // Прозрачность без отдельного слоя: слой размером с кнопку обрезал бы значок, торчащий за край
             .graphicsLayer {
                 alpha = if (enabled) 1f else 0.45f
@@ -82,10 +99,13 @@ fun BonusButton(
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = if (count > 99) "99" else count.toString(),
+                    // Больше 99 в кружок не помещается: «99+» мельче обычного числа
+                    text = if (count > 99) "99+" else count.toString(),
                     color = White,
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Black
+                    fontSize = if (count > 99) 10.sp else 13.sp,
+                    fontWeight = FontWeight.Black,
+                    maxLines = 1,
+                    softWrap = false
                 )
             }
         } else {

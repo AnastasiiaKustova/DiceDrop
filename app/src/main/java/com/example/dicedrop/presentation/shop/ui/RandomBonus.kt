@@ -12,20 +12,23 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.ui.res.painterResource
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.boundsInRoot
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -33,7 +36,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.dicedrop.R
 import com.example.dicedrop.domain.entity.BonusItem
-import com.example.dicedrop.presentation.common.ConfettiBit
+import com.example.dicedrop.domain.entity.BonusType
 import com.example.dicedrop.presentation.common.ConfettiBurst
 import com.example.dicedrop.presentation.common.DialogScrim
 import com.example.dicedrop.presentation.common.GameButton
@@ -56,9 +59,22 @@ fun RandomBonusDialog(
     modifier: Modifier = Modifier,
     // Первая награда - главная, крупно; остальные (бонус к подарку 7-го дня) - строкой ниже
     bonuses: List<BonusItem>,
+    // Монеты из награды вылетают из значка при закрытии окна: откуда и сколько
+    onCoinsFly: (from: Offset, amount: Int) -> Unit = { _, _ -> },
     confirmClick: () -> Unit
 ) {
     val bonus = bonuses.first()
+    val coinsAmount = bonuses.firstOrNull { it.type == BonusType.COIN }?.count ?: 0
+    var iconCenter by remember { mutableStateOf(Offset.Zero) }
+    // И кнопка, и касание мимо окна закрывают его: монеты должны вылететь один раз
+    var confirmed by remember { mutableStateOf(false) }
+    val confirm = {
+        if (!confirmed) {
+            confirmed = true
+            if (coinsAmount > 0) onCoinsFly(iconCenter, coinsAmount)
+            confirmClick()
+        }
+    }
 
     // Окно "выпрыгивает" с лёгкой пружиной
     val appear = remember { Animatable(0.3f) }
@@ -69,7 +85,7 @@ fun RandomBonusDialog(
         )
     }
 
-    DialogScrim(onDismiss = confirmClick) {
+    DialogScrim(onDismiss = confirm) {
         Box(
             modifier = modifier
                 .padding(horizontal = 44.dp)
@@ -81,11 +97,6 @@ fun RandomBonusDialog(
                 .background(DarkBlue, RoundedCornerShape(30.dp))
                 .consumeClicks()
         ) {
-            ConfettiBit(x = 30.dp, y = 74.dp, size = 14.dp, color = Orange, rotation = 20f)
-            ConfettiBit(x = 50.dp, y = 170.dp, size = 9.dp, color = Green, rotation = -15f)
-            ConfettiBit(x = 34.dp, y = 84.dp, size = 12.dp, color = Yellow, rotation = 35f, alignRight = true)
-            ConfettiBit(x = 48.dp, y = 186.dp, size = 8.dp, color = LightBlue, round = true, alignRight = true)
-
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -103,7 +114,7 @@ fun RandomBonusDialog(
 
                 Spacer(modifier = Modifier.height(14.dp))
 
-                Box {
+                Box(modifier = Modifier.onGloballyPositioned { iconCenter = it.boundsInRoot().center }) {
                     // Конфетти вылетает из-за иконки полученного бонуса
                     ConfettiBurst(
                         key = Unit,
@@ -161,10 +172,10 @@ fun RandomBonusDialog(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Image(
-                            painter = painterResource(extra.type.getRewardIconResId()),
-                            contentDescription = null,
-                            modifier = Modifier.size(32.dp)
+                        IconCircle(
+                            iconRes = extra.type.getRewardIconResId(),
+                            size = 36.dp,
+                            iconSize = 27.dp
                         )
                         Text(
                             text = "+${extra.count} " + stringResource(extra.type.getTitleResId()),
@@ -180,7 +191,7 @@ fun RandomBonusDialog(
                 GameButton(
                     modifier = Modifier.fillMaxWidth(),
                     text = stringResource(R.string.great),
-                    onClick = confirmClick,
+                    onClick = confirm,
                     height = 54.dp,
                     fontSize = 21.sp
                 )

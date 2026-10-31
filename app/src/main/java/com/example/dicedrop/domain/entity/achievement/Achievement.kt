@@ -4,6 +4,8 @@ data class Achievement(
     val id: String,
     val titleId: Int,
     val descriptionId: Int,
+    // Своя картинка у каждого достижения
+    val iconId: Int,
     val type: AchievementType,
     val requiredCount: Int,
     val totalCount: Int = 0,

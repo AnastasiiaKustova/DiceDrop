@@ -54,6 +54,8 @@ interface GameComponent {
 
     fun onSettingsChange(setting: SettingTypes)
 
+    fun onStuckDialogClosed()
+
     sealed interface UiEvent {
         data class WatchAd(val reward: AdReward) : UiEvent
         data object Animate : UiEvent

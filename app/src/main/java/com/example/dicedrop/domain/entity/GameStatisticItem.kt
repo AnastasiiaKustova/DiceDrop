@@ -12,10 +12,8 @@ data class GameStatisticItem (
     val bonuses: List<BonusItem> = BonusItem.default(),
     val boardItem: BoardItem = BoardItem.default(),
     val dice: DiceItem = DiceItem.empty(),
-    val nextDice: DiceItem = DiceItem.empty(),
     val tray: TrayState = TrayState(),
     val lastPlaced: List<Int> = emptyList(),
-    val isRolling: Boolean = false,
     val isGameOver: Boolean = false,
     val isRecordAchieved: Boolean = false,
     val isNewRecord: Boolean = false,
@@ -24,7 +22,15 @@ data class GameStatisticItem (
     val reviveSnapshot: ReviveSnapshot? = null,
     // Монеты, заработанные в этой партии; показываются в конце игры и удваиваются за рекламу
     val coinsEarned: Int = 0,
-    val coinsDoubled: Boolean = false
+    val coinsDoubled: Boolean = false,
+    // Счётчики партии для достижений: ходы, полные очистки поля, какие бонусы использованы
+    val moves: Int = 0,
+    val boardClears: Int = 0,
+    val usedBonuses: List<BonusType> = emptyList(),
+    // Ходы после отмены хода за рекламу; null - отмены не было или «Второй шанс» уже засчитан
+    val movesAfterRevive: Int? = null,
+    // Блок никуда не встаёт, но его спасают эти бонусы; пусто - ход есть или игра окончена
+    val rescueBonuses: List<BonusType> = emptyList()
 ): Parcelable{
     companion object{
         fun default() = GameStatisticItem()
@@ -54,5 +60,8 @@ data class ReviveSnapshot(
     val dice: DiceItem,
     val tray: TrayState,
     val totalScore: Int,
-    val combo: Int = 0
+    val combo: Int = 0,
+    val boardClears: Int = 0,
+    // Сколько монет принёс сам ход: только их и забираем при отмене, остальные (покупки, подарки) не трогаем
+    val moveCoins: Int = 0
 ): Parcelable

@@ -5,7 +5,9 @@ import com.arkivanov.mvikotlin.core.store.Store
 import com.arkivanov.mvikotlin.core.store.StoreFactory
 import com.arkivanov.mvikotlin.extensions.coroutines.CoroutineBootstrapper
 import com.arkivanov.mvikotlin.extensions.coroutines.CoroutineExecutor
+import com.example.dicedrop.domain.engine.AchievementTracker
 import com.example.dicedrop.domain.entity.BonusItem
+import com.example.dicedrop.domain.entity.statistic.PlayerStat
 import com.example.dicedrop.domain.entity.DailyReward
 import com.example.dicedrop.domain.useCases.shop.GetDailyRewardIsReceivedStateUseCase
 import com.example.dicedrop.domain.useCases.shop.GetDailyRewardUseCase
@@ -43,6 +45,8 @@ interface MenuStore : Store<Intent, State, Label> {
 
         data object TutorialClose : Intent
 
+        data object TutorialFinish : Intent
+
     }
 
     data class State(
@@ -54,6 +58,8 @@ interface MenuStore : Store<Intent, State, Label> {
         // Полученный подарок, пока открыто окно "Вы получили"
         // Что выдал подарок: монеты и, в 7-й день серии, бонус
         val receivedGift: List<BonusItem>? = null,
+        // Монеты до подарка: пока окно открыто, счётчик их и показывает, награда прилетит в него после окна
+        val coinsBeforeGift: Int? = null,
         // Обучение при первом запуске
         val showTutorial: Boolean = false
     )
@@ -82,6 +88,7 @@ class MenuStoreFactory @Inject constructor(
     private val getDailyRewardUseCase: GetDailyRewardUseCase,
     private val getSettingsUseCase: GetSettingsUseCase,
     private val markTutorialShownUseCase: MarkTutorialShownUseCase,
+    private val achievementTracker: AchievementTracker,
 ) {
 
     fun create(): MenuStore =
@@ -112,7 +119,7 @@ class MenuStoreFactory @Inject constructor(
 
         data class RewardsChanged(val count: Int) : Msg
 
-        data class GiftReceived(val gift: List<BonusItem>?) : Msg
+        data class GiftReceived(val gift: List<BonusItem>?, val coinsBefore: Int? = null) : Msg
 
         data class TutorialVisible(val visible: Boolean) : Msg
     }
@@ -163,7 +170,8 @@ class MenuStoreFactory @Inject constructor(
                             if (getDailyRewardIsReceivedStateUseCase()) {
                                 publish(Label.GiftAlreadyReceived)
                             } else {
-                                dispatch(Msg.GiftReceived(getDailyRewardUseCase()))
+                                val coinsBefore = getState().coins
+                                dispatch(Msg.GiftReceived(getDailyRewardUseCase(), coinsBefore))
                             }
                         } finally {
                             claimingGift = false
@@ -175,6 +183,13 @@ class MenuStoreFactory @Inject constructor(
                 Intent.TutorialClose -> {
                     dispatch(Msg.TutorialVisible(false))
                     scope.launch { markTutorialShownUseCase() }
+                }
+                Intent.TutorialFinish -> {
+                    dispatch(Msg.TutorialVisible(false))
+                    scope.launch {
+                        markTutorialShownUseCase()
+                        achievementTracker.mark(PlayerStat.TUTORIAL_COMPLETED)
+                    }
                 }
                 Intent.ClickNavigateToAchievements -> publish(Label.ClickNavigateToAchievements)
                 Intent.ClickNavigateToGame -> publish(Label.ClickNavigateToGame)
@@ -213,7 +228,7 @@ class MenuStoreFactory @Inject constructor(
             is Msg.GameChanged -> copy(coins = msg.coins, bestScore = msg.bestScore)
             is Msg.DailyRewardChanged -> copy(giftReady = msg.giftReady, streakDay = msg.streakDay)
             is Msg.RewardsChanged -> copy(rewardsToClaim = msg.count)
-            is Msg.GiftReceived -> copy(receivedGift = msg.gift)
+            is Msg.GiftReceived -> copy(receivedGift = msg.gift, coinsBeforeGift = msg.coinsBefore)
             is Msg.TutorialVisible -> copy(showTutorial = msg.visible)
         }
     }

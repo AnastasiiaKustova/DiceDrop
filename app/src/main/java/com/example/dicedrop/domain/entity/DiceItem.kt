@@ -23,12 +23,5 @@ data class DiceItem (
             val dice2 = Random.nextInt(1, DICE_SIZE + 1)
             return DiceItem( dice1 = dice1, dice2 = dice2)
         }
-
-        fun DiceItem.rotateDices(): DiceItem{
-            return DiceItem(
-                dice1 = this.dice2,
-                dice2 = this.dice1
-            )
-        }
     }
 }

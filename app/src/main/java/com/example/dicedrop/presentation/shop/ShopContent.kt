@@ -12,14 +12,21 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import com.example.dicedrop.R
+import com.example.dicedrop.domain.ads.RewardedAdManager
+import com.example.dicedrop.domain.entity.AdReward
 import com.example.dicedrop.domain.feedback.GameFeedback
+import com.example.dicedrop.presentation.common.FlyingCoins
 import com.example.dicedrop.presentation.common.LocalGameFeedback
 import com.example.dicedrop.presentation.game.ui.GameSnackbarHost
+import com.example.dicedrop.presentation.game.ui.RewardedAdOverlay
+import com.example.dicedrop.presentation.game.ui.findActivity
 import com.example.dicedrop.presentation.shop.ui.RandomBonusDialog
 import com.example.dicedrop.presentation.shop.ui.ShopItems
 import com.example.dicedrop.presentation.shop.ui.ShopTopBar
@@ -34,10 +41,14 @@ fun ShopContent(component: ShopComponent) {
     val context = LocalContext.current
     val feedback = LocalGameFeedback.current
     val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+    val adState by component.rewardedAdManager.state.collectAsState()
+    val density = LocalDensity.current.density
+    val coinFlight = remember { FlyingCoins() }
 
     val coins = when (val shopState = state.shopState) {
         is ShopStore.State.ShopState.Loaded -> shopState.money
-        is ShopStore.State.ShopState.GetRandomBonus -> shopState.prevState.money
+        is ShopStore.State.ShopState.GetRandomBonus -> shopState.coinsBefore ?: shopState.prevState.money
         else -> 0
     }
 
@@ -82,7 +93,8 @@ fun ShopContent(component: ShopComponent) {
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
             ShopTopBar(
-                coinsValue = coins,
+                coinsValue = coinFlight.coinsToShow(coins),
+                coinsModifier = with(coinFlight) { Modifier.coinsTarget() },
                 onBackClick = component::onBackClick
             )
 
@@ -104,7 +116,25 @@ fun ShopContent(component: ShopComponent) {
                         dailyRewardClaimed = loaded.dailyRewardClaimed,
                         dayStreak = state.dayStreak,
                         bonuses = loaded.bonuses,
-                        onCardClick = { component.onBuyItemClick(it) }
+                        adBonusesLeft = state.adBonusesLeft,
+                        onCardClick = { component.onBuyItemClick(it) },
+                        onAdBonusClick = {
+                            val activity = context.findActivity() ?: return@ShopItems
+                            component.rewardedAdManager.showAd(
+                                activity = activity,
+                                reward = AdReward.RANDOM_BONUS,
+                                onReward = component::onAdBonusReward,
+                                onUnavailable = {
+                                    scope.launch {
+                                        snackbarHostState.currentSnackbarData?.dismiss()
+                                        snackbarHostState.showSnackbar(
+                                            message = context.getString(R.string.ad_unavailable),
+                                            duration = SnackbarDuration.Short
+                                        )
+                                    }
+                                }
+                            )
+                        }
                     )
                 }
             }
@@ -118,10 +148,20 @@ fun ShopContent(component: ShopComponent) {
             is ShopStore.State.ShopState.GetRandomBonus ->
                 RandomBonusDialog(
                     bonuses = shopState.bonuses,
+                    onCoinsFly = { from, amount ->
+                        coinFlight.holdCoins(coins)
+                        scope.launch { coinFlight.flyReward(from, amount, density, feedback) }
+                    },
                     confirmClick = component::onRandomBonusConfirmClick
                 )
 
             else -> Unit
+        }
+
+        coinFlight.Layer()
+
+        if (adState != RewardedAdManager.RewardedAdState.Idle) {
+            RewardedAdOverlay(adState)
         }
     }
 }

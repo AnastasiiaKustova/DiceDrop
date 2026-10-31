@@ -1,5 +1,6 @@
 package com.example.dicedrop.presentation
 
+import android.content.pm.ActivityInfo
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -30,6 +31,13 @@ class MainActivity : ComponentActivity() {
         (applicationContext as GameApp).applicationComponent.inject(this)
 
         super.onCreate(savedInstanceState)
+
+        // Телефон держим в портретной ориентации, а на планшете экран поворачивается
+        requestedOrientation = if (resources.configuration.smallestScreenWidthDp >= 600) {
+            ActivityInfo.SCREEN_ORIENTATION_FULL_USER
+        } else {
+            ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+        }
 
         // Корневой компонент создаём один раз, а не при каждой рекомпозиции
         val rootComponent = rootComponentFactory.create(

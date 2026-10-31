@@ -1,12 +1,22 @@
 import android.content.res.Configuration
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.runtime.SideEffect
+import com.example.dicedrop.presentation.game.ui.header.HeaderButtons
+import com.example.dicedrop.presentation.game.ui.header.SideCoins
+import com.example.dicedrop.presentation.game.ui.header.SideScore
 import androidx.compose.ui.unit.dp
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
@@ -32,6 +42,7 @@ import com.example.dicedrop.presentation.common.LocalBackgroundMusic
 import com.example.dicedrop.presentation.common.LocalGameFeedback
 import com.example.dicedrop.presentation.game.GameComponent
 import com.example.dicedrop.presentation.game.GameStore
+import com.example.dicedrop.presentation.game.ui.ClearEffects
 import com.example.dicedrop.presentation.game.ui.board.BottomBoard
 import com.example.dicedrop.presentation.game.ui.board.ComboPopup
 import com.example.dicedrop.presentation.game.ui.board.DrawPlayingField
@@ -44,9 +55,15 @@ import com.example.dicedrop.presentation.game.ui.header.GameHeader
 import com.example.dicedrop.presentation.game.ui.popups.GameOverDialog
 import com.example.dicedrop.presentation.game.ui.popups.LuckyChoiceDialog
 import com.example.dicedrop.presentation.game.ui.popups.NewRecordDialog
+import com.example.dicedrop.presentation.game.ui.popups.StuckDialog
+import com.example.dicedrop.presentation.game.ui.popups.StuckHint
+import com.example.dicedrop.presentation.game.ui.popups.onTrayEdge
 import com.example.dicedrop.presentation.settings.ui.DrawPause
 import com.example.dicedrop.presentation.ui.theme.DarkBlue
 import com.example.dicedrop.presentation.ui.theme.White
+
+// Сколько раз показывать окно «Ходов нет», прежде чем перейти на подсказку
+private const val STUCK_DIALOG_LIMIT = 3
 
 @Composable
 fun GameStateContent(
@@ -57,6 +74,7 @@ fun GameStateContent(
     trophyHighlighted: Boolean,
     rewardsToClaim: Int,
     settings: GameSettings,
+    clearEffects: ClearEffects,
     component: GameComponent
 ) {
     // "Счастливый": сначала игрок выбирает в шторке грань, затем кубик, которому её поставить
@@ -103,6 +121,19 @@ fun GameStateContent(
 
         if (gameState != null) {
             val game = gameState.gameStatistic
+
+            // Блок никуда не встаёт, но бонус спасёт: первые разы - окно, потом только подсказка.
+            // Закрытое окно больше не открывается, пока не сменится ход или кубики
+            val rescueBonuses = if (state is GameStore.State.GameState.Loaded) game.rescueBonuses else emptyList()
+            var stuckDialogClosed by rememberSaveable(game.moves, game.dice) { mutableStateOf(false) }
+            val showStuckDialog = rescueBonuses.isNotEmpty() && !stuckDialogClosed &&
+                    settings.stuckDialogsShown < STUCK_DIALOG_LIMIT &&
+                    !showPause && !showLuckySheet && luckyFace == null
+            fun closeStuckDialog() {
+                stuckDialogClosed = true
+                component.onStuckDialogClosed()
+            }
+
             GameScreen(
                 gameStatistic = game,
                 clearedRows = clearedRows,
@@ -112,6 +143,9 @@ fun GameStateContent(
                 trophyHighlighted = trophyHighlighted,
                 rewardsToClaim = rewardsToClaim,
                 luckyFace = luckyFace,
+                rescueBonuses = rescueBonuses,
+                showStuckHint = rescueBonuses.isNotEmpty() && !showStuckDialog,
+                clearEffects = clearEffects,
                 onShopClick = component::onShopClick,
                 onAchievementsClick = component::onAchievementClick,
                 onPauseClick = { showPause = true },
@@ -160,6 +194,18 @@ fun GameStateContent(
                         showLuckySheet = false
                     },
                     onCancel = { cancelLucky() }
+                )
+            }
+
+            if (showStuckDialog) {
+                BackHandler { closeStuckDialog() }
+                StuckDialog(
+                    rescueBonuses = rescueBonuses,
+                    onUseBonusClick = { closeStuckDialog() },
+                    onRestartClick = {
+                        closeStuckDialog()
+                        component.restartGame()
+                    }
                 )
             }
         } else if (state == GameStore.State.GameState.Loading) {
@@ -234,6 +280,9 @@ private fun GameScreen(
     trophyHighlighted: Boolean,
     rewardsToClaim: Int,
     luckyFace: Int?,
+    rescueBonuses: List<BonusType>,
+    showStuckHint: Boolean,
+    clearEffects: ClearEffects,
     onShopClick: () -> Unit,
     onAchievementsClick: () -> Unit,
     onPauseClick: () -> Unit,
@@ -250,29 +299,19 @@ private fun GameScreen(
     val spareActive = gameStatistic.tray.spare != null
     val diceReady = gameStatistic.dice != DiceItem.empty()
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(DarkBlue),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
+    val uiStates = remember { GameUiState.getList() }
+    val boardState = remember { BoardUiState() }
 
-        val uiStates = remember { GameUiState.getList() }
-        val boardState = remember { BoardUiState() }
+    // Эффектам очистки нужно знать, где поле и какого оно размера
+    SideEffect {
+        clearEffects.board = boardState
+        clearEffects.boardRows = gameStatistic.boardItem.row
+        clearEffects.boardCols = gameStatistic.boardItem.col
+    }
+    val coinsTarget = with(clearEffects.coinFlight) { Modifier.coinsTarget() }
 
-        GameHeader(
-            totalScore = gameStatistic.totalScore,
-            bestScore = gameStatistic.bestScore,
-            coins = gameStatistic.coins,
-            combo = gameStatistic.combo,
-            trophyHighlighted = trophyHighlighted,
-            rewardsToClaim = rewardsToClaim,
-            onPauseClick = onPauseClick,
-            onShopClick = onShopClick,
-            onAchievementsClick = onAchievementsClick
-        )
-
-        val field = @Composable { fieldModifier: Modifier, trayModifier: Modifier, panelModifier: Modifier ->
+    // Поле, лоток и бонусы отдельно: в портрете они идут столбиком, на планшете - в разных колонках
+    val field = @Composable { fieldModifier: Modifier ->
             DrawPlayingField(
                 modifier = fieldModifier,
                 boardItem = gameStatistic.boardItem,
@@ -284,29 +323,43 @@ private fun GameScreen(
                 lastPlaced = gameStatistic.lastPlaced,
                 uiState = uiStates.getGhost()
             )
+        }
 
-            BottomBoard(
-                modifier = trayModifier,
-                uiState = uiStates.getByType(DraggingType.BLOCK)
-                    ?: throw IllegalStateException(),
-                boardItem = gameStatistic.boardItem,
-                boardState = boardState,
-                diceItem = gameStatistic.dice,
-                tray = gameStatistic.tray,
-                pickedFace = luckyFace.takeIf { !spareActive && diceReady },
-                onDieClick = { target ->
-                    if (spareActive && gameStatistic.tray.spare?.value != null) {
-                        onDiscardClick(target)
-                    } else if (luckyFace != null && !spareActive) {
-                        if (target == DiscardTarget.A) onLuckyDieClick(Slot.A)
-                        else if (target == DiscardTarget.B) onLuckyDieClick(Slot.B)
-                    }
-                },
-                onRollEnd = onRollEnd,
-                onPlaceBlock = onPlaceBlock,
-                onSpareRolled = onSpareRolled,
-            )
+    // Подсказка «используй бонус» - над лотком, чтобы не закрывать кубики блока
+    val trayContent = @Composable { trayModifier: Modifier ->
+            Box(modifier = trayModifier) {
+                BottomBoard(
+                    modifier = Modifier.fillMaxSize(),
+                    uiState = uiStates.getByType(DraggingType.BLOCK)
+                        ?: throw IllegalStateException(),
+                    boardItem = gameStatistic.boardItem,
+                    boardState = boardState,
+                    diceItem = gameStatistic.dice,
+                    tray = gameStatistic.tray,
+                    pickedFace = luckyFace.takeIf { !spareActive && diceReady },
+                    onDieClick = { target ->
+                        if (spareActive && gameStatistic.tray.spare?.value != null) {
+                            onDiscardClick(target)
+                        } else if (luckyFace != null && !spareActive) {
+                            if (target == DiscardTarget.A) onLuckyDieClick(Slot.A)
+                            else if (target == DiscardTarget.B) onLuckyDieClick(Slot.B)
+                        }
+                    },
+                    onRollEnd = onRollEnd,
+                    onPlaceBlock = onPlaceBlock,
+                    onSpareRolled = onSpareRolled,
+                )
+                if (showStuckHint) {
+                    StuckHint(
+                        modifier = Modifier
+                            .align(Alignment.TopCenter)
+                            .onTrayEdge()
+                    )
+                }
+            }
+        }
 
+    val panel = @Composable { panelModifier: Modifier ->
             GameBottomPanel(
                 modifier = panelModifier,
                 bonusStatistic = gameStatistic.bonuses,
@@ -324,16 +377,100 @@ private fun GameScreen(
                 },
                 isLandscape = isLandscape,
                 luckyEnabled = !spareActive,
+                highlighted = rescueBonuses,
                 onBuyClick = onBuyBonusClick
             )
         }
 
-        if (isLandscape) {
-            Row(modifier = Modifier.weight(1f)) {
-                field(Modifier.weight(0.46f).fillMaxHeight(), Modifier.weight(0.34f), Modifier.weight(0.2f))
+    if (isLandscape) {
+        // Планшет: слева монеты и счёт, по центру поле, справа кнопки, лоток и бонусы
+        BoxWithConstraints(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(DarkBlue)
+        ) {
+            val sideWidth = if (maxWidth < 1100.dp) 200.dp else 250.dp
+            val trayMinWidth = 320.dp
+            // Клетка такая, чтобы по высоте влезло поле 11×11, а по ширине - поле и блок 6×6 с линейкой
+            val cell = minOf(
+                (maxHeight - 90.dp) / 11,
+                (maxWidth - sideWidth - trayMinWidth - 80.dp) / 11,
+                (maxWidth - sideWidth - 200.dp) / 17
+            ).coerceIn(24.dp, 46.dp)
+            SideEffect { boardState.cellSize = cell }
+            val trayWidth = maxOf(cell * 6 + 120.dp, trayMinWidth)
+
+            Row(modifier = Modifier.fillMaxSize()) {
+                Column(
+                    modifier = Modifier
+                        .width(sideWidth)
+                        .fillMaxHeight()
+                        .padding(start = 24.dp, end = 24.dp, top = 28.dp, bottom = 30.dp)
+                ) {
+                    SideCoins(coins = gameStatistic.coins, onShopClick = onShopClick, modifier = coinsTarget)
+                    Spacer(modifier = Modifier.weight(1f))
+                    SideScore(
+                        totalScore = gameStatistic.totalScore,
+                        bestScore = gameStatistic.bestScore,
+                        combo = gameStatistic.combo
+                    )
+                    Spacer(modifier = Modifier.weight(1f))
+                    // Пустое место под высоту монет: так счёт оказывается ровно по центру экрана
+                    Spacer(modifier = Modifier.height(52.dp))
+                }
+                field(
+                    Modifier
+                        .weight(1f)
+                        .fillMaxHeight()
+                )
+                Column(
+                    modifier = Modifier
+                        .width(trayWidth)
+                        .fillMaxHeight()
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            // Снизу запас под свечение кубка, иначе его перекрывает лоток
+                            .padding(top = 28.dp, end = 28.dp, bottom = 8.dp),
+                        horizontalArrangement = Arrangement.End
+                    ) {
+                        HeaderButtons(
+                            trophyHighlighted = trophyHighlighted,
+                            rewardsToClaim = rewardsToClaim,
+                            onPauseClick = onPauseClick,
+                            onAchievementsClick = onAchievementsClick,
+                            buttonSize = 48.dp
+                        )
+                    }
+                    trayContent(Modifier.weight(1f))
+                    panel(Modifier)
+                }
             }
-        } else {
-            field(Modifier, Modifier.weight(1f), Modifier.height(120.dp))
+        }
+    } else {
+        SideEffect { boardState.cellSize = BoardUiState.PortraitCell }
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(DarkBlue),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            GameHeader(
+                totalScore = gameStatistic.totalScore,
+                bestScore = gameStatistic.bestScore,
+                coins = gameStatistic.coins,
+                coinsModifier = coinsTarget,
+                combo = gameStatistic.combo,
+                trophyHighlighted = trophyHighlighted,
+                rewardsToClaim = rewardsToClaim,
+                onPauseClick = onPauseClick,
+                onShopClick = onShopClick,
+                onAchievementsClick = onAchievementsClick
+            )
+            field(Modifier)
+            trayContent(Modifier.weight(1f))
+            panel(Modifier.height(120.dp))
         }
     }
 }

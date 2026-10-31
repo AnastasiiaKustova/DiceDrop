@@ -29,6 +29,7 @@ import com.example.dicedrop.presentation.common.GameButton
 import com.example.dicedrop.presentation.common.GameIcons
 import com.example.dicedrop.presentation.common.TutorialDialog
 import com.example.dicedrop.presentation.common.consumeClicks
+import com.example.dicedrop.presentation.common.isLandscape
 import com.example.dicedrop.presentation.ui.theme.DarkBlue
 import com.example.dicedrop.presentation.ui.theme.MidBlue
 import com.example.dicedrop.presentation.ui.theme.White
@@ -40,12 +41,19 @@ fun DrawPause(
     onSettingsChange: (SettingTypes) -> Unit,
     onBackClick: () -> Unit,
     onRestartClick: () -> Unit,
-    onMenuClick: () -> Unit
+    onMenuClick: () -> Unit,
+    onTutorialFinished: () -> Unit = {}
 ) {
     // Обучение открывается вместо окна паузы и возвращает к нему по закрытии
     var showTutorial by rememberSaveable { mutableStateOf(false) }
     if (showTutorial) {
-        TutorialDialog(onClose = { showTutorial = false })
+        TutorialDialog(
+            onClose = { showTutorial = false },
+            onFinish = {
+                showTutorial = false
+                onTutorialFinished()
+            }
+        )
         return
     }
 
@@ -80,30 +88,65 @@ fun DrawPause(
                 icon = GameIcons.Play
             )
 
-            GameButton(
-                modifier = Modifier.fillMaxWidth(),
-                text = stringResource(R.string.restart_game),
-                onClick = onRestartClick,
-                color = MidBlue,
-                contentColor = White
-            )
+            if (isLandscape()) {
+                // На планшете окно ниже по высоте: «Как играть» и «Заново» стоят рядом
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    GameButton(
+                        modifier = Modifier.weight(1f),
+                        text = stringResource(R.string.how_to_play),
+                        onClick = { showTutorial = true },
+                        color = MidBlue,
+                        contentColor = White,
+                        icon = GameIcons.Help,
+                        fontSize = 17.sp
+                    )
+                    GameButton(
+                        modifier = Modifier.weight(1f),
+                        text = stringResource(R.string.restart_short),
+                        onClick = onRestartClick,
+                        color = MidBlue,
+                        contentColor = White,
+                        icon = GameIcons.Restart,
+                        fontSize = 17.sp
+                    )
+                }
 
-            GameButton(
-                modifier = Modifier.fillMaxWidth(),
-                text = stringResource(R.string.to_menu),
-                onClick = onMenuClick,
-                color = MidBlue,
-                contentColor = White
-            )
+                GameButton(
+                    modifier = Modifier.fillMaxWidth(),
+                    text = stringResource(R.string.to_menu),
+                    onClick = onMenuClick,
+                    color = MidBlue,
+                    contentColor = White
+                )
+            } else {
+                GameButton(
+                    modifier = Modifier.fillMaxWidth(),
+                    text = stringResource(R.string.restart_game),
+                    onClick = onRestartClick,
+                    color = MidBlue,
+                    contentColor = White
+                )
 
-            GameButton(
-                modifier = Modifier.fillMaxWidth(),
-                text = stringResource(R.string.how_to_play),
-                onClick = { showTutorial = true },
-                color = MidBlue,
-                contentColor = White,
-                icon = GameIcons.Help
-            )
+                GameButton(
+                    modifier = Modifier.fillMaxWidth(),
+                    text = stringResource(R.string.to_menu),
+                    onClick = onMenuClick,
+                    color = MidBlue,
+                    contentColor = White
+                )
+
+                GameButton(
+                    modifier = Modifier.fillMaxWidth(),
+                    text = stringResource(R.string.how_to_play),
+                    onClick = { showTutorial = true },
+                    color = MidBlue,
+                    contentColor = White,
+                    icon = GameIcons.Help
+                )
+            }
 
             // Те же переключатели, что в настройках, чтобы не выходить ради них в меню
             Row(

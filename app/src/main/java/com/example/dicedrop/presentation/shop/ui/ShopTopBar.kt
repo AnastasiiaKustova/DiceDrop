@@ -14,18 +14,23 @@ import androidx.compose.ui.unit.sp
 import com.example.dicedrop.R
 import com.example.dicedrop.presentation.common.CoinChip
 import com.example.dicedrop.presentation.common.RoundImageButton
+import com.example.dicedrop.presentation.common.isLandscape
 import com.example.dicedrop.presentation.ui.theme.White
 
 @Composable
 fun ShopTopBar(
     coinsValue: Int,
     modifier: Modifier = Modifier,
+    // Для счётчика монет: сюда летят монеты подарка
+    coinsModifier: Modifier = Modifier,
     onBackClick: () -> Unit,
 ) {
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .padding(start = 20.dp, end = 20.dp, top = 20.dp)
+            // На планшете поля шире, как у содержимого магазина
+            .padding(horizontal = if (isLandscape()) 40.dp else 20.dp)
+            .padding(top = 20.dp)
     ) {
         RoundImageButton(
             modifier = Modifier.align(Alignment.CenterStart),
@@ -42,7 +47,7 @@ fun ShopTopBar(
             fontWeight = FontWeight.Black
         )
         CoinChip(
-            modifier = Modifier.align(Alignment.CenterEnd),
+            modifier = coinsModifier.align(Alignment.CenterEnd),
             coins = coinsValue,
             height = 36.dp,
             fontSize = 15.sp

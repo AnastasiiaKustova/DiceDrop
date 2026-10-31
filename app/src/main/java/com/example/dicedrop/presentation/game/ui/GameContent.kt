@@ -1,7 +1,9 @@
 package com.example.dicedrop.presentation.game.ui
 
 import GameStateContent
+import android.app.Activity
 import android.content.Context
+import android.content.ContextWrapper
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
@@ -20,6 +22,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.SnackbarDuration
@@ -32,11 +35,13 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -47,10 +52,10 @@ import com.example.dicedrop.domain.ads.RewardedAdManager
 import com.example.dicedrop.domain.entity.AdReward
 import com.example.dicedrop.domain.feedback.GameFeedback
 import com.example.dicedrop.domain.feedback.GameFeedback.Companion.lineCleared
-import com.example.dicedrop.presentation.common.ConfettiBit
 import com.example.dicedrop.presentation.common.ConfettiBurst
 import com.example.dicedrop.presentation.common.DialogScrim
 import com.example.dicedrop.presentation.common.LocalGameFeedback
+import com.example.dicedrop.presentation.common.isLandscape
 import com.example.dicedrop.presentation.game.GameComponent
 import com.example.dicedrop.presentation.game.ui.board.ComboPopup
 import com.example.dicedrop.presentation.game.ui.bottompanel.getPrice
@@ -92,6 +97,11 @@ fun GameContent(component: GameComponent) {
 
     val snackbarHostState = remember { SnackbarHostState() }
 
+    // Осколки и монеты при очистке линий; играют сами по себе, не задерживая события
+    val clearEffects = remember { ClearEffects() }
+    val effectsScope = rememberCoroutineScope()
+    val density = LocalDensity.current.density
+
     val adState by component
         .rewardedAdManager
         .state
@@ -116,6 +126,15 @@ fun GameContent(component: GameComponent) {
                             points = clearEvent.points,
                             coins = clearEvent.coins
                         )
+                        effectsScope.launch {
+                            clearEffects.play(
+                                rows = clearEvent.clearedRows,
+                                cols = clearEvent.clearedCols,
+                                coinsEarned = clearEvent.coins,
+                                density = density,
+                                feedback = feedback
+                            )
+                        }
                     },
                     onClearFinished = {
                         clearedRows = emptyList()
@@ -124,6 +143,14 @@ fun GameContent(component: GameComponent) {
                     onAdRewarded = { reward ->
                         if (reward == AdReward.DOUBLE_COINS) feedback.play(GameFeedback.Sound.COINS_REWARD)
                         component.AdRewardReceive(reward)
+                    },
+                    onAdUnavailable = {
+                        // Ответ рекламы приходит позже, когда обработка этого события уже закончилась,
+                        // поэтому не её scope: в завершённом сообщение отменилось бы, не появившись
+                        effectsScope.launch {
+                            snackbarHostState.currentSnackbarData?.dismiss()
+                            snackbarHostState.showSnackbar(context.getString(R.string.ad_unavailable))
+                        }
                     },
                     onAchievement = {
                         banner = it
@@ -158,13 +185,18 @@ fun GameContent(component: GameComponent) {
             trophyHighlighted = bannerVisible,
             rewardsToClaim = state.rewardsToClaim,
             settings = state.settings,
+            clearEffects = clearEffects,
             component = component
         )
+
+        clearEffects.Overlay()
 
         AnimatedVisibility(
             modifier = Modifier
                 .align(Alignment.TopCenter)
-                .padding(top = 96.dp),
+                // На планшете шапки над полем нет, баннер встаёт у верхнего края
+                .padding(top = if (isLandscape()) 24.dp else 96.dp)
+                .widthIn(max = 560.dp),
             visible = bannerVisible,
             enter = slideInVertically { -it } + fadeIn(),
             exit = slideOutVertically { -it } + fadeOut()
@@ -182,8 +214,9 @@ fun GameContent(component: GameComponent) {
     }
 }
 
+// internal: этот же баннер показывает промо-ролик в отладочной сборке
 @Composable
-private fun AchievementBannerCard(banner: AchievementBanner) {
+internal fun AchievementBannerCard(banner: AchievementBanner) {
     Box(
         modifier = Modifier
             .padding(horizontal = 14.dp)
@@ -248,10 +281,6 @@ private fun AchievementBannerCard(banner: AchievementBanner) {
             count = 40,
             power = 0.9f
         )
-        ConfettiBit(x = 24.dp, y = (-7).dp, size = 12.dp, color = Orange, rotation = 20f)
-        ConfettiBit(x = 120.dp, y = (-5).dp, size = 9.dp, color = LightBlue, rotation = -15f)
-        ConfettiBit(x = 20.dp, y = (-6).dp, size = 8.dp, color = Green, round = true, alignRight = true)
-        ConfettiBit(x = 70.dp, y = 76.dp, size = 11.dp, color = Yellow, rotation = 35f, alignRight = true)
     }
 }
 
@@ -288,6 +317,7 @@ private suspend fun handleUiEvent(
     onClearLine: (GameComponent.UiEvent.ClearLine) -> Unit,
     onClearFinished: () -> Unit,
     onAdRewarded: (AdReward) -> Unit,
+    onAdUnavailable: () -> Unit,
     onAchievement: (AchievementBanner) -> Unit,
     onGoToShop: () -> Unit
 ) {
@@ -337,9 +367,20 @@ private suspend fun handleUiEvent(
 
         GameComponent.UiEvent.Animate -> Unit
         is GameComponent.UiEvent.WatchAd -> {
-            rewardedAdManager.showAd {
-                onAdRewarded(event.reward)
-            }
+            val activity = context.findActivity() ?: return
+            rewardedAdManager.showAd(
+                activity = activity,
+                reward = event.reward,
+                onReward = { onAdRewarded(event.reward) },
+                onUnavailable = onAdUnavailable
+            )
         }
     }
+}
+
+// Ролик Яндекса показывается поверх Activity, а LocalContext может быть обёрткой над ней
+tailrec fun Context.findActivity(): Activity? = when (this) {
+    is Activity -> this
+    is ContextWrapper -> baseContext.findActivity()
+    else -> null
 }

@@ -5,7 +5,12 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
+import com.example.dicedrop.presentation.common.isLandscape
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -23,6 +28,8 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalContext
 import com.example.dicedrop.presentation.game.ui.GameSnackbarHost
 import com.example.dicedrop.presentation.shop.ui.RandomBonusDialog
@@ -48,6 +55,7 @@ import com.example.dicedrop.R
 import com.example.dicedrop.domain.feedback.GameFeedback
 import com.example.dicedrop.presentation.common.LocalGameFeedback
 import com.example.dicedrop.presentation.common.CoinChip
+import com.example.dicedrop.presentation.common.FlyingCoins
 import com.example.dicedrop.presentation.common.DieFace
 import com.example.dicedrop.presentation.common.GameButton
 import com.example.dicedrop.presentation.common.GameIcons
@@ -56,6 +64,7 @@ import com.example.dicedrop.presentation.common.RoundImageButton
 import com.example.dicedrop.presentation.common.TutorialDialog
 import com.example.dicedrop.presentation.common.spaced
 import com.example.dicedrop.presentation.ui.theme.DarkBlue
+import com.example.dicedrop.presentation.ui.theme.DeepBlue
 import com.example.dicedrop.presentation.ui.theme.Green
 import com.example.dicedrop.presentation.ui.theme.GreenText
 import com.example.dicedrop.presentation.ui.theme.MidBlue
@@ -70,6 +79,10 @@ fun MenuContent(component: MenuComponent) {
 
     val context = LocalContext.current
     val snackbarHostState = remember { SnackbarHostState() }
+    val feedback = LocalGameFeedback.current
+    val density = LocalDensity.current.density
+    val scope = rememberCoroutineScope()
+    val coinFlight = remember { FlyingCoins() }
 
     LaunchedEffect(Unit) {
         component.uiEvents.collect { event ->
@@ -87,7 +100,8 @@ fun MenuContent(component: MenuComponent) {
 
     Box(modifier = Modifier.fillMaxSize()) {
         Menu(
-            state = state,
+            state = state.copy(coins = coinFlight.coinsToShow(state.coinsBeforeGift ?: state.coins)),
+            coinsModifier = with(coinFlight) { Modifier.coinsTarget() },
             onStartGameClick = { component.onStartGameClick() },
             onAchievementsClick = { component.onAchievementsClick() },
             onShopClick = { component.onShopClick() },
@@ -105,20 +119,25 @@ fun MenuContent(component: MenuComponent) {
         }
 
         state.receivedGift?.let { gift ->
-            val feedback = LocalGameFeedback.current
             LaunchedEffect(gift) { feedback.play(GameFeedback.Sound.DAILY_GIFT) }
             RandomBonusDialog(
                 bonuses = gift,
+                onCoinsFly = { from, amount ->
+                    coinFlight.holdCoins(state.coinsBeforeGift ?: (state.coins - amount))
+                    scope.launch { coinFlight.flyReward(from, amount, density, feedback) }
+                },
                 confirmClick = { component.onGiftConfirm() }
             )
         }
+
+        coinFlight.Layer()
 
         // При первом запуске; «Играть!» на последнем шаге сразу начинает игру
         if (state.showTutorial) {
             TutorialDialog(
                 onClose = { component.onTutorialClose() },
                 onFinish = {
-                    component.onTutorialClose()
+                    component.onTutorialFinish()
                     component.onStartGameClick()
                 }
             )
@@ -129,6 +148,8 @@ fun MenuContent(component: MenuComponent) {
 @Composable
 private fun Menu(
     state: MenuStore.State,
+    // Для счётчика монет: сюда летят монеты подарка
+    coinsModifier: Modifier = Modifier,
     onStartGameClick: () -> Unit,
     onAchievementsClick: () -> Unit,
     onShopClick: () -> Unit,
@@ -142,7 +163,17 @@ private fun Menu(
     ) {
         BackgroundDecor()
 
-        Column(
+        if (isLandscape()) {
+            MenuLandscape(
+                state = state,
+                coinsModifier = coinsModifier,
+                onStartGameClick = onStartGameClick,
+                onAchievementsClick = onAchievementsClick,
+                onShopClick = onShopClick,
+                onSettingsClick = onSettingsClick,
+                onGiftClick = onGiftClick
+            )
+        } else Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(start = 24.dp, end = 24.dp, top = 20.dp, bottom = 32.dp),
@@ -152,7 +183,7 @@ private fun Menu(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                CoinChip(coins = state.coins)
+                CoinChip(coins = state.coins, modifier = coinsModifier)
                 Spacer(modifier = Modifier.weight(1f))
                 RoundImageButton(
                     iconRes = R.drawable.btn_settings,
@@ -185,65 +216,13 @@ private fun Menu(
 
             Spacer(modifier = Modifier.height(18.dp))
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                MenuTile(
-                    modifier = Modifier.weight(1f),
-                    iconRes = R.drawable.ic_shop_bag,
-                    title = stringResource(R.string.store),
-                    onClick = onShopClick
-                )
-                MenuTile(
-                    modifier = Modifier.weight(1f),
-                    iconRes = R.drawable.ic_trophy,
-                    title = stringResource(R.string.achievements),
-                    titleSize = 13,
-                    onClick = onAchievementsClick
-                ) {
-                    if (state.rewardsToClaim > 0) {
-                        Box(
-                            modifier = Modifier
-                                .align(Alignment.TopEnd)
-                                .offset(x = 6.dp, y = (-8).dp)
-                                .sizeIn(minWidth = 26.dp)
-                                .height(26.dp)
-                                .background(Yellow, CircleShape)
-                                .padding(horizontal = 6.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                text = state.rewardsToClaim.toString(),
-                                color = Navy,
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.Black
-                            )
-                        }
-                    }
-                }
-                MenuTile(
-                    modifier = Modifier.weight(1f),
-                    iconRes = R.drawable.ic_gift_box,
-                    title = stringResource(R.string.gift),
-                    onClick = onGiftClick
-                ) {
-                    if (state.giftReady) {
-                        Text(
-                            modifier = Modifier
-                                .align(Alignment.TopCenter)
-                                .offset(y = (-11).dp)
-                                .background(Green, RoundedCornerShape(10.dp))
-                                .padding(horizontal = 10.dp, vertical = 2.dp),
-                            text = stringResource(R.string.gift_ready),
-                            color = GreenText,
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Black,
-                            maxLines = 1
-                        )
-                    }
-                }
-            }
+            MenuTiles(
+                state = state,
+                horizontal = false,
+                onShopClick = onShopClick,
+                onAchievementsClick = onAchievementsClick,
+                onGiftClick = onGiftClick
+            )
 
             Spacer(modifier = Modifier.weight(1f))
 
@@ -252,6 +231,169 @@ private fun Menu(
                 text = stringResource(R.string.daily_streak, state.streakDay),
                 color = White,
                 fontSize = 12.sp
+            )
+        }
+    }
+}
+
+// Планшет: всё одним блоком по центру - логотип строкой, рекорд рядом с «Играть», плитки в ряд
+@Composable
+private fun BoxScope.MenuLandscape(
+    state: MenuStore.State,
+    coinsModifier: Modifier,
+    onStartGameClick: () -> Unit,
+    onAchievementsClick: () -> Unit,
+    onShopClick: () -> Unit,
+    onSettingsClick: () -> Unit,
+    onGiftClick: () -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 40.dp, vertical = 28.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        CoinChip(coins = state.coins, modifier = coinsModifier)
+        Spacer(modifier = Modifier.weight(1f))
+        RoundImageButton(
+            iconRes = R.drawable.btn_settings,
+            contentDescription = stringResource(R.string.settings_title),
+            size = 48.dp,
+            onClick = onSettingsClick
+        )
+    }
+
+    Column(
+        modifier = Modifier
+            .align(Alignment.Center)
+            .padding(top = 40.dp)
+            .widthIn(max = 780.dp)
+            .padding(horizontal = 24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(30.dp)
+        ) {
+            DieFace(value = 5, size = 84.dp, modifier = Modifier.rotate(-10f))
+            LogoTitle(fontSize = 76)
+            DieFace(value = 3, size = 84.dp, gold = true, modifier = Modifier.rotate(8f))
+        }
+
+        Spacer(modifier = Modifier.height(26.dp))
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(100.dp),
+            horizontalArrangement = Arrangement.spacedBy(18.dp)
+        ) {
+            RecordCard(
+                bestScore = state.bestScore,
+                modifier = Modifier
+                    .width(260.dp)
+                    .fillMaxHeight()
+            )
+            GameButton(
+                modifier = Modifier.weight(1f),
+                text = stringResource(R.string.play),
+                onClick = onStartGameClick,
+                height = 100.dp,
+                corner = 26.dp,
+                fontSize = 38.sp,
+                icon = GameIcons.Play,
+                iconSize = 34.dp
+            )
+        }
+
+        Spacer(modifier = Modifier.height(18.dp))
+
+        MenuTiles(
+            state = state,
+            horizontal = true,
+            onShopClick = onShopClick,
+            onAchievementsClick = onAchievementsClick,
+            onGiftClick = onGiftClick
+        )
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        Text(
+            modifier = Modifier.alpha(0.55f),
+            text = stringResource(R.string.daily_streak, state.streakDay),
+            color = White,
+            fontSize = 13.sp
+        )
+    }
+}
+
+@Composable
+private fun MenuTiles(
+    state: MenuStore.State,
+    horizontal: Boolean,
+    onShopClick: () -> Unit,
+    onAchievementsClick: () -> Unit,
+    onGiftClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(if (horizontal) 18.dp else 12.dp)
+    ) {
+        MenuTile(
+            modifier = Modifier.weight(1f),
+            iconRes = R.drawable.ic_shop_bag,
+            title = stringResource(R.string.store),
+            horizontal = horizontal,
+            onClick = onShopClick
+        )
+        MenuTile(
+            modifier = Modifier.weight(1f),
+            iconRes = R.drawable.ic_trophy,
+            title = stringResource(R.string.achievements),
+            titleSize = 13,
+            horizontal = horizontal,
+            onClick = onAchievementsClick
+        ) {
+            if (state.rewardsToClaim > 0) {
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .offset(x = 6.dp, y = (-8).dp)
+                        .sizeIn(minWidth = 26.dp)
+                        .height(26.dp)
+                        .background(Yellow, CircleShape)
+                        .padding(horizontal = 6.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = state.rewardsToClaim.toString(),
+                        color = Navy,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Black
+                    )
+                }
+            }
+        }
+        MenuTile(
+            modifier = Modifier.weight(1f),
+            // Подарок за сегодня уже получен - коробка открыта, следующий завтра
+            iconRes = if (state.giftReady) R.drawable.ic_gift_box else R.drawable.ic_gift_box_open,
+            title = stringResource(R.string.gift),
+            horizontal = horizontal,
+            onClick = onGiftClick
+        ) {
+            Text(
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .offset(y = (-11).dp)
+                    .alpha(if (state.giftReady) 1f else 0.9f)
+                    .background(if (state.giftReady) Green else DeepBlue, RoundedCornerShape(10.dp))
+                    .padding(horizontal = 10.dp, vertical = 2.dp),
+                text = stringResource(if (state.giftReady) R.string.gift_ready else R.string.gift_tomorrow),
+                color = if (state.giftReady) GreenText else White,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Black,
+                maxLines = 1
             )
         }
     }
@@ -272,28 +414,33 @@ private fun Logo() {
             )
         }
         Spacer(modifier = Modifier.height(24.dp))
-        Text(
-            text = buildAnnotatedString {
-                append("DICE ")
-                withStyle(SpanStyle(color = Yellow)) { append("DROP") }
-            },
-            color = White,
-            fontSize = 50.sp,
-            lineHeight = 50.sp,
-            fontWeight = FontWeight.Black,
-            letterSpacing = 1.sp
-        )
+        LogoTitle(fontSize = 50)
     }
 }
 
 @Composable
-private fun RecordCard(bestScore: Int) {
+private fun LogoTitle(fontSize: Int) {
+    Text(
+        text = buildAnnotatedString {
+            append("DICE ")
+            withStyle(SpanStyle(color = Yellow)) { append("DROP") }
+        },
+        color = White,
+        fontSize = fontSize.sp,
+        lineHeight = fontSize.sp,
+        fontWeight = FontWeight.Black,
+        letterSpacing = 1.sp
+    )
+}
+
+@Composable
+private fun RecordCard(bestScore: Int, modifier: Modifier = Modifier.fillMaxWidth()) {
     Column(
-        modifier = Modifier
-            .fillMaxWidth()
+        modifier = modifier
             .background(MidBlue, RoundedCornerShape(20.dp))
             .padding(top = 12.dp, bottom = 14.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
     ) {
         Text(
             modifier = Modifier.alpha(0.85f),
@@ -319,32 +466,51 @@ private fun MenuTile(
     @DrawableRes iconRes: Int,
     title: String,
     titleSize: Int = 14,
+    // На планшете плитка ниже и шире: иконка слева от подписи
+    horizontal: Boolean = false,
     onClick: () -> Unit,
-    badge: @Composable androidx.compose.foundation.layout.BoxScope.() -> Unit = {}
+    badge: @Composable BoxScope.() -> Unit = {}
 ) {
     val feedback = LocalGameFeedback.current
-    Box(modifier = modifier.height(116.dp)) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .clip(RoundedCornerShape(22.dp))
-                .background(MidBlue)
-                .clickable {
-                    feedback.play(GameFeedback.Sound.BUTTON_CLICK)
-                    onClick()
-                }
-                .padding(top = 10.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterVertically)
-        ) {
-            IconCircle(iconRes = iconRes, size = 64.dp, iconSize = 46.dp)
-            Text(
-                text = title,
-                color = White,
-                fontSize = titleSize.sp,
-                fontWeight = FontWeight.ExtraBold,
-                maxLines = 1
-            )
+    val tileModifier = Modifier
+        .fillMaxSize()
+        .clip(RoundedCornerShape(if (horizontal) 26.dp else 22.dp))
+        .background(MidBlue)
+        .clickable {
+            feedback.play(GameFeedback.Sound.BUTTON_CLICK)
+            onClick()
+        }
+    Box(modifier = modifier.height(if (horizontal) 104.dp else 116.dp)) {
+        if (horizontal) {
+            Row(
+                modifier = tileModifier.padding(horizontal = 16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(14.dp, Alignment.CenterHorizontally)
+            ) {
+                IconCircle(iconRes = iconRes, size = 70.dp, iconSize = 50.dp)
+                Text(
+                    text = title,
+                    color = White,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    maxLines = 1
+                )
+            }
+        } else {
+            Column(
+                modifier = tileModifier.padding(top = 10.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterVertically)
+            ) {
+                IconCircle(iconRes = iconRes, size = 64.dp, iconSize = 46.dp)
+                Text(
+                    text = title,
+                    color = White,
+                    fontSize = titleSize.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    maxLines = 1
+                )
+            }
         }
         badge()
     }

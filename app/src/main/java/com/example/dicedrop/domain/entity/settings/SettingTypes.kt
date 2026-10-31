@@ -14,7 +14,6 @@ sealed interface SettingTypes{
     ): SettingTypes
 
     data class Language(
-        val language: String,
-        val valueList: List<String>
+        val language: String
     ): SettingTypes
 }

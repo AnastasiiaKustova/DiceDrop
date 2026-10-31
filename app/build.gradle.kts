@@ -20,6 +20,11 @@ android {
         vectorDrawables {
             useSupportLibrary = true
         }
+
+        // Блоки рекламы с вознаграждением в кабинете Яндекса
+        buildConfigField("String", "AD_UNIT_REVIVE", "\"R-M-20287637-1\"")
+        buildConfigField("String", "AD_UNIT_DOUBLE_COINS", "\"R-M-20287637-2\"")
+        buildConfigField("String", "AD_UNIT_RANDOM_BONUS", "\"R-M-20287637-3\"")
     }
 
     buildTypes {
@@ -30,8 +35,11 @@ android {
                 "proguard-rules.pro"
             )
         }
-        create("customDebugType") {
-            isDebuggable = true
+        // В отладке только тестовая реклама: нажатия на настоящую Яндекс считает накруткой
+        debug {
+            buildConfigField("String", "AD_UNIT_REVIVE", "\"demo-rewarded-yandex\"")
+            buildConfigField("String", "AD_UNIT_DOUBLE_COINS", "\"demo-rewarded-yandex\"")
+            buildConfigField("String", "AD_UNIT_RANDOM_BONUS", "\"demo-rewarded-yandex\"")
         }
     }
     compileOptions {
@@ -43,6 +51,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
     composeOptions {
         kotlinCompilerExtensionVersion = "1.5.1"
@@ -76,6 +85,8 @@ dependencies {
 
     implementation(libs.dagger)
     ksp(libs.dagger.compiler)
+
+    implementation(libs.yandex.mobileads)
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)

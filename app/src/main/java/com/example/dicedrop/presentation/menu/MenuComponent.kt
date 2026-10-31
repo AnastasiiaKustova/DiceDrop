@@ -23,6 +23,9 @@ interface MenuComponent {
 
     fun onTutorialClose()
 
+    // Обучение пролистано до конца кнопкой «Играть!»
+    fun onTutorialFinish()
+
     sealed interface UiEvent {
         data object GiftAlreadyReceived : UiEvent
     }

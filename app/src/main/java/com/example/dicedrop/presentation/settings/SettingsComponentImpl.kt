@@ -40,7 +40,6 @@ class SettingsComponentImpl @AssistedInject constructor(
                     SettingsStore.Label.ClickNavigateToShop -> onNavigateToShopClicked()
                     SettingsStore.Label.ClickRestartGame -> onRestartGameClicked()
                     is SettingsStore.Label.ClickChangeLanguageError -> _uiEvents.emit(UiEvent.ShowError(UiEvent.ErrorType.ChangeLanguageError))
-                    is SettingsStore.Label.ClickTurnOffAds -> _uiEvents.emit(UiEvent.ShowMessage(UiEvent.MessageType.AdsOffSuccess))
                     SettingsStore.Label.ClickExit -> onExitClicked()
                 }
             }
@@ -70,9 +69,8 @@ class SettingsComponentImpl @AssistedInject constructor(
         store.accept(SettingsStore.Intent.ClickSettingsChange(settingType))
     }
 
-
-    override fun onTurnOffAds() {
-        store.accept(SettingsStore.Intent.ClickTurnOffAds)
+    override fun onTutorialFinished() {
+        store.accept(SettingsStore.Intent.TutorialFinished)
     }
 
     @AssistedFactory

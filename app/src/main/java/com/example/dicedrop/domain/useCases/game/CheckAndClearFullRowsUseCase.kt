@@ -34,9 +34,13 @@ class CheckAndClearFullRowsUseCase @Inject constructor(
             combo = combo,
             coins = game.coins + coins,
             coinsEarned = game.coinsEarned + coins,
+            boardClears = game.boardClears + if (boardCleared) 1 else 0,
             totalScore = game.totalScore + delta,
-            bestScore = if (game.isRecordAchieved) game.totalScore + delta else game.bestScore,
-            isNewRecord = game.totalScore + delta > game.bestScore && game.bestScore > 0 && !game.isRecordAchieved
+            // После отмены хода счёт бывает ниже рекорда: рекорд от этого не опускается
+            bestScore = if (game.isRecordAchieved) maxOf(game.bestScore, game.totalScore + delta) else game.bestScore,
+            isNewRecord = game.totalScore + delta > game.bestScore && game.bestScore > 0 && !game.isRecordAchieved,
+            // Монеты этого хода заберёт отмена хода за рекламу
+            reviveSnapshot = game.reviveSnapshot?.copy(moveCoins = coins)
         )
 
         repository.updateGameState(updated)

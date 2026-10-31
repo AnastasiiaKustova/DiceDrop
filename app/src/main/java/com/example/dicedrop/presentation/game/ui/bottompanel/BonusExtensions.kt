@@ -7,10 +7,6 @@ import com.example.dicedrop.domain.entity.BonusType
 import com.example.dicedrop.domain.entity.DraggingType
 import com.example.dicedrop.presentation.game.ui.drag.GameUiState
 
-fun List<BonusItem>.getItemByType(bonusType: BonusType): BonusItem {
-    return this.find { it.type == bonusType } ?: throw IllegalStateException()
-}
-
 fun List<GameUiState>.getByType(type: DraggingType?): GameUiState? {
     type?.let { return this.first { it.draggingType == type } } ?: return null
 }

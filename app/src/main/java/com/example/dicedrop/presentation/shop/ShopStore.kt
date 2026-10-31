@@ -3,6 +3,8 @@ package com.example.dicedrop.presentation.shop
 import com.arkivanov.mvikotlin.core.store.Reducer
 import com.arkivanov.mvikotlin.core.store.Store
 import com.arkivanov.mvikotlin.core.store.StoreFactory
+import com.example.dicedrop.domain.engine.AchievementTracker
+import com.example.dicedrop.domain.entity.statistic.PlayerStat
 import com.arkivanov.mvikotlin.extensions.coroutines.CoroutineBootstrapper
 import com.arkivanov.mvikotlin.extensions.coroutines.CoroutineExecutor
 import com.example.dicedrop.core.DailyRewardReceived
@@ -11,6 +13,7 @@ import com.example.dicedrop.domain.entity.BonusItem
 import com.example.dicedrop.domain.entity.ShopItem
 import com.example.dicedrop.domain.useCases.game.ObserveGameUseCase
 import com.example.dicedrop.domain.useCases.shop.BuyBonusUseCase
+import com.example.dicedrop.domain.useCases.shop.GetAdBonusUseCase
 import com.example.dicedrop.domain.useCases.shop.GetDailyRewardIsReceivedStateUseCase
 import com.example.dicedrop.domain.useCases.shop.GetDailyRewardUseCase
 import com.example.dicedrop.domain.useCases.shop.GetRandomBonusUseCase
@@ -33,12 +36,16 @@ interface ShopStore : Store<Intent, State, Label> {
         data object RandomBonusConfirmClick : Intent
 
         data class ClickBuyItem(val shopItem: ShopItem) : Intent
+
+        // Реклама досмотрена - выдаём случайный бонус
+        data object AdBonusReward : Intent
     }
 
     data class State(
         val isDailyRewardReceived: Boolean,
         // Сколько дней подряд забран подарок (с учётом сброса после пропуска); приходит отдельно от данных магазина
         val dayStreak: Int = 0,
+        val adBonusesLeft: Int = 0,
         val shopState: ShopState
     ) {
         sealed interface ShopState {
@@ -49,7 +56,12 @@ interface ShopStore : Store<Intent, State, Label> {
             data object Error : ShopState
 
             // Окно «Вы получили»: купленный бонус или ежедневный подарок (монеты и, в 7-й день, бонус)
-            data class GetRandomBonus(val bonuses: List<BonusItem>, val prevState: Loaded) : ShopState
+            // coinsBefore - монеты до подарка: пока окно открыто, счётчик их и показывает, награда прилетит в него после окна
+            data class GetRandomBonus(
+                val bonuses: List<BonusItem>,
+                val prevState: Loaded,
+                val coinsBefore: Int? = null
+            ) : ShopState
 
             data class Loaded(
                 val money: Int,
@@ -71,6 +83,8 @@ interface ShopStore : Store<Intent, State, Label> {
         data object NotEnoughCoins : Label
 
         data class ClickBuyItem(val shopItem: ShopItem) : Label
+
+        data object AdBonusReceived : Label
     }
 }
 
@@ -82,7 +96,9 @@ class ShopStoreFactory @Inject constructor(
     private val getRandomBonusUseCase: GetRandomBonusUseCase,
     private val getShopItemsUseCase: GetShopItemsUseCase,
     private val getDailyRewardUseCase: GetDailyRewardUseCase,
-    private val getDailyRewardIsReceivedStateUseCase: GetDailyRewardIsReceivedStateUseCase
+    private val getDailyRewardIsReceivedStateUseCase: GetDailyRewardIsReceivedStateUseCase,
+    private val getAdBonusUseCase: GetAdBonusUseCase,
+    private val achievementTracker: AchievementTracker
 ) {
 
     fun create(): ShopStore =
@@ -108,7 +124,8 @@ class ShopStoreFactory @Inject constructor(
 
         data class ObserveDailyReward(
             val isDailyRewardReceived: Boolean,
-            val dayStreak: Int
+            val dayStreak: Int,
+            val adBonusesLeft: Int
         ) : Action
 
         data object ShopStartLoading : Action
@@ -125,11 +142,12 @@ class ShopStoreFactory @Inject constructor(
             val dailyRewardClaimed: Boolean
         ) : Msg
 
-        data class GetRandomBonus(val bonuses: List<BonusItem>) : Msg
+        data class GetRandomBonus(val bonuses: List<BonusItem>, val coinsBefore: Int? = null) : Msg
 
         data class ObserveDailyReward(
             val isDailyRewardReceived: Boolean,
-            val dayStreak: Int
+            val dayStreak: Int,
+            val adBonusesLeft: Int
         ) : Msg
 
         data object ReturnToShopLoaded : Msg
@@ -177,7 +195,8 @@ class ShopStoreFactory @Inject constructor(
                             dispatch(
                                 Action.ObserveDailyReward(
                                     isDailyRewardReceived = dailyReward.isClaimedToday,
-                                    dayStreak = dailyReward.currentStreak
+                                    dayStreak = dailyReward.currentStreak,
+                                    adBonusesLeft = dailyReward.adBonusesLeft
                                 )
                             )
                         }
@@ -200,7 +219,8 @@ class ShopStoreFactory @Inject constructor(
                                 if (getDailyRewardIsReceivedStateUseCase()) {
                                     throw DailyRewardReceived("Daily reward already received")
                                 }
-                                dispatch(Msg.GetRandomBonus(getDailyRewardUseCase()))
+                                val coinsBefore = (getState().shopState as? State.ShopState.Loaded)?.money
+                                dispatch(Msg.GetRandomBonus(getDailyRewardUseCase(), coinsBefore))
                                 publish(Label.DailyRewardSuccess)
                             } else if (intent.shopItem.bonusType == null) {
                                 val randomBonus = getRandomBonusUseCase()
@@ -208,6 +228,7 @@ class ShopStoreFactory @Inject constructor(
                                     bonusType = randomBonus.type,
                                     price = intent.shopItem.price
                                 )
+                                achievementTracker.increment(PlayerStat.RANDOM_BONUSES_RECEIVED)
                                 dispatch(Msg.GetRandomBonus(listOf(randomBonus)))
                                 publish(Label.ClickBuyItem(intent.shopItem))
                             } else {
@@ -238,6 +259,14 @@ class ShopStoreFactory @Inject constructor(
                 Intent.RandomBonusConfirmClick -> {
                     dispatch(Msg.ReturnToShopLoaded)
                 }
+
+                Intent.AdBonusReward -> {
+                    scope.launch {
+                        val bonus = getAdBonusUseCase() ?: return@launch
+                        dispatch(Msg.GetRandomBonus(listOf(bonus)))
+                        publish(Label.AdBonusReceived)
+                    }
+                }
             }
         }
 
@@ -255,7 +284,8 @@ class ShopStoreFactory @Inject constructor(
                 is Action.ObserveDailyReward -> dispatch(
                     Msg.ObserveDailyReward(
                         isDailyRewardReceived = action.isDailyRewardReceived,
-                        dayStreak = action.dayStreak
+                        dayStreak = action.dayStreak,
+                        adBonusesLeft = action.adBonusesLeft
                     )
                 )
 
@@ -290,7 +320,8 @@ class ShopStoreFactory @Inject constructor(
                     copy(
                         shopState = State.ShopState.GetRandomBonus(
                             bonuses = msg.bonuses,
-                            prevState = loaded
+                            prevState = loaded,
+                            coinsBefore = msg.coinsBefore
                         )
                     )
                 }
@@ -298,7 +329,8 @@ class ShopStoreFactory @Inject constructor(
                 is Msg.ObserveDailyReward -> {
                     val updated = copy(
                         isDailyRewardReceived = msg.isDailyRewardReceived,
-                        dayStreak = msg.dayStreak
+                        dayStreak = msg.dayStreak,
+                        adBonusesLeft = msg.adBonusesLeft
                     )
                     when (val current = shopState) {
                         is State.ShopState.Loaded -> updated.copy(

@@ -9,9 +9,10 @@ data class GameSettings(
     val isVibrationOn: Boolean = true,
     val isMusicOn: Boolean = true,
     val language: String = Locale.getDefault().language,
-    val isAdsOff: Boolean = false,
     // Обучение показывается при первом запуске, пока игрок его не закроет
     val isTutorialShown: Boolean = false,
+    // Сколько раз показано окно «Ходов нет»: первые разы - окно, потом только подсказка
+    val stuckDialogsShown: Int = 0,
 ){
     companion object{
         fun default() = GameSettings()
