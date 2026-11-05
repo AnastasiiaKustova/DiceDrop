@@ -1,5 +1,6 @@
 package com.example.dicedrop.presentation
 
+import android.content.Intent
 import android.content.pm.ActivityInfo
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -28,6 +29,14 @@ class MainActivity : ComponentActivity() {
     lateinit var backgroundMusic: BackgroundMusic
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        // Если игру уже запустили не с рабочего стола (из магазина после установки), значок открывает
+        // её копию поверх. Закрываем копию, и на экране остаётся то, что было открыто, например ролик
+        if (!isTaskRoot && intent.hasCategory(Intent.CATEGORY_LAUNCHER) && intent.action == Intent.ACTION_MAIN) {
+            super.onCreate(savedInstanceState)
+            finish()
+            return
+        }
+
         (applicationContext as GameApp).applicationComponent.inject(this)
 
         super.onCreate(savedInstanceState)
@@ -55,15 +64,15 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    // Музыка играет, только пока приложение на экране
-    override fun onStart() {
-        super.onStart()
+    // Музыка играет, только пока игра на экране и активна: ролик рекламы открывается поверх неё
+    override fun onResume() {
+        super.onResume()
         backgroundMusic.setForeground(true)
     }
 
-    override fun onStop() {
+    override fun onPause() {
         backgroundMusic.setForeground(false)
-        super.onStop()
+        super.onPause()
     }
 }
 

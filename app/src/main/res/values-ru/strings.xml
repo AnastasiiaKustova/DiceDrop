@@ -22,7 +22,7 @@
     <string name="close">Закрыть</string>
     <string name="game_over">ИГРА ОКОНЧЕНА</string>
     <string name="try_again">Ещё одна попытка</string>
-    <string name="you_got">Вы получили</string>
+    <string name="you_got">Твоя награда</string>
     <string name="coins_thousands">%1$s тыс</string>
     <string name="coins_millions">%1$s млн</string>
     <string name="decimal_separator">,</string>
@@ -63,7 +63,7 @@
     <string name="lucky_desc">Выбери любую грань кубика</string>
     <string name="draft_desc">Докинь кубик и убери лишний</string>
     <string name="random_bonus_desc">Один из четырёх — повезёт?</string>
-    <string name="owned_hint">В скобках — сколько бонусов у вас</string>
+    <string name="owned_hint">В скобках — сколько бонусов у тебя</string>
     <string name="achievements_done">Выполнено</string>
     <string name="tab_all">Все</string>
     <string name="tab_claim">Забрать · %1$d</string>

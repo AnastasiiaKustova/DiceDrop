@@ -19,3 +19,15 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
+# Строки падений с номерами: расшифровываются через mapping.txt этой сборки
+-keepattributes SourceFile,LineNumberTable
+-renamesourcefileattribute SourceFile
+
+# Сохранения лежат в JSON, Gson читает их по именам полей и значений enum.
+# Конструкторы тоже нужны: через них подставляются значения по умолчанию для старых сохранений
+-keep class com.example.dicedrop.domain.entity.** { *; }
+
+# Gson определяет тип списка через дженерик наследника TypeToken
+-keepattributes Signature,InnerClasses,EnclosingMethod
+-keep class com.google.gson.reflect.TypeToken { *; }
+-keep class * extends com.google.gson.reflect.TypeToken
